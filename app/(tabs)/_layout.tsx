@@ -21,6 +21,7 @@ export default function TabLayout(): React.JSX.Element {
   return (
     <SidebarProvider>
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarBackground: GradientTabBar,

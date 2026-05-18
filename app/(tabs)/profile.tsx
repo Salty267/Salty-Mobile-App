@@ -104,6 +104,7 @@ export default function ProfileScreen(): React.JSX.Element {
                 activeOpacity={0.7}
                 onPress={() => {
                   if (item.label === 'Saved Events') router.push('/(tabs)/saved-events');
+                  else if (item.label === 'Friends') router.push('/(tabs)/friends');
                 }}
               >
                 <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center' }}>

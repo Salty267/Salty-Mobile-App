@@ -184,6 +184,7 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
                 onPress={() => {
                   if (item.label === 'Settings') { onClose(); router.push('/settings'); }
                   else if (item.label === 'Saved Events') { onClose(); router.push('/(tabs)/saved-events'); }
+                  else if (item.label === 'Friends') { onClose(); router.push('/(tabs)/friends'); }
                   else if (item.label === 'Feedback') { onClose(); router.push('/feedback'); }
                 }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 12, paddingVertical: 13, borderRadius: 16 }}
