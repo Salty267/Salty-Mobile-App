@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\rahul\\\\Desktop\\\\Salty\\\\salty-mobile\" && mkdir -p app/\"\\(auth\\)\" app/\"\\(tabs\\)\" components/ui components/tickets lib/supabase types 2>&1)",
+      "Bash(npx expo *)",
+      "Bash(npm install *)"
+    ]
+  }
+}
