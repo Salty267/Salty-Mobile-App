@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase/client';
 import { useSavedEvents } from '@/lib/SavedEventsContext';
-import { isEventPast, daysUntil } from '@/lib/parseEventDate';
+import { parseEventDate, isEventPast, daysUntil } from '@/lib/parseEventDate';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -73,11 +73,12 @@ const FAB_ACTIONS: FabAction[] = [
   { icon: 'mail-outline',   label: 'Import Gmail', route: '/(tabs)/tickets', color: '#E8581A',  bg: '#fdebd9' },
 ];
 
-const ON_THIS_DAY = {
-  title: 'The Weeknd — After Hours Tour',
-  venue: 'Madison Square Garden',
-  yearsAgo: 1,
-  image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=85',
+type OnThisDayEvent = {
+  id: string;
+  title: string;
+  venue: string;
+  image: string;
+  yearsAgo: number;
 };
 
 export default function HomeScreen(): React.JSX.Element {
@@ -89,6 +90,8 @@ export default function HomeScreen(): React.JSX.Element {
   const [firstName, setFirstName] = useState('');
   const [fabOpen, setFabOpen] = useState(false);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
+  const [onThisDay, setOnThisDay] = useState<OnThisDayEvent | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
   const [hasUnread, setHasUnread] = useState(false);
 
   // Async data: user identity + tickets
@@ -100,6 +103,13 @@ export default function HomeScreen(): React.JSX.Element {
       setUserId(user.id);
       const full = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? '';
       setFirstName(full.split(' ')[0]);
+
+      supabase
+        .from('pending_imports')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .then(({ count }) => { if (!cancelled) setPendingCount(count ?? 0); });
       const { data } = await supabase
         .from('tickets')
         .select('id, title, venue_name, date_str, time_str, category, image_url')
@@ -107,6 +117,14 @@ export default function HomeScreen(): React.JSX.Element {
         .eq('status', 'active')
         .order('date_str', { ascending: true });
       if (!data || cancelled) return;
+
+      const DEFAULT_IMG = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85';
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const thisYear = now.getFullYear();
+      const thisMonth = now.getMonth();
+      const thisDay = now.getDate();
+
       setUpcoming(
         data
           .filter(row => !isEventPast(row.date_str))
@@ -117,10 +135,32 @@ export default function HomeScreen(): React.JSX.Element {
             date: row.date_str ?? 'TBD',
             time: row.time_str ?? 'TBD',
             category: row.category,
-            image: row.image_url ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85',
+            image: row.image_url ?? DEFAULT_IMG,
             daysAway: Math.max(0, daysUntil(row.date_str) ?? 0),
           })),
       );
+
+      // On this day: past events whose month+day match today, most recent first
+      const otdCandidates = data
+        .map(row => ({ row, parsed: parseEventDate(row.date_str) }))
+        .filter(({ parsed }) =>
+          parsed !== null &&
+          parsed.getFullYear() < thisYear &&
+          parsed.getMonth() === thisMonth &&
+          parsed.getDate() === thisDay,
+        )
+        .sort((a, b) => b.parsed!.getFullYear() - a.parsed!.getFullYear());
+
+      if (otdCandidates.length > 0 && !cancelled) {
+        const { row, parsed } = otdCandidates[0];
+        setOnThisDay({
+          id: row.id,
+          title: row.title ?? 'Untitled',
+          venue: row.venue_name ?? 'TBD',
+          image: row.image_url ?? DEFAULT_IMG,
+          yearsAgo: thisYear - parsed!.getFullYear(),
+        });
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -311,38 +351,51 @@ export default function HomeScreen(): React.JSX.Element {
         </View>
 
         {/* ── On This Day ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 14 }}>On this day</Text>
-          <TouchableOpacity activeOpacity={0.88} onPress={() => router.push('/(tabs)/memories')}>
-            <View style={{
-              backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', flexDirection: 'row',
-              shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4,
-            }}>
-              <LinearGradient
-                colors={[BRAND_FROM, BRAND_TO]}
-                start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-                style={{ width: 5 }}
-              />
-              <View style={{ width: 80, height: 88 }}>
-                <Image source={{ uri: ON_THIS_DAY.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.18)' }} />
-              </View>
-              <View style={{ flex: 1, padding: 14, justifyContent: 'center' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-                  <Ionicons name="sparkles" size={12} color={BRAND_FROM} />
-                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: BRAND_FROM, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                    {ON_THIS_DAY.yearsAgo} year ago today
-                  </Text>
+        {onThisDay && (
+          <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 14 }}>On this day</Text>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => router.push({
+                pathname: '/event-details',
+                params: {
+                  id: onThisDay.id,
+                  title: onThisDay.title,
+                  venue: onThisDay.venue,
+                  image: onThisDay.image,
+                },
+              })}
+            >
+              <View style={{
+                backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', flexDirection: 'row',
+                shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4,
+              }}>
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+                  style={{ width: 5 }}
+                />
+                <View style={{ width: 80, height: 88 }}>
+                  <Image source={{ uri: onThisDay.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.18)' }} />
                 </View>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>{ON_THIS_DAY.title}</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>📍 {ON_THIS_DAY.venue}</Text>
+                <View style={{ flex: 1, padding: 14, justifyContent: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                    <Ionicons name="sparkles" size={12} color={BRAND_FROM} />
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: BRAND_FROM, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                      {onThisDay.yearsAgo} {onThisDay.yearsAgo === 1 ? 'year' : 'years'} ago today
+                    </Text>
+                  </View>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>{onThisDay.title}</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>📍 {onThisDay.venue}</Text>
+                </View>
+                <View style={{ justifyContent: 'center', paddingRight: 14 }}>
+                  <Ionicons name="chevron-forward" size={16} color={MUTED} />
+                </View>
               </View>
-              <View style={{ justifyContent: 'center', paddingRight: 14 }}>
-                <Ionicons name="chevron-forward" size={16} color={MUTED} />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ── Detection banner ── */}
         <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
@@ -356,13 +409,16 @@ export default function HomeScreen(): React.JSX.Element {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff', marginBottom: 4 }}>
-                2 new events detected
+                {pendingCount} event{pendingCount === 1 ? '' : 's'} pending review
               </Text>
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 18 }}>
-                We found new events from your emails and photos.
+                Events detected from your emails and photos.
               </Text>
-              <TouchableOpacity style={{ marginTop: 12, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.96)', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Review events</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/tickets')}
+                style={{ marginTop: 12, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.96)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Review</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
