@@ -4,6 +4,7 @@ import { scaleFont } from '@/lib/layout';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase/client';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -33,7 +34,7 @@ export default function SignInScreen(): React.JSX.Element {
     setLoading(true);
     setError(null);
     try {
-      const redirectTo = 'salty://auth/callback';
+      const redirectTo = Linking.createURL('auth/callback');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo },

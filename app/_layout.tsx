@@ -1,13 +1,22 @@
 import '../global.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { SavedEventsProvider } from '@/lib/SavedEventsContext';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 import { View } from 'react-native';
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase/client';
+import { registerForPushNotifications } from '@/lib/notifications';
 import type { Session } from '@supabase/supabase-js';
+import type * as NotificationsType from 'expo-notifications';
+
+// Expo Go dropped remote push support in SDK 53 — skip all push setup there
+const isExpoGo =
+  Constants.executionEnvironment === 'storeClient' ||
+  (Constants.appOwnership as string | null) === 'expo';
 
 function useProtectedRoute(session: Session | null, isLoading: boolean): void {
   const segments = useSegments();
@@ -18,15 +27,18 @@ function useProtectedRoute(session: Session | null, isLoading: boolean): void {
     const inAuthGroup = segments[0] === '(auth)';
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/onboarding' as any);
-    } else if (session && inAuthGroup) {
+    } else if (session && inAuthGroup && segments[1] !== 'confirmed') {
       router.replace('/(tabs)');
     }
   }, [session, segments, isLoading]);
 }
 
 export default function RootLayout(): React.JSX.Element | null {
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const notificationListener = useRef<NotificationsType.Subscription | null>(null);
+  const responseListener = useRef<NotificationsType.Subscription | null>(null);
 
   const [fontsLoaded] = useFonts({
     BebasNeue_400Regular,
@@ -36,21 +48,50 @@ export default function RootLayout(): React.JSX.Element | null {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) {
+        setSession(null);
+        setIsLoading(false);
+        return;
+      }
+      // Validate the stored session before autoRefreshToken fires and throws
+      const { error } = await supabase.auth.getUser();
+      if (error) {
+        await supabase.auth.signOut();
+        setSession(null);
+      } else {
+        setSession(session);
+        registerForPushNotifications(session.user.id).catch(() => {});
+      }
+      setIsLoading(false);
+    }).catch(async () => {
+      await supabase.auth.signOut();
+      setSession(null);
       setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
+      if (event === 'SIGNED_IN' && session?.user) {
+        await registerForPushNotifications(session.user.id).catch(() => {});
+      }
     });
 
     // Handle deep link callbacks (e.g. email confirmation, OAuth redirect)
     const handleDeepLink = async ({ url }: { url: string }) => {
       if (!url.includes('auth/callback')) return;
       const parsed = new URL(url);
-      // Supabase OAuth puts tokens in the hash fragment; email links use query params
       const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ''));
+
+      // Supabase v2 email confirmation: token_hash + type
+      const tokenHash = parsed.searchParams.get('token_hash');
+      const type = parsed.searchParams.get('type') as 'signup' | 'recovery' | 'email' | null;
+      if (tokenHash && type) {
+        await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+        return;
+      }
+
+      // OAuth / magic-link: access_token + refresh_token in hash or query
       const accessToken = hashParams.get('access_token') ?? parsed.searchParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token') ?? parsed.searchParams.get('refresh_token');
       if (accessToken && refreshToken) {
@@ -58,12 +99,31 @@ export default function RootLayout(): React.JSX.Element | null {
       }
     };
 
+    let notifCleanup: (() => void) | undefined;
+
+    if (!isExpoGo) {
+      // Dynamic import prevents expo-notifications loading (and throwing) in Expo Go
+      void (async () => {
+        const N = await import('expo-notifications');
+        notificationListener.current = N.addNotificationReceivedListener(() => {});
+        responseListener.current = N.addNotificationResponseReceivedListener(response => {
+          const screen = response.notification.request.content.data?.screen as string | undefined;
+          if (screen) router.push(`/(tabs)/${screen}` as Parameters<typeof router.push>[0]);
+        });
+        notifCleanup = () => {
+          if (notificationListener.current) N.removeNotificationSubscription(notificationListener.current);
+          if (responseListener.current) N.removeNotificationSubscription(responseListener.current);
+        };
+      })();
+    }
+
     const sub = Linking.addEventListener('url', handleDeepLink);
     Linking.getInitialURL().then((url) => { if (url) handleDeepLink({ url }); });
 
     return () => {
       subscription.unsubscribe();
       sub.remove();
+      notifCleanup?.();
     };
   }, []);
 
@@ -74,7 +134,7 @@ export default function RootLayout(): React.JSX.Element | null {
   }
 
   return (
-    <>
+    <SavedEventsProvider>
       <StatusBar style="light" translucent />
       <Stack
         screenOptions={{
@@ -87,9 +147,14 @@ export default function RootLayout(): React.JSX.Element | null {
       >
         <Stack.Screen name="(auth)" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="auth/callback" options={{ animation: 'none', gestureEnabled: false }} />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="notifications" />
         <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="event-details" />
+        <Stack.Screen name="user-profile" />
+        <Stack.Screen name="discover-event" />
       </Stack>
-    </>
+    </SavedEventsProvider>
   );
 }

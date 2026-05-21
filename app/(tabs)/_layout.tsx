@@ -93,16 +93,16 @@ export default function TabLayout(): React.JSX.Element {
       />
       <Tabs.Screen
         name="memories"
-        options={{
-          title: 'Memories',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={(focused ? 'heart' : 'heart-outline') as IoniconsName} size={22} color={color} />
-          ),
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ href: null }}
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={(focused ? 'person' : 'person-outline') as IoniconsName} size={22} color={color} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="saved-events"

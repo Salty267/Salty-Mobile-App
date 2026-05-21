@@ -12,6 +12,7 @@ const SE_IMG_H = Math.round(SE_IMG_W * 1.42); // maintain ~90×128 aspect ratio
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSidebar } from '@/lib/SidebarContext';
+import { useSavedEvents, type SavedEvent } from '@/lib/SavedEventsContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -23,85 +24,34 @@ const LA = () => LayoutAnimation.configureNext({
   delete:  { type: 'easeInEaseOut', property: 'opacity' },
 });
 
-const YEAR = new Date().getFullYear();
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
 const FG         = '#1a1530';
 const MUTED      = '#6b6a85';
 const SURFACE    = '#ffffff';
-const SECONDARY  = '#f1eefb';
 const BG         = '#eef0fb';
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-type SavedEvent = {
-  id: string; title: string; subtitle: string; venue: string;
-  date: string; time: string; daysAway: number;
-  category: string; tint: string; image: string;
-};
-
-const SAVED_EVENTS: SavedEvent[] = [
-  {
-    id: '1', title: 'Olivia Rodrigo', subtitle: 'GUTS World Tour',
-    venue: 'Madison Square Garden', date: 'Jun 3', time: '8:00 PM', daysAway: 17,
-    category: 'Concerts', tint: '#FAC775',
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=85',
-  },
-  {
-    id: '2', title: 'NBA Playoffs', subtitle: 'Eastern Conference Finals',
-    venue: 'TD Garden, Boston', date: 'Jun 8', time: '7:30 PM', daysAway: 22,
-    category: 'Sports', tint: '#E8581A',
-    image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=400&q=85',
-  },
-  {
-    id: '3', title: `Lollapalooza ${YEAR}`, subtitle: 'Chicago Music Festival',
-    venue: 'Grant Park, Chicago', date: 'Aug 1', time: 'All day', daysAway: 76,
-    category: 'Festivals', tint: '#A8E6D3',
-    image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=85',
-  },
-  {
-    id: '4', title: 'MoMA Summer Exhibition', subtitle: 'Contemporary Works',
-    venue: 'MoMA, New York', date: 'Jun 20', time: '10:00 AM', daysAway: 34,
-    category: 'Arts', tint: '#C8B8FF',
-    image: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?w=400&q=85',
-  },
-  {
-    id: '5', title: 'Night Market NYC', subtitle: 'Asian Street Food Festival',
-    venue: 'Flushing Meadows', date: 'Jul 12', time: '5:00 PM', daysAway: 56,
-    category: 'Food', tint: '#FFCBA4',
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=85',
-  },
-  {
-    id: '6', title: 'Tokyo Trip', subtitle: 'Cherry Blossom Season',
-    venue: 'Shinjuku Gyoen', date: 'Sep 5', time: 'All day', daysAway: 111,
-    category: 'Travel', tint: '#93C5FD',
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=85',
-  },
-];
-
-const FILTER_CHIPS = ['All', 'Concerts', 'Sports', 'Festivals', 'Arts', 'Food', 'Travel'] as const;
-type FilterChip = typeof FILTER_CHIPS[number];
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function SavedEventsScreen(): React.JSX.Element {
   const { openSidebar } = useSidebar();
   const bottomPad = useBottomPad();
-  const [activeFilter, setActiveFilter] = useState<FilterChip>('All');
-  const [savedIds, setSavedIds] = useState<Set<string>>(
-    new Set(SAVED_EVENTS.map(e => e.id))
-  );
+  const { savedEvents, unsaveEvent } = useSavedEvents();
+  const [activeFilter, setActiveFilter] = useState('All');
 
   const handleUnsave = (id: string) => {
     LA();
-    setSavedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    unsaveEvent(id);
   };
 
-  const visible = SAVED_EVENTS.filter(e =>
-    savedIds.has(e.id) && (activeFilter === 'All' || e.category === activeFilter)
+  const filterChips = ['All', ...Array.from(new Set(savedEvents.map(e => e.category)))];
+
+  const visible = savedEvents.filter(e =>
+    activeFilter === 'All' || e.category === activeFilter
   );
 
   const isEmpty = visible.length === 0;
-  const isFiltered = activeFilter !== 'All' || savedIds.size < SAVED_EVENTS.length;
+  const isFiltered = activeFilter !== 'All';
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
@@ -135,7 +85,7 @@ export default function SavedEventsScreen(): React.JSX.Element {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}
       >
-        {FILTER_CHIPS.map(chip => {
+        {filterChips.map((chip: string) => {
           const isActive = chip === activeFilter;
           return (
             <TouchableOpacity
@@ -205,7 +155,7 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
 
           {/* Category badge + unsave button */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ backgroundColor: `${event.tint}55`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <View style={{ backgroundColor: `${event.tint ?? '#b0b8e0'}55`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {event.category}
               </Text>
@@ -238,11 +188,13 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
           </View>
 
           {/* Days-away chip */}
-          <View style={{ alignSelf: 'flex-start', backgroundColor: `${BRAND_FROM}14`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: BRAND_FROM }}>
-              {event.daysAway === 0 ? 'Today' : `${event.daysAway}d away`}
-            </Text>
-          </View>
+          {event.daysAway !== undefined && (
+            <View style={{ alignSelf: 'flex-start', backgroundColor: `${BRAND_FROM}14`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: BRAND_FROM }}>
+                {event.daysAway === 0 ? 'Today' : `${event.daysAway}d away`}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </View>

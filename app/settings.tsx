@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, Image, TouchableOpacity, ScrollView,
-  Switch, ActivityIndicator,
+  View, Text, TouchableOpacity, ScrollView,
+  Switch, ActivityIndicator, Alert,
   LayoutAnimation, UIManager, Platform,
 } from 'react-native';
 
@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase/client';
-import { useAvatar } from '@/lib/useAvatar';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -30,9 +29,24 @@ const GREEN      = '#059669';
 const AUTO_SCAN_TIMES = ['6:00 AM', '9:00 AM', '12:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
 
 const ACCOUNT_ITEMS = [
-  { icon: 'notifications-outline' as const, label: 'Notifications' },
-  { icon: 'lock-closed-outline'   as const, label: 'Privacy'       },
+  { icon: 'lock-closed-outline' as const, label: 'Privacy' },
 ] as const;
+
+type NotificationPreferences = {
+  event_reminders:   boolean;
+  friend_activity:   boolean;
+  new_detections:    boolean;
+  setlist_available: boolean;
+  photos_added:      boolean;
+};
+
+const NOTIF_TOGGLE_ROWS: { key: keyof NotificationPreferences; label: string; sub: string }[] = [
+  { key: 'event_reminders',   label: 'Event Reminders',  sub: 'Remind me before events start'        },
+  { key: 'friend_activity',   label: 'Friend Activity',  sub: 'Friend requests and tags'              },
+  { key: 'new_detections',    label: 'New Detections',   sub: 'When AI finds a ticket in your inbox' },
+  { key: 'setlist_available', label: 'Setlists',         sub: 'When a setlist is posted for an event' },
+  { key: 'photos_added',      label: 'Photos Added',     sub: 'When photos are uploaded to an event'  },
+];
 
 const SUPPORT_ITEMS = [
   { icon: 'help-circle-outline' as const, label: 'Help & Support' },
@@ -65,35 +79,65 @@ function SettingsRow({ icon, label, onPress, last = false }: {
 
 export default function SettingsScreen(): React.JSX.Element {
   const router = useRouter();
-  const { avatarUrl } = useAvatar();
   const { bottom } = useSafeAreaInsets();
 
-  const [fullName,       setFullName]       = useState('');
-  const [userEmail,      setUserEmail]      = useState('');
   const [gmailConnected, setGmailConnected] = useState(false);
   const [gmailEmail,     setGmailEmail]     = useState('');
   const [autoScan,       setAutoScan]       = useState(false);
   const [autoScanTime,   setAutoScanTime]   = useState('9:00 AM');
   const [connecting,     setConnecting]     = useState(false);
+  const [deleting,       setDeleting]       = useState(false);
+  const [notifPrefs,     setNotifPrefs]     = useState<NotificationPreferences>({
+    event_reminders:   true,
+    friend_activity:   true,
+    new_detections:    true,
+    setlist_available: true,
+    photos_added:      true,
+  });
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
-      setFullName((user.user_metadata?.full_name as string | undefined) ?? '');
-      setUserEmail(user.email ?? '');
+      setUserId(user.id);
+
       const hasGoogle   = user.identities?.some(id => id.provider === 'google');
       const storedEmail = user.user_metadata?.gmail_email as string | undefined;
       if (hasGoogle || storedEmail) {
         LA(); setGmailConnected(true);
         setGmailEmail(storedEmail ?? user.email ?? '');
       }
-      const prefs = user.user_metadata?.gmail_prefs as { autoScan?: boolean; autoScanTime?: string } | undefined;
-      if (prefs) {
-        setAutoScan(prefs.autoScan ?? false);
-        setAutoScanTime(prefs.autoScanTime ?? '9:00 AM');
+      const gmailPrefs = user.user_metadata?.gmail_prefs as { autoScan?: boolean; autoScanTime?: string } | undefined;
+      if (gmailPrefs) {
+        setAutoScan(gmailPrefs.autoScan ?? false);
+        setAutoScanTime(gmailPrefs.autoScanTime ?? '9:00 AM');
+      }
+
+      const { data } = await supabase
+        .from('notification_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      if (data) {
+        setNotifPrefs({
+          event_reminders:   data.event_reminders   ?? true,
+          friend_activity:   data.friend_activity   ?? true,
+          new_detections:    data.new_detections    ?? true,
+          setlist_available: data.setlist_available ?? true,
+          photos_added:      data.photos_added      ?? true,
+        });
       }
     });
   }, []);
+
+  const updateNotifPref = async (key: keyof NotificationPreferences, value: boolean) => {
+    setNotifPrefs(prev => ({ ...prev, [key]: value }));
+    if (!userId) return;
+    await supabase.from('notification_preferences').upsert(
+      { user_id: userId, [key]: value, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  };
 
   const savePrefs = useCallback(async (scan: boolean, time: string) => {
     await supabase.auth.updateUser({ data: { gmail_prefs: { autoScan: scan, autoScanTime: time } } });
@@ -138,6 +182,43 @@ export default function SettingsScreen(): React.JSX.Element {
     }
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all your data — tickets, badges, friends, and activity. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Last chance',
+              'Are you absolutely sure? Your data will be gone forever.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Yes, delete everything', style: 'destructive', onPress: confirmDeleteAccount },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Account deletion failed:', e);
+      Alert.alert('Error', 'Failed to delete account. Please try again.');
+      setDeleting(false);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
 
@@ -163,45 +244,39 @@ export default function SettingsScreen(): React.JSX.Element {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 24, paddingBottom: bottom + 32 }}>
 
-        {/* ── Edit Profile card ── */}
-        <TouchableOpacity
-          onPress={() => router.push('/edit-profile')}
-          activeOpacity={0.85}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 20, marginBottom: 24, backgroundColor: SURFACE, borderRadius: 20, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}
-        >
-          {/* Avatar */}
-          <View style={{ width: scale(52), height: scale(52), borderRadius: scale(26), overflow: 'hidden', backgroundColor: `${BRAND_FROM}22`, alignItems: 'center', justifyContent: 'center' }}>
-            {avatarUrl
-              ? <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-              : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 20, color: BRAND_FROM }}>
-                  {fullName ? fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?'}
-                </Text>
-            }
-          </View>
-
-          {/* Info */}
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }} numberOfLines={1}>
-              {fullName || 'Your Name'}
-            </Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }} numberOfLines={1}>
-              {userEmail}
-            </Text>
-          </View>
-
-          {/* Edit pill */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: SECONDARY, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Ionicons name="pencil-outline" size={12} color={BRAND_FROM} />
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: BRAND_FROM }}>Edit</Text>
-          </View>
-        </TouchableOpacity>
-
         {/* ── Account ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Account</Text>
           <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             {ACCOUNT_ITEMS.map((item, i) => (
               <SettingsRow key={item.label} icon={item.icon} label={item.label} last={i === ACCOUNT_ITEMS.length - 1} />
+            ))}
+          </View>
+        </View>
+
+        {/* ── Notifications ── */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Notifications</Text>
+          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+            {NOTIF_TOGGLE_ROWS.map((row, i) => (
+              <View key={row.key}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>{row.label}</Text>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>{row.sub}</Text>
+                  </View>
+                  <Switch
+                    value={notifPrefs[row.key]}
+                    onValueChange={v => updateNotifPref(row.key, v)}
+                    trackColor={{ false: '#e5e7eb', true: `${BRAND_FROM}55` }}
+                    thumbColor={notifPrefs[row.key] ? BRAND_FROM : '#fff'}
+                    ios_backgroundColor="#e5e7eb"
+                  />
+                </View>
+                {i < NOTIF_TOGGLE_ROWS.length - 1 && (
+                  <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 16 }} />
+                )}
+              </View>
             ))}
           </View>
         </View>
@@ -298,6 +373,30 @@ export default function SettingsScreen(): React.JSX.Element {
           </View>
         </View>
 
+        {/* ── Danger Zone ── */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#ef4444', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Danger Zone</Text>
+          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#ef4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
+            <TouchableOpacity
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 14 }}
+            >
+              <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
+                {deleting
+                  ? <ActivityIndicator size="small" color="#ef4444" />
+                  : <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                }
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#ef4444' }}>Delete Account</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>Permanently remove your data</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
       </ScrollView>
     </View>

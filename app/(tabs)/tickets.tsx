@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  Image, ActivityIndicator,
+  Image, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView,
   LayoutAnimation, UIManager, Platform,
 } from 'react-native';
 
@@ -18,16 +18,17 @@ const LA = () => LayoutAnimation.configureNext({
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { SCREEN_W, scale } from '@/lib/layout';
+import { useRouter } from 'expo-router';
 
-const TKT_IMG_W = Math.round(SCREEN_W * 0.23); // ~90dp on 390dp screen
-const TKT_IMG_H = Math.round(TKT_IMG_W * 1.22); // maintain ~90×110 aspect ratio
+const TKT_IMG_W = Math.round(SCREEN_W * 0.23);
+const TKT_IMG_H = Math.round(TKT_IMG_W * 1.22);
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase/client';
 import { useSidebar } from '@/lib/SidebarContext';
-
-const YEAR = new Date().getFullYear();
+import { useSavedEvents } from '@/lib/SavedEventsContext';
+import { isEventPast } from '@/lib/parseEventDate';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -40,21 +41,25 @@ const GREEN      = '#059669';
 type Ticket = {
   id: string; title: string; venue: string; date: string; time: string;
   category: string; tint: string; image: string; seat?: string;
-  status: 'upcoming' | 'past';
+  isPast: boolean;
 };
 
-const TICKETS: Ticket[] = [
-  { id: '1', title: 'Taylor Swift — Eras Tour', venue: 'MetLife Stadium',  date: `Aug 15, ${YEAR}`, time: '7:30 PM', category: 'Concert',  tint: '#FAC775', image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&q=85', seat: 'Sec 114 · Row C · Seat 22', status: 'upcoming' },
-  { id: '2', title: 'Lakers vs Warriors',        venue: 'Crypto.com Arena', date: `Aug 10, ${YEAR}`, time: '8:00 PM', category: 'Sports',   tint: '#E8581A', image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&q=85', seat: 'Sec 203 · Row F · Seat 7',  status: 'upcoming' },
-  { id: '3', title: 'Jazz Festival',             venue: 'Central Park',     date: `Sep 15, ${YEAR}`, time: '4:00 PM', category: 'Festival', tint: '#A8E6D3', image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=85',                                    status: 'upcoming' },
-  { id: '4', title: 'The Strokes',               venue: 'Madison Sq Garden',date: `Mar 12, ${YEAR}`, time: '9:00 PM', category: 'Concert',  tint: '#C8B8FF', image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=85', seat: 'Sec 102 · Row A · Seat 14', status: 'past'     },
-  { id: '5', title: 'Coachella W2',              venue: 'Empire Polo Club', date: `Apr 20, ${YEAR}`, time: '2:00 PM', category: 'Festival', tint: '#FFCBA4', image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400&q=85',                                    status: 'past'     },
-  { id: '6', title: 'Lisbon weekend',            venue: 'Alfama district',  date: `Feb 8, ${YEAR}`,  time: 'All day', category: 'Trip',     tint: '#A8E6D3', image: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=400&q=85',                                    status: 'past'     },
-];
+// Map display category → DB category value
+const CATEGORY_DB: Record<string, string> = {
+  Concert: 'concert', Sports: 'sports', Festival: 'festival',
+  Trip: 'trip', Theatre: 'theater', Other: 'other',
+};
+const CATEGORY_TINTS: Record<string, string> = {
+  Concert: '#FAC775', Sports: '#E8581A', Festival: '#FFCBA4',
+  Trip: '#A8E6D3', Theatre: '#C8B8FF', Other: '#b0b8e0',
+};
+const CATEGORIES = Object.keys(CATEGORY_TINTS);
 
-function formatLastScanned(date: Date | null): string {
-  if (!date) return 'Never scanned';
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+type AddForm = { title: string; venue: string; date: string; time: string; category: string; seat: string };
+
+function formatLastScanned(ts: string | null): string {
+  if (!ts) return 'Never scanned';
+  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
   if (diff < 60)   return 'Just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   return `${Math.floor(diff / 3600)}h ago`;
@@ -63,24 +68,57 @@ function formatLastScanned(date: Date | null): string {
 export default function TicketsScreen(): React.JSX.Element {
   const { openSidebar } = useSidebar();
   const bottomPad = useBottomPad();
-  const [tab,           setTab]          = useState<'upcoming' | 'past'>('upcoming');
-  const [gmailConnected,setGmailConnected] = useState(false);
-  const [gmailEmail,    setGmailEmail]   = useState('');
-  const [scanning,      setScanning]     = useState(false);
-  const [lastScanned,   setLastScanned]  = useState<Date | null>(null);
-  const [connecting,    setConnecting]   = useState(false);
+  const router = useRouter();
+  const [tab,            setTab]           = useState<'upcoming' | 'past'>('upcoming');
+  const [tickets,        setTickets]       = useState<Ticket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailEmail,     setGmailEmail]    = useState('');
+  const [lastSyncedAt,   setLastSyncedAt]  = useState<string | null>(null);
+  const [scanning,       setScanning]      = useState(false);
+  const [connecting,     setConnecting]    = useState(false);
+  const [addVisible,     setAddVisible]    = useState(false);
+  const [form,           setForm]          = useState<AddForm>({ title: '', venue: '', date: '', time: '', category: 'Concert', seat: '' });
 
-  // Auto-connect if user signed up with Google
+  // Load tickets from Supabase
   useEffect(() => {
+    let active = true;
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      const hasGoogle = user.identities?.some(id => id.provider === 'google');
-      const storedEmail = user.user_metadata?.gmail_email as string | undefined;
-      if (hasGoogle || storedEmail) {
-        LA(); setGmailConnected(true);
-        setGmailEmail(storedEmail ?? user.email ?? '');
-      }
+      if (!user || !active) { setTicketsLoading(false); return; }
+
+      const uid = user.id;
+
+      // Load tickets and gmail connection in parallel
+      Promise.all([
+        supabase
+          .from('tickets')
+          .select('id, title, venue_name, date_str, time_str, category, tint, image_url, seat')
+          .eq('user_id', uid)
+          .eq('status', 'active')
+          .order('imported_at', { ascending: false }),
+        supabase
+          .from('gmail_connections')
+          .select('email, last_synced_at')
+          .eq('user_id', uid)
+          .maybeSingle(),
+      ]).then(([ticketsRes, gmailRes]) => {
+        if (!active) return;
+
+        if (ticketsRes.data) {
+          setTickets(ticketsRes.data.map(mapRow));
+        }
+
+        if (gmailRes.data) {
+          LA();
+          setGmailConnected(true);
+          setGmailEmail(gmailRes.data.email);
+          setLastSyncedAt(gmailRes.data.last_synced_at ?? null);
+        }
+
+        setTicketsLoading(false);
+      });
     });
+    return () => { active = false; };
   }, []);
 
   const handleConnectGmail = async () => {
@@ -105,11 +143,24 @@ export default function TicketsScreen(): React.JSX.Element {
         const rt = hp.get('refresh_token') ?? parsed.searchParams.get('refresh_token');
         if (at && rt) {
           await supabase.auth.setSession({ access_token: at, refresh_token: rt });
+          const { data: { session } } = await supabase.auth.getSession();
+          const googleAccessToken  = session?.provider_token ?? at;
+          const googleRefreshToken = session?.provider_refresh_token ?? rt;
           const { data: { user } } = await supabase.auth.getUser();
           const email = user?.email ?? '';
-          LA(); setGmailConnected(true);
+          const { data: gc } = await supabase
+            .from('gmail_connections')
+            .upsert({ user_id: user!.id,
+              email, access_token: googleAccessToken,
+              refresh_token: googleRefreshToken,
+              connected_at: new Date().toISOString() },
+              { onConflict: 'user_id' })
+            .select('last_synced_at')
+            .maybeSingle();
+          LA();
+          setGmailConnected(true);
           setGmailEmail(email);
-          await supabase.auth.updateUser({ data: { gmail_email: email } });
+          setLastSyncedAt(gc?.last_synced_at ?? null);
         }
       }
     } finally {
@@ -117,16 +168,92 @@ export default function TicketsScreen(): React.JSX.Element {
     }
   };
 
-  const handleScanGmail = useCallback(async () => {
-    if (scanning) return;
-    setScanning(true);
-    // In production: call supabase edge function that scans Gmail with stored token
-    await new Promise(r => setTimeout(r, 2500));
-    setLastScanned(new Date());
-    setScanning(false);
-  }, [scanning]);
+  const mapRow = (row: {
+    id: string; title: string | null; venue_name: string | null;
+    date_str: string | null; time_str: string | null; category: string;
+    tint: string | null; image_url: string | null; seat: string | null;
+  }): Ticket => ({
+    id: row.id,
+    title: row.title ?? 'Untitled',
+    venue: row.venue_name ?? 'TBD',
+    date: row.date_str ?? 'TBD',
+    time: row.time_str ?? 'TBD',
+    category: row.category,
+    tint: row.tint ?? '#b0b8e0',
+    image: row.image_url ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85',
+    seat: row.seat ?? undefined,
+    isPast: isEventPast(row.date_str),
+  });
 
-  const visible = TICKETS.filter(t => t.status === tab);
+  const handleScanGmail = useCallback(async () => {
+  if (scanning) return;
+  setScanning(true);
+  try {
+    const { error } = await supabase.functions.invoke('scan-gmail');
+    if (error) { console.warn('scan-gmail:', error.message); return; }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: fresh } = await supabase
+      .from('tickets')
+      .select('id, title, venue_name, date_str, time_str, category, tint, image_url, seat')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('imported_at', { ascending: false });
+    if (fresh) { LA(); setTickets(fresh.map(mapRow)); }
+    setLastSyncedAt(new Date().toISOString());
+  } finally {
+    setScanning(false);
+  }
+}, [scanning]);
+
+  const handleAddTicket = async () => {
+    if (!form.title.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const dbCategory = CATEGORY_DB[form.category] ?? 'other';
+    const tint = CATEGORY_TINTS[form.category] ?? '#b0b8e0';
+
+    const { data, error } = await supabase
+      .from('tickets')
+      .insert({
+        user_id: user.id,
+        title: form.title.trim(),
+        venue_name: form.venue.trim() || 'TBD',
+        date_str: form.date.trim() || 'TBD',
+        time_str: form.time.trim() || 'TBD',
+        category: dbCategory,
+        tint,
+        image_url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85',
+        seat: form.seat.trim() || null,
+        status: 'active',
+        source: 'manual',
+        is_past: false,
+      })
+      .select('id, title, venue_name, date_str, time_str, category, tint, image_url, seat')
+      .single();
+
+    if (!error && data) {
+      LA();
+      setTickets(prev => [{
+        id: data.id,
+        title: data.title ?? form.title.trim(),
+        venue: data.venue_name ?? 'TBD',
+        date: data.date_str ?? 'TBD',
+        time: data.time_str ?? 'TBD',
+        category: data.category,
+        tint: data.tint ?? tint,
+        image: data.image_url,
+        seat: data.seat ?? undefined,
+        isPast: isEventPast(data.date_str),
+      }, ...prev]);
+    }
+    setForm({ title: '', venue: '', date: '', time: '', category: 'Concert', seat: '' });
+    setAddVisible(false);
+  };
+
+  const visible = tickets.filter(t => tab === 'upcoming' ? !t.isPast : t.isPast);
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
@@ -145,8 +272,11 @@ export default function TicketsScreen(): React.JSX.Element {
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your vault</Text>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>My Tickets</Text>
             </View>
-            <TouchableOpacity style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="filter-outline" size={20} color="#fff" />
+            <TouchableOpacity
+              onPress={() => setAddVisible(true)}
+              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="add" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -171,7 +301,6 @@ export default function TicketsScreen(): React.JSX.Element {
 
         {/* ── Gmail Card ── */}
         {!gmailConnected ? (
-          /* Not connected */
           <LinearGradient
             colors={['#f8f7ff', '#eef0fb']}
             style={{ borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: `${BRAND_FROM}22` }}
@@ -209,10 +338,7 @@ export default function TicketsScreen(): React.JSX.Element {
             </TouchableOpacity>
           </LinearGradient>
         ) : (
-          /* Connected */
           <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}>
-
-            {/* Connected header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: `${FG}08` }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ width: scale(34), height: scale(34), borderRadius: 9, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
@@ -221,7 +347,7 @@ export default function TicketsScreen(): React.JSX.Element {
                 <View>
                   <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{gmailEmail}</Text>
                   <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }}>
-                    Last scanned: {formatLastScanned(lastScanned)}
+                    Last scanned: {formatLastScanned(lastSyncedAt)}
                   </Text>
                 </View>
               </View>
@@ -230,8 +356,6 @@ export default function TicketsScreen(): React.JSX.Element {
                 <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Connected</Text>
               </View>
             </View>
-
-            {/* Scan Now */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 }}>
               <View>
                 <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Scan Gmail</Text>
@@ -260,31 +384,165 @@ export default function TicketsScreen(): React.JSX.Element {
                 </LinearGradient>
               </TouchableOpacity>
             </View>
-
           </View>
         )}
 
         {/* ── Ticket list ── */}
-        {visible.map(ticket => <TicketRow key={ticket.id} ticket={ticket} isPast={tab === 'past'} />)}
+        {ticketsLoading ? (
+          <ActivityIndicator color={BRAND_FROM} style={{ marginTop: 40 }} />
+        ) : (
+          <>
+            {visible.map(ticket => (
+              <TicketRow
+                key={ticket.id}
+                ticket={ticket}
+                isPast={tab === 'past'}
+                onPress={() => router.push({
+                  pathname: '/event-details',
+                  params: {
+                    id: ticket.id,
+                    title: ticket.title,
+                    venue: ticket.venue,
+                    date: ticket.date,
+                    time: ticket.time,
+                    category: ticket.category,
+                    image: ticket.image,
+                    seat: ticket.seat ?? '',
+                    tint: ticket.tint,
+                  },
+                })}
+              />
+            ))}
 
-        {visible.length === 0 && (
-          <View style={{ alignItems: 'center', paddingTop: 40 }}>
-            <Ionicons name="ticket-outline" size={48} color={MUTED} />
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16 }}>No tickets yet</Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6, textAlign: 'center' }}>
-              Your {tab} tickets will appear here.
-            </Text>
-          </View>
+            {visible.length === 0 && (
+              <View style={{ alignItems: 'center', paddingTop: 40 }}>
+                <Ionicons name="ticket-outline" size={48} color={MUTED} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16 }}>No tickets yet</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6, textAlign: 'center' }}>
+                  Your {tab} tickets will appear here.
+                </Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
+
+      {/* ── Add Manually Modal ── */}
+      <Modal visible={addVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAddVisible(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={{ flex: 1, backgroundColor: BG }}>
+            <LinearGradient
+              colors={[BRAND_FROM, BRAND_TO]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+            >
+              <SafeAreaView edges={['top']}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+                  <TouchableOpacity
+                    onPress={() => setAddVisible(false)}
+                    style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="close" size={20} color="#fff" />
+                  </TouchableOpacity>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }}>Add Ticket</Text>
+                  <TouchableOpacity
+                    onPress={handleAddTicket}
+                    style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.22)' }}
+                  >
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </SafeAreaView>
+            </LinearGradient>
+
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40, gap: 14 }}>
+              <FormField label="Event name *" value={form.title} onChangeText={t => setForm(f => ({ ...f, title: t }))} placeholder="e.g. Taylor Swift — Eras Tour" />
+              <FormField label="Venue" value={form.venue} onChangeText={t => setForm(f => ({ ...f, venue: t }))} placeholder="e.g. Madison Square Garden" />
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <FormField label="Date" value={form.date} onChangeText={t => setForm(f => ({ ...f, date: t }))} placeholder="e.g. Aug 15, 2026" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <FormField label="Time" value={form.time} onChangeText={t => setForm(f => ({ ...f, time: t }))} placeholder="e.g. 8:00 PM" />
+                </View>
+              </View>
+              <FormField label="Seat / Section" value={form.seat} onChangeText={t => setForm(f => ({ ...f, seat: t }))} placeholder="e.g. Sec 114 · Row C · Seat 22" />
+
+              <View>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG, marginBottom: 10 }}>Category</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {CATEGORIES.map(cat => (
+                    <TouchableOpacity
+                      key={cat}
+                      onPress={() => setForm(f => ({ ...f, category: cat }))}
+                      style={{
+                        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99,
+                        backgroundColor: form.category === cat ? BRAND_FROM : SURFACE,
+                        shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
+                      }}
+                    >
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: form.category === cat ? '#fff' : FG }}>{cat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <TouchableOpacity onPress={handleAddTicket} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 16, marginTop: 8 }}>
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ height: 52, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>Add Ticket</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
+  );
+}
+
+// ── Form Field ─────────────────────────────────────────────────────────────────
+function FormField({ label, value, onChangeText, placeholder }: {
+  label: string; value: string; onChangeText: (t: string) => void; placeholder: string;
+}): React.JSX.Element {
+  return (
+    <View>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#1a1530', marginBottom: 8 }}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#6b6a85"
+        style={{
+          backgroundColor: '#ffffff', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13,
+          fontFamily: 'DMSans_400Regular', fontSize: 14, color: '#1a1530',
+          shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
+        }}
+      />
     </View>
   );
 }
 
 // ── Ticket Row ─────────────────────────────────────────────────────────────────
-function TicketRow({ ticket, isPast }: { ticket: Ticket; isPast: boolean }): React.JSX.Element {
+function TicketRow({ ticket, isPast, onPress }: { ticket: Ticket; isPast: boolean; onPress?: () => void }): React.JSX.Element {
+  const { saveEvent, unsaveEvent, isSaved } = useSavedEvents();
+  const saved = isSaved(ticket.id);
+  const toggleSave = () => {
+    if (saved) {
+      unsaveEvent(ticket.id);
+    } else {
+      saveEvent({
+        id: ticket.id, title: ticket.title, venue: ticket.venue,
+        date: ticket.date, time: ticket.time, category: ticket.category,
+        image: ticket.image, tint: ticket.tint, seat: ticket.seat,
+      });
+    }
+  };
   return (
-    <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4, opacity: isPast ? 0.88 : 1 }}>
+    <TouchableOpacity activeOpacity={0.88} onPress={onPress} style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4, opacity: isPast ? 0.88 : 1 }}>
       <View style={{ flexDirection: 'row' }}>
         <View style={{ width: 6, backgroundColor: ticket.tint }} />
         <View style={{ width: TKT_IMG_W, height: TKT_IMG_H }}>
@@ -304,7 +562,12 @@ function TicketRow({ ticket, isPast }: { ticket: Ticket; isPast: boolean }): Rea
               <View style={{ backgroundColor: `${ticket.tint}55`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
                 <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{ticket.category}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={14} color={MUTED} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <TouchableOpacity onPress={toggleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name={saved ? 'heart' : 'heart-outline'} size={16} color={saved ? '#ff6b8a' : MUTED} />
+                </TouchableOpacity>
+                <Ionicons name="chevron-forward" size={14} color={MUTED} />
+              </View>
             </View>
             <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, marginTop: 8, letterSpacing: -0.2 }} numberOfLines={1}>{ticket.title}</Text>
           </View>
@@ -341,6 +604,6 @@ function TicketRow({ ticket, isPast }: { ticket: Ticket; isPast: boolean }): Rea
           ADMIT ONE · #{(ticket.id.charCodeAt(0) * 3741) % 9000 + 1000}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }

@@ -26,11 +26,12 @@ type MenuItem = {
   badge?: number;
 };
 
-const MENU: MenuItem[] = [
-  { icon: 'heart-outline',       label: 'Saved Events'             },
-  { icon: 'people-outline',      label: 'Friends',      badge: 47 },
-  { icon: 'settings-outline',    label: 'Settings'                 },
-  { icon: 'chatbubble-outline',  label: 'Feedback'                 },
+const MENU_BASE: MenuItem[] = [
+  { icon: 'film-outline',        label: 'Memories'     },
+  { icon: 'heart-outline',       label: 'Saved Events' },
+  { icon: 'people-outline',      label: 'Friends'      },
+  { icon: 'settings-outline',    label: 'Settings'     },
+  { icon: 'chatbubble-outline',  label: 'Feedback'     },
 ];
 
 type Props = { visible: boolean; onClose: () => void };
@@ -45,21 +46,32 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
   // Separate modal visibility from prop so close animation plays before unmount
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [fullName, setFullName] = useState('');
-  const [email,    setEmail]    = useState('');
-  const [initials, setInitials] = useState('?');
+  const [fullName,        setFullName]        = useState('');
+  const [email,           setEmail]           = useState('');
+  const [initials,        setInitials]        = useState('?');
+  const [pendingCount,    setPendingCount]     = useState(0);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
-      const name = (user.user_metadata?.full_name as string | undefined) ?? '';
-      setFullName(name);
       setEmail(user.email ?? '');
+
+      const [profileRes, pendingRes] = await Promise.all([
+        supabase.from('users').select('display_name').eq('id', user.id).single(),
+        supabase.from('friendships').select('id', { count: 'exact', head: true })
+          .eq('addressee_id', user.id).eq('status', 'pending'),
+      ]);
+
+      const name = profileRes.data?.display_name
+        ?? (user.user_metadata?.full_name as string | undefined)
+        ?? '';
+      setFullName(name);
       setInitials(
         name
-          ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-          : (user.email?.[0].toUpperCase() ?? '?')
+          ? name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+          : (user.email?.[0].toUpperCase() ?? '?'),
       );
+      setPendingCount(pendingRes.count ?? 0);
     });
   }, []);
 
@@ -144,7 +156,7 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
             style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 24 }}
           >
             {/* Avatar + name */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               <View style={{ width: scale(56), height: scale(56), borderRadius: scale(28), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', overflow: 'hidden' }}>
                 {avatarUrl
                   ? <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -161,15 +173,6 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
               </View>
             </View>
 
-            {/* Stats pills */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              {[['24', 'Events'], ['47', 'Friends'], ['12', 'Shows']].map(([val, label]) => (
-                <View key={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 14 }}>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff' }}>{val}</Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.72)', marginTop: 2 }}>{label}</Text>
-                </View>
-              ))}
-            </View>
           </LinearGradient>
 
           {/* ── Menu items ── */}
@@ -177,12 +180,16 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 16, gap: 4 }}
           >
-            {MENU.map(item => (
+            {MENU_BASE.map(item => ({
+              ...item,
+              badge: item.label === 'Friends' && pendingCount > 0 ? pendingCount : undefined,
+            })).map(item => (
               <TouchableOpacity
                 key={item.label}
                 activeOpacity={0.7}
                 onPress={() => {
-                  if (item.label === 'Settings') { onClose(); router.push('/settings'); }
+                  if (item.label === 'Memories') { onClose(); router.push('/(tabs)/memories'); }
+                  else if (item.label === 'Settings') { onClose(); router.push('/settings'); }
                   else if (item.label === 'Saved Events') { onClose(); router.push('/(tabs)/saved-events'); }
                   else if (item.label === 'Friends') { onClose(); router.push('/(tabs)/friends'); }
                   else if (item.label === 'Feedback') { onClose(); router.push('/feedback'); }

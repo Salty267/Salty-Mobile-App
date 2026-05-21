@@ -8,6 +8,7 @@ export type SearchResult = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  username: string | null;
   status: FriendshipStatus;
   friendship_id: string | null;
 };
@@ -18,6 +19,7 @@ type UseUserSearchReturn = {
   results: SearchResult[];
   loading: boolean;
   error: string | null;
+  optimisticSend: (userId: string) => void;
 };
 
 export function useUserSearch(
@@ -47,10 +49,11 @@ export function useUserSearch(
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setError('Not authenticated'); setLoading(false); return; }
 
+        const searchTerm = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
         const { data: users, error: searchErr } = await supabase
           .from('users')
-          .select('id, display_name, avatar_url')
-          .ilike('display_name', `%${trimmed}%`)
+          .select('id, display_name, avatar_url, username')
+          .or(`username.ilike.${searchTerm}%,display_name.ilike.%${searchTerm}%`)
           .neq('id', user.id)
           .limit(20);
 
@@ -82,7 +85,7 @@ export function useUserSearch(
             friendship_id = receivedFidByRequesterId[u.id] ?? null;
           }
 
-          return { id: u.id, display_name: u.display_name, avatar_url: u.avatar_url, status, friendship_id };
+          return { id: u.id, display_name: u.display_name, avatar_url: u.avatar_url, username: u.username, status, friendship_id };
         });
 
         setResults(enriched);
@@ -97,5 +100,11 @@ export function useUserSearch(
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [query, existingFriends, existingSentRequests, existingPendingRequests]);
 
-  return { query, setQuery, results, loading, error };
+  const optimisticSend = (userId: string) => {
+    setResults(prev =>
+      prev.map(r => r.id === userId ? { ...r, status: 'pending_sent' as const } : r)
+    );
+  };
+
+  return { query, setQuery, results, loading, error, optimisticSend };
 }

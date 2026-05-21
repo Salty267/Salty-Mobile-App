@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Image,
   Modal, TextInput, ActivityIndicator,
@@ -9,6 +9,7 @@ import { scale } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useFriends } from '@/lib/useFriends';
 import type { AcceptedFriend, PendingRequest } from '@/lib/useFriends';
 import { useUserSearch } from '@/lib/useUserSearch';
@@ -35,16 +36,19 @@ export default function FriendsScreen(): React.JSX.Element {
     sendRequest, acceptRequest, declineRequest, withdrawRequest,
   } = useFriends();
 
-  const { query, setQuery, results, loading: searching } = useUserSearch(
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+
+  const { query, setQuery, results, loading: searching, optimisticSend } = useUserSearch(
     friends, sentRequests, pendingRequests,
   );
 
   const handleSend = async (addresseeId: string) => {
+    optimisticSend(addresseeId);
     try { await sendRequest(addresseeId); } catch {}
   };
 
-  const handleWithdraw = async (friendshipId: string) => {
-    try { await withdrawRequest(friendshipId); } catch {}
+  const handleWithdraw = async (friendshipId: string, addresseeId: string) => {
+    try { await withdrawRequest(friendshipId, addresseeId); } catch {}
   };
 
   return (
@@ -191,9 +195,15 @@ function PendingRequestCard({
         <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>
           {name ?? 'Someone'}
         </Text>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
-          Wants to be friends
-        </Text>
+        {request.requester.username ? (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+            @{request.requester.username}
+          </Text>
+        ) : (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+            Wants to be friends
+          </Text>
+        )}
       </View>
       <TouchableOpacity
         onPress={onDecline}
@@ -214,6 +224,7 @@ function PendingRequestCard({
 // ── Friend Card ───────────────────────────────────────────────────────────────
 
 function FriendCard({ friend }: { friend: AcceptedFriend }): React.JSX.Element {
+  const router = useRouter();
   const name = friend.display_name;
   const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
   return (
@@ -223,13 +234,34 @@ function FriendCard({ friend }: { friend: AcceptedFriend }): React.JSX.Element {
         <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }} numberOfLines={1}>
           {name ?? 'Friend'}
         </Text>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>
-          {friend.mutual_events > 0
-            ? `${friend.mutual_events} mutual event${friend.mutual_events === 1 ? '' : 's'}`
-            : 'Connected via Salty'}
-        </Text>
+        {friend.username ? (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+            @{friend.username}
+          </Text>
+        ) : (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>
+            {friend.mutual_events > 0
+              ? `${friend.mutual_events} mutual event${friend.mutual_events === 1 ? '' : 's'}`
+              : 'Connected via Salty'}
+          </Text>
+        )}
+        {friend.username && friend.mutual_events > 0 && (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }}>
+            {`${friend.mutual_events} mutual event${friend.mutual_events === 1 ? '' : 's'}`}
+          </Text>
+        )}
       </View>
-      <TouchableOpacity style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: SECONDARY }}>
+      <TouchableOpacity
+        onPress={() => router.push({
+          pathname: '/user-profile',
+          params: {
+            userId: friend.id,
+            friendshipId: friend.friendship_id,
+            mutualEvents: String(friend.mutual_events),
+          },
+        })}
+        style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: SECONDARY }}
+      >
         <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG }}>View</Text>
       </TouchableOpacity>
     </View>
@@ -268,7 +300,7 @@ function SearchModal({
   visible: boolean; onClose: () => void;
   query: string; onQueryChange: (q: string) => void;
   results: SearchResult[]; searching: boolean;
-  onSend: (id: string) => void; onWithdraw: (fid: string) => void;
+  onSend: (id: string) => void; onWithdraw: (fid: string, addresseeId: string) => void;
 }): React.JSX.Element {
   return (
     <Modal
@@ -298,9 +330,11 @@ function SearchModal({
               <TextInput
                 value={query}
                 onChangeText={onQueryChange}
-                placeholder="Search by name…"
+                placeholder="Search by @username or name…"
                 placeholderTextColor={MUTED}
                 autoFocus
+                autoCapitalize="none"
+                autoCorrect={false}
                 style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG }}
               />
               {searching && <ActivityIndicator size="small" color={BRAND_FROM} />}
@@ -322,7 +356,7 @@ function SearchModal({
             <View style={{ alignItems: 'center', paddingTop: 48 }}>
               <Ionicons name="search-outline" size={48} color={MUTED} />
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>
-                Type at least 2 characters to search
+                Search by @username or display name
               </Text>
             </View>
           )}
@@ -330,7 +364,7 @@ function SearchModal({
             <View style={{ alignItems: 'center', paddingTop: 48 }}>
               <Ionicons name="person-outline" size={48} color={MUTED} />
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 12 }}>No users found</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6 }}>Try a different name.</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6 }}>Try a different username or name.</Text>
             </View>
           )}
           {results.map(result => (
@@ -338,7 +372,7 @@ function SearchModal({
               key={result.id}
               result={result}
               onSend={() => onSend(result.id)}
-              onWithdraw={() => result.friendship_id && onWithdraw(result.friendship_id)}
+              onWithdraw={() => result.friendship_id && onWithdraw(result.friendship_id, result.id)}
             />
           ))}
         </ScrollView>
@@ -396,6 +430,11 @@ function SearchResultRow({
         <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>
           {name ?? 'Unknown User'}
         </Text>
+        {result.username && (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+            @{result.username}
+          </Text>
+        )}
       </View>
       <ActionButton />
     </View>

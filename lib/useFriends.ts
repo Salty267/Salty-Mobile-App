@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabase/client';
 
 export type FriendProfile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  username: string | null;
 };
 
 export type AcceptedFriend = FriendProfile & {
@@ -34,7 +35,7 @@ type UseFriendsReturn = {
   sendRequest: (addresseeId: string) => Promise<void>;
   acceptRequest: (friendshipId: string) => Promise<void>;
   declineRequest: (friendshipId: string) => Promise<void>;
-  withdrawRequest: (friendshipId: string) => Promise<void>;
+  withdrawRequest: (friendshipId: string, addresseeId: string) => Promise<void>;
   removeFriend: (friendshipId: string) => Promise<void>;
 };
 
@@ -71,8 +72,8 @@ export function useFriends(): UseFriendsReturn {
           addressee_id,
           status,
           created_at,
-          requester:users!friendships_requester_id_fkey (id, display_name, avatar_url),
-          addressee:users!friendships_addressee_id_fkey (id, display_name, avatar_url)
+          requester:users!friendships_requester_id_fkey (id, display_name, avatar_url, username),
+          addressee:users!friendships_addressee_id_fkey (id, display_name, avatar_url, username)
         `)
         .or(`requester_id.eq.${uid},addressee_id.eq.${uid}`)
         .order('created_at', { ascending: false });
@@ -96,6 +97,7 @@ export function useFriends(): UseFriendsReturn {
             id: other.id,
             display_name: other.display_name,
             avatar_url: other.avatar_url,
+            username: other.username,
             friendship_id: row.id,
             mutual_events: 0,
           });
@@ -150,13 +152,59 @@ export function useFriends(): UseFriendsReturn {
     return () => { cancelled = true; };
   }, [tick]);
 
+  // Unique channel name per hook instance — prevents collisions when multiple
+  // screens mount useFriends simultaneously (Supabase reuses channels by name).
+  const channelName = useRef(`friendships_${Math.random().toString(36).slice(2)}`).current;
+
+  useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled || !user) return;
+      const uid = user.id;
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `addressee_id=eq.${uid}` }, () => refresh())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `requester_id=eq.${uid}` }, () => refresh())
+        .subscribe();
+    });
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [refresh, channelName]);
+
   const sendRequest = useCallback(async (addresseeId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
+
+    // Delete any stale row where we are the requester — upsert would trigger an
+    // UPDATE which the RLS policy blocks for the requester side.
+    await supabase
+      .from('friendships')
+      .delete()
+      .eq('requester_id', user.id)
+      .eq('addressee_id', addresseeId);
+
     const { error } = await supabase
       .from('friendships')
       .insert({ requester_id: user.id, addressee_id: addresseeId, status: 'pending' });
     if (error) throw new Error(error.message);
+
+    const senderName = (user.user_metadata?.full_name as string | undefined)
+      ?? user.email
+      ?? 'Someone';
+    supabase.functions.invoke('send-notification', {
+      body: {
+        userId: addresseeId,
+        title: 'New Friend Request',
+        body: `${senderName} wants to connect with you`,
+        data: { screen: 'friends', prefKey: 'friend_activity', requesterId: user.id },
+      },
+    }).catch(() => {});
+
     refresh();
   }, [refresh]);
 
@@ -178,12 +226,21 @@ export function useFriends(): UseFriendsReturn {
     refresh();
   }, [refresh]);
 
-  const withdrawRequest = useCallback(async (friendshipId: string) => {
+  const withdrawRequest = useCallback(async (friendshipId: string, addresseeId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('friendships')
       .delete()
       .eq('id', friendshipId);
     if (error) throw new Error(error.message);
+
+    // Remove the notification that was sent when the request was made
+    if (user) {
+      supabase.functions.invoke('send-notification', {
+        body: { action: 'delete', userId: addresseeId, requesterId: user.id },
+      }).catch(() => {});
+    }
+
     refresh();
   }, [refresh]);
 
