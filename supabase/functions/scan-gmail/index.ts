@@ -34,11 +34,26 @@ interface ScanResult {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TICKET_KEYWORDS = [
-  'ticket', 'confirmation', 'booking', 'e-ticket', 'reservation',
+  'ticket', 'booking', 'e-ticket', 'reservation',
   'your order', 'event', 'admit', 'venue', 'seat', 'row', 'section',
 ];
 
-const STRONG_KEYWORDS = ['ticket', 'e-ticket', 'confirmation', 'your order'];
+const STRONG_KEYWORDS = ['ticket', 'e-ticket', 'your tickets', 'your order'];
+
+const NEGATIVE_SUBJECT_KEYWORDS = [
+  'parking', 'toll', 'e-zpass', 'ezpass', 'package', 'shipment', 'delivered',
+  'tracking', 'subscription renewal', 'account deletion', 'account suspended',
+  'account security', 'password reset', 'verify your email', 'privacy policy',
+];
+
+const TRUSTED_SENDERS = [
+  'ticketmaster', 'axs.com', 'livenation', 'stubhub', 'seatgeek', 'eventbrite',
+  'telecharge', 'opentable', 'resy.com', 'sevenrooms', 'tock.com',
+  'delta.com', 'united.com', 'aa.com', 'southwest.com', 'jetblue', 'alaskaair',
+  'spirit.com', 'frontier', 'americanairlines',
+  'marriott', 'hilton', 'ihg.com', 'hyatt', 'airbnb', 'booking.com', 'hotels.com',
+  'expedia', 'vrbo', 'enterprise', 'hertz', 'avis', 'budget.com',
+];
 
 const CATEGORY_TINTS: Record<string, string> = {
   concert:  '#FAC775',
@@ -130,7 +145,14 @@ async function listMessages(token: string): Promise<string[]> {
   const ids: string[] = [];
   let pageToken: string | undefined;
 
-  const QUERY = 'subject:(ticket OR confirmation OR booking OR "your order" OR "e-ticket")';
+  const QUERY = [
+    'subject:(ticket OR "e-ticket" OR "your tickets" OR "booking confirmation"',
+    'OR "flight confirmation" OR itinerary OR "reservation confirmed"',
+    'OR "your reservation" OR "hotel confirmation" OR "order confirmation")',
+    '-from:(ezpass OR "e-zpass" OR spotangels OR spothero OR parkwhiz OR bestparking',
+    'OR ups.com OR fedex.com OR usps.com OR amazon.com',
+    'OR adobe.com OR netflix.com OR spotify.com OR apple.com OR microsoft.com)',
+  ].join(' ');
 
   do {
     const params = new URLSearchParams({
@@ -192,16 +214,17 @@ async function listHistory(
 async function fetchMessageDetails(
   id: string,
   token: string,
-): Promise<{ subject: string; body: string } | null> {
+): Promise<{ subject: string; body: string; from: string } | null> {
   const res = await gmailGet(`/messages/${id}?format=full`, token);
   if (!res.ok) return null;
   const msg = await res.json();
 
   const headers: Array<{ name: string; value: string }> = msg.payload?.headers ?? [];
   const subject = headers.find((h) => h.name.toLowerCase() === 'subject')?.value ?? '';
+  const from    = headers.find((h) => h.name.toLowerCase() === 'from')?.value ?? '';
 
   const body = extractBody(msg.payload);
-  return { subject, body };
+  return { subject, body, from };
 }
 
 function extractBody(payload: {
@@ -231,10 +254,17 @@ function extractBody(payload: {
 
 // ─── Filter ───────────────────────────────────────────────────────────────────
 
-function passesKeywordFilter(subject: string, body: string): boolean {
+function passesKeywordFilter(subject: string, body: string, from: string): boolean {
   const subjectLower = subject.toLowerCase();
-  const combinedLower = (subject + ' ' + body).toLowerCase();
+  const fromLower    = from.toLowerCase();
 
+  // Hard block: noise senders and subjects we never want
+  if (NEGATIVE_SUBJECT_KEYWORDS.some((kw) => subjectLower.includes(kw))) return false;
+
+  // Trusted ticket/reservation platforms always pass
+  if (TRUSTED_SENDERS.some((s) => fromLower.includes(s))) return true;
+
+  const combinedLower = (subject + ' ' + body).toLowerCase();
   const hasStrongKeyword = STRONG_KEYWORDS.some((kw) => subjectLower.includes(kw));
   if (hasStrongKeyword) return true;
 
@@ -249,7 +279,7 @@ type TicketFields = Omit<ParsedTicket, 'confidence' | 'tint' | 'image_url'>;
 async function parseTicketWithAI(subject: string, body: string, apiKey: string): Promise<TicketFields | null> {
   const truncated = body.slice(0, 4000);
   const prompt = `Extract event ticket info from this email. Return JSON with:
-- is_ticket: true only if this is an event ticket or booking confirmation
+- is_ticket: true ONLY for live experiences a person attends — concerts, sports games, theater/shows, music festivals, flights/hotels/travel, or restaurant reservations. Set false for: parking, tolls, package delivery, account emails, refunds, subscriptions, movie theater tickets, or any non-experience confirmation.
 - title: event or show name (empty string if unknown)
 - venue: venue or location name (empty string if unknown)
 - date: date like "Aug 15, 2026" (empty string if unknown)
@@ -460,14 +490,13 @@ function detectCategory(
   text: string,
 ): 'concert' | 'sports' | 'theater' | 'dining' | 'festival' | 'trip' | 'other' {
   const lower = text.toLowerCase();
-  // Festival check before concert — "music festival" and named festivals (Coachella, etc.) would
-  // otherwise match the concert pattern first because they contain words like "music" or "show"
-  if (/festival|fest|coachella|glastonbury|lollapalooza|bonnaroo|outside lands/.test(lower)) return 'festival';
-  if (/concert|gig|tour\b|live music|show/.test(lower)) return 'concert';
-  if (/sports?|game|match|nfl|nba|mlb|nhl|mls|soccer|football|basketball|baseball|hockey|tennis|golf|lakers|celtics|knicks|bulls|warriors|heat|nets|sixers|bucks|nuggets|suns|clippers|mavericks|spurs|rockets|pacers|raptors/.test(lower)) return 'sports';
-  if (/theater|theatre|broadway|opera|ballet|musical|play/.test(lower)) return 'theater';
-  if (/flight|hotel|airline|reservation|check-in|check in|airbnb|trip/.test(lower)) return 'trip';
-  if (/restaurant|dining|dinner|reservation|table|chef|cuisine/.test(lower)) return 'dining';
+  // Festival check before concert — named festivals would otherwise match concert's "music"/"show"
+  if (/festival|fest\b|coachella|glastonbury|lollapalooza|bonnaroo|outside lands|burning man|acl fest|governors ball|wristband|lineup/.test(lower)) return 'festival';
+  if (/concert|gig|tour\b|live music|amphitheater|amphitheatre|pavilion|ticketmaster|seatgeek|stubhub|axs\.com|livenation/.test(lower)) return 'concert';
+  if (/sports?|game\b|match\b|nfl|nba|mlb|nhl|mls|soccer|football|basketball|baseball|hockey|tennis|golf|game day|matchday|lakers|celtics|knicks|bulls|warriors|heat|nets|sixers|bucks|nuggets|suns|clippers|mavericks|spurs|rockets|pacers|raptors|yankees|mets|cubs|sox|dodgers/.test(lower)) return 'sports';
+  if (/theater|theatre|broadway|off-broadway|opera|ballet|musical\b|telecharge|theatermania|your performance|curtain/.test(lower)) return 'theater';
+  if (/flight|airline|itinerary|boarding pass|check-in|check in|airbnb|booking\.com|hotels\.com|hotel confirmation|your stay|expedia|vrbo|enterprise rent|hertz|avis|car rental/.test(lower)) return 'trip';
+  if (/restaurant|opentable|resy\.com|your reservation|dining reservation|your table|party of \d|sevenrooms|tock|chef|cuisine/.test(lower)) return 'dining';
   return 'other';
 }
 
@@ -612,14 +641,17 @@ Deno.serve(async (req: Request) => {
   for (const detail of details) {
     if (!detail) { result.skipped++; continue; }
 
-    const { subject, body } = detail;
+    const { subject, body, from } = detail;
 
     // Filter
-    if (!passesKeywordFilter(subject, body)) { result.skipped++; continue; }
+    if (!passesKeywordFilter(subject, body, from)) { result.skipped++; continue; }
 
     // Parse (throttle AI calls to stay under Gemini's 15 RPM free-tier limit)
     const parsed = await parseTicket(subject, body);
     if (GEMINI_KEY) await new Promise(r => setTimeout(r, 200));
+
+    // Reject unrecognized category — not a supported experience type
+    if (parsed.category === 'other') { result.skipped++; continue; }
 
     // Deduplicate
     const dedupeKey = `${(parsed.title ?? '').toLowerCase()}|${parsed.date ?? ''}`;
