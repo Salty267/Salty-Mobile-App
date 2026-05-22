@@ -96,7 +96,7 @@ async function getValidToken(
   conn: GmailConnection,
   supabase: ReturnType<typeof createClient>,
 ): Promise<string> {
-  const expiresAt = conn.token_expires_at ? new Date(conn.token_expires_at).getTime() : 0;
+  const expiresAt = conn.token_expires_at ? new Date(conn.token_expires_at).getTime() : Infinity;
   const needsRefresh = expiresAt <= Date.now() + 60_000;
 
   if (!needsRefresh) return conn.access_token;

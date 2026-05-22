@@ -5,6 +5,7 @@ import {
   LayoutAnimation, UIManager, Platform, Alert,
 } from 'react-native';
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -128,7 +129,12 @@ export default function TicketsScreen(): React.JSX.Element {
     try {
       await WebBrowser.warmUpAsync();
 
-      const redirectTo = 'salty://auth/callback';
+      const isExpoGo =
+        Constants.executionEnvironment === 'storeClient' ||
+        (Constants.appOwnership as string | null) === 'expo';
+      const redirectTo = isExpoGo
+        ? 'exp://localhost:8081/--/auth/callback'
+        : 'salty://auth/callback';
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -152,31 +158,22 @@ export default function TicketsScreen(): React.JSX.Element {
         return;
       }
 
-      let googleAccessToken: string | null = null;
-      let googleRefreshToken: string | null = null;
+      // Implicit flow: Supabase puts all tokens in the URL hash
+      // #access_token=SUPABASE_JWT&provider_token=GOOGLE_AT&provider_refresh_token=GOOGLE_RT&...
+      const parsed = new URL(result.url);
+      const hp = new URLSearchParams(parsed.hash.replace(/^#/, ''));
 
-      // PKCE flow (supabase-js v2 default): exchange code → session
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(result.url);
-      if (!exchangeError) {
-        const { data: { session } } = await supabase.auth.getSession();
-        googleAccessToken = session?.provider_token ?? null;
-        googleRefreshToken = session?.provider_refresh_token ?? null;
-      } else {
-        // Implicit flow fallback: tokens are in the URL hash/query directly
-        const parsed = new URL(result.url);
-        const hp = new URLSearchParams(parsed.hash.replace(/^#/, ''));
-        const at = hp.get('access_token') ?? parsed.searchParams.get('access_token');
-        const rt = hp.get('refresh_token') ?? parsed.searchParams.get('refresh_token');
-        if (at && rt) {
-          await supabase.auth.setSession({ access_token: at, refresh_token: rt });
-          const { data: { session } } = await supabase.auth.getSession();
-          googleAccessToken = session?.provider_token ?? at;
-          googleRefreshToken = session?.provider_refresh_token ?? rt;
-        }
+      const supabaseAt = hp.get('access_token');
+      const supabaseRt = hp.get('refresh_token');
+      const googleAccessToken  = hp.get('provider_token');
+      const googleRefreshToken = hp.get('provider_refresh_token');
+
+      if (supabaseAt && supabaseRt) {
+        await supabase.auth.setSession({ access_token: supabaseAt, refresh_token: supabaseRt });
       }
 
       if (!googleAccessToken) {
-        Alert.alert('Gmail Error', 'Could not get Google access token. Make sure this redirect URL is allowlisted in your Supabase dashboard:\n\n' + redirectTo);
+        Alert.alert('Gmail Error', 'Google access token missing from redirect. Check that Gmail readonly scope is enabled in your Google OAuth app.');
         return;
       }
 
@@ -187,7 +184,8 @@ export default function TicketsScreen(): React.JSX.Element {
         .from('gmail_connections')
         .upsert(
           { user_id: user.id, email, access_token: googleAccessToken,
-            refresh_token: googleRefreshToken, connected_at: new Date().toISOString() },
+            refresh_token: googleRefreshToken, connected_at: new Date().toISOString(),
+            token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString() },
           { onConflict: 'user_id' },
         )
         .select('last_synced_at')
@@ -240,21 +238,34 @@ export default function TicketsScreen(): React.JSX.Element {
     }
   }, [scanning, router]);
 
-  // Reload tickets when returning from review-imports (after approvals)
+  // Reload tickets + gmail status whenever the tab is focused
   const firstFocus = useRef(true);
   useFocusEffect(useCallback(() => {
     if (firstFocus.current) { firstFocus.current = false; return; }
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      supabase
-        .from('tickets')
-        .select('id, title, venue_name, date_str, time_str, category, tint, image_url, seat')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('imported_at', { ascending: false })
-        .then(({ data }) => { if (data) { LA(); setTickets(data.map(mapRow)); } });
+      Promise.all([
+        supabase
+          .from('tickets')
+          .select('id, title, venue_name, date_str, time_str, category, tint, image_url, seat')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('imported_at', { ascending: false }),
+        supabase
+          .from('gmail_connections')
+          .select('email, last_synced_at')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ]).then(([ticketsRes, gmailRes]) => {
+        if (ticketsRes.data) { LA(); setTickets(ticketsRes.data.map(mapRow)); }
+        if (gmailRes.data && !gmailConnected) {
+          setGmailConnected(true);
+          setGmailEmail(gmailRes.data.email);
+          setLastSyncedAt(gmailRes.data.last_synced_at ?? null);
+        }
+      });
     });
-  }, []));
+  }, [gmailConnected]));
 
   const handleAddTicket = async () => {
     if (!form.title.trim()) return;

@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
 
 export default function AuthCallback(): React.JSX.Element {
+  const router = useRouter();
+
   useEffect(() => {
     const handle = async (url: string) => {
       try {
@@ -15,6 +18,7 @@ export default function AuthCallback(): React.JSX.Element {
         const refreshToken = hashParams.get('refresh_token') ?? parsed.searchParams.get('refresh_token');
         if (accessToken && refreshToken) {
           await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          router.replace('/(tabs)');
           return;
         }
 
@@ -23,9 +27,16 @@ export default function AuthCallback(): React.JSX.Element {
         const type = parsed.searchParams.get('type') as 'signup' | 'recovery' | 'email' | null;
         if (tokenHash && type) {
           await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+          router.replace('/(tabs)');
+          return;
         }
+
+        // Gmail OAuth via PKCE — handleConnectGmail already processed the tokens.
+        // Just navigate back to the app.
+        router.replace('/(tabs)');
       } catch (e) {
         console.error('Auth callback error:', e);
+        router.replace('/(tabs)');
       }
     };
 
@@ -34,7 +45,6 @@ export default function AuthCallback(): React.JSX.Element {
     return () => sub.remove();
   }, []);
 
-  // useProtectedRoute in _layout.tsx will redirect once the session is set
   return (
     <View style={{ flex: 1, backgroundColor: '#eef0fb', alignItems: 'center', justifyContent: 'center' }}>
       <ActivityIndicator size="large" color="#4f6cf2" />
