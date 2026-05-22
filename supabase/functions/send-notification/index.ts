@@ -17,8 +17,16 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
-  // Delete action: remove the matching notification
+  // Verify the caller is an authenticated Supabase user
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const { data: { user }, error: authError } = await supabase.auth.getUser(
+    authHeader.replace('Bearer ', ''),
+  );
+  if (authError || !user) return new Response('Unauthorized', { status: 401 });
+
+  // Delete action: only the original requester may rescind their own notification
   if (payload.action === 'delete' && payload.requesterId) {
+    if (payload.requesterId !== user.id) return new Response('Forbidden', { status: 403 });
     await supabase
       .from('notifications')
       .delete()

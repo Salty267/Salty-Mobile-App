@@ -672,7 +672,6 @@ Deno.serve(async (req: Request) => {
         category: parsed.category,
         tint:     parsed.tint,
         image_url: parsed.image_url,
-        subject,
       },
     });
     result.pending++;

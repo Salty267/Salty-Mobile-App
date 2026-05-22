@@ -78,6 +78,8 @@ export default function TicketsScreen(): React.JSX.Element {
   const [gmailConnected, setGmailConnected] = useState(false);
   const [gmailEmail,     setGmailEmail]    = useState('');
   const [lastSyncedAt,   setLastSyncedAt]  = useState<string | null>(null);
+  const [geminiConsent,  setGeminiConsent] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const [scanning,       setScanning]      = useState(false);
   const [connecting,     setConnecting]    = useState(false);
   const [addVisible,     setAddVisible]    = useState(false);
@@ -101,7 +103,7 @@ export default function TicketsScreen(): React.JSX.Element {
           .order('imported_at', { ascending: false }),
         supabase
           .from('gmail_connections')
-          .select('email, last_synced_at')
+          .select('email, last_synced_at, gemini_consent')
           .eq('user_id', uid)
           .maybeSingle(),
       ]).then(([ticketsRes, gmailRes]) => {
@@ -116,6 +118,7 @@ export default function TicketsScreen(): React.JSX.Element {
           setGmailConnected(true);
           setGmailEmail(gmailRes.data.email);
           setLastSyncedAt(gmailRes.data.last_synced_at ?? null);
+          setGeminiConsent(gmailRes.data.gemini_consent ?? false);
         }
 
         setTicketsLoading(false);
@@ -223,8 +226,7 @@ export default function TicketsScreen(): React.JSX.Element {
     isPast: isEventPast(row.date_str),
   });
 
-  const handleScanGmail = useCallback(async () => {
-    if (scanning) return;
+  const runScan = useCallback(async () => {
     setScanning(true);
     try {
       const { data: scanResult, error } = await supabase.functions.invoke('scan-gmail');
@@ -236,7 +238,23 @@ export default function TicketsScreen(): React.JSX.Element {
     } finally {
       setScanning(false);
     }
-  }, [scanning, router]);
+  }, [router]);
+
+  const handleScanGmail = useCallback(() => {
+    if (scanning) return;
+    if (!geminiConsent) { setShowConsentModal(true); return; }
+    runScan();
+  }, [scanning, geminiConsent, runScan]);
+
+  const handleConsentAccept = useCallback(async () => {
+    setShowConsentModal(false);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('gmail_connections').update({ gemini_consent: true }).eq('user_id', user.id);
+      setGeminiConsent(true);
+    }
+    runScan();
+  }, [runScan]);
 
   // Reload tickets + gmail status whenever the tab is focused
   const firstFocus = useRef(true);
@@ -253,7 +271,7 @@ export default function TicketsScreen(): React.JSX.Element {
           .order('imported_at', { ascending: false }),
         supabase
           .from('gmail_connections')
-          .select('email, last_synced_at')
+          .select('email, last_synced_at, gemini_consent')
           .eq('user_id', user.id)
           .maybeSingle(),
       ]).then(([ticketsRes, gmailRes]) => {
@@ -262,6 +280,7 @@ export default function TicketsScreen(): React.JSX.Element {
           setGmailConnected(true);
           setGmailEmail(gmailRes.data.email);
           setLastSyncedAt(gmailRes.data.last_synced_at ?? null);
+          setGeminiConsent(gmailRes.data.gemini_consent ?? false);
         }
       });
     });
@@ -559,6 +578,33 @@ export default function TicketsScreen(): React.JSX.Element {
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Gemini AI Consent Modal ── */}
+      <Modal visible={showConsentModal} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: 24, padding: 24, width: '100%' }}>
+            <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f3f0ff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Ionicons name="shield-checkmark-outline" size={26} color={BRAND_FROM} />
+            </View>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, marginBottom: 10 }}>Before we scan</Text>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, lineHeight: 21, marginBottom: 20 }}>
+              To detect tickets in your emails, Salty sends the subject and content of matching emails to Google AI for parsing. No email data is stored — only the ticket details extracted from it.
+            </Text>
+            <TouchableOpacity onPress={handleConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 14, marginBottom: 10 }}>
+              <LinearGradient
+                colors={[BRAND_FROM, BRAND_TO]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ height: 50, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>I Understand, Continue</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowConsentModal(false)} style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );
