@@ -63,6 +63,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85';
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GEMINI_KEY = Deno.env.get('GOOGLE_AI_STUDIO_KEY') ?? '';
 const MAX_MESSAGES = 500;
 const CONCURRENCY = 20;
 
@@ -241,9 +242,102 @@ function passesKeywordFilter(subject: string, body: string): boolean {
   return hitCount >= 2;
 }
 
-// ─── Parser ───────────────────────────────────────────────────────────────────
+// ─── AI Parser ────────────────────────────────────────────────────────────────
 
-function parseTicket(subject: string, body: string): ParsedTicket {
+type TicketFields = Omit<ParsedTicket, 'confidence' | 'tint' | 'image_url'>;
+
+async function parseTicketWithAI(subject: string, body: string, apiKey: string): Promise<TicketFields | null> {
+  const truncated = body.slice(0, 4000);
+  const prompt = `Extract event ticket info from this email. Return JSON with:
+- is_ticket: true only if this is an event ticket or booking confirmation
+- title: event or show name (empty string if unknown)
+- venue: venue or location name (empty string if unknown)
+- date: date like "Aug 15, 2026" (empty string if unknown)
+- time: time like "8:00 PM" (empty string if unknown)
+- seat: seat, section, or ticket number (empty string if unknown)
+- category: one of concert|sports|theater|festival|trip|dining|other
+
+Subject: ${subject}
+Body: ${truncated}`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                is_ticket: { type: 'BOOLEAN' },
+                title:     { type: 'STRING' },
+                venue:     { type: 'STRING' },
+                date:      { type: 'STRING' },
+                time:      { type: 'STRING' },
+                seat:      { type: 'STRING' },
+                category:  { type: 'STRING', enum: ['concert', 'sports', 'theater', 'festival', 'trip', 'dining', 'other'] },
+              },
+              required: ['is_ticket', 'category'],
+            },
+            temperature: 0,
+          },
+        }),
+      },
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return null;
+    const p = JSON.parse(text);
+    if (!p.is_ticket) return null;
+    const orNull = (s: string | undefined) => (s && s.trim() ? s.trim() : null);
+    return {
+      title:    orNull(p.title),
+      venue:    orNull(p.venue),
+      date:     orNull(p.date),
+      time:     orNull(p.time),
+      seat:     orNull(p.seat),
+      category: p.category ?? 'other',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function parseTicket(subject: string, body: string): Promise<ParsedTicket> {
+  let fields: TicketFields | null = null;
+
+  if (GEMINI_KEY) {
+    fields = await parseTicketWithAI(subject, body, GEMINI_KEY);
+  }
+  if (!fields) {
+    const r = parseTicketRegex(subject, body);
+    fields = { title: r.title, venue: r.venue, date: r.date, time: r.time, seat: r.seat, category: r.category };
+  }
+
+  const { title, venue, date, time, seat, category } = fields;
+  const confidence =
+    (title  ? 0.30 : 0) +
+    (date   ? 0.25 : 0) +
+    (venue  ? 0.20 : 0) +
+    (time   ? 0.15 : 0) +
+    (seat   ? 0.10 : 0);
+
+  return {
+    title, venue, date, time, seat, category,
+    tint:      CATEGORY_TINTS[category]  ?? '#b0b8e0',
+    image_url: CATEGORY_IMAGES[category] ?? DEFAULT_IMAGE,
+    confidence,
+  };
+}
+
+// ─── Regex Parser (fallback) ──────────────────────────────────────────────────
+
+function parseTicketRegex(subject: string, body: string): ParsedTicket {
   console.log('SUBJECT:', subject);
   console.log('BODY_SAMPLE:', body.substring(0, 1000));
   const text = subject + '\n' + body;
@@ -268,7 +362,9 @@ function parseTicket(subject: string, body: string): ParsedTicket {
   }
 
   if (!title) {
-    title = cleanSubject(subject) || null;
+    // Prefer labeled "Event:" line in body over the (often generic) subject
+    const eventLabelMatch = body.match(/^Event:\s*(.+)/im);
+    title = (eventLabelMatch ? eventLabelMatch[1].trim() : null) || cleanSubject(subject) || null;
   }
 
   // Venue — for non-flights, try labeled "Venue:" line first (captures commas), then keyword fallback
@@ -282,17 +378,37 @@ function parseTicket(subject: string, body: string): ParsedTicket {
       : venueKeywordMatch ? venueKeywordMatch[1].trim() : null;
   }
 
-  // Date — prioritise itinerary dates (Mon, 09 Jun style) over email send date
-  const itineraryDateMatch = body.match(
-    /\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*)/i
-  );
-  const genericDateMatch = text.match(
-    /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}\b/i,
-  ) ?? text.match(/\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/);
+  // Date — labeled "Date:" line wins; skip forwarded-header dates (they end with " at HH:MM")
+  let date: string | null = null;
+  for (const m of [...body.matchAll(/^Date:\s*(.+)/gim)]) {
+    const val = m[1].trim();
+    if (/ at \d{1,2}:\d{2}/.test(val)) continue; // forwarded email header, not an event date
+    date = val.replace(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+/i, '').trim() || null;
+    break;
+  }
+  if (!date) {
+    // Fallback: itinerary-style dates (e.g. "Tue, 09 Jun") — skip any match that sits on a
+    // forwarded-header "Date:" line (check up to 20 chars of context before the match)
+    const itinMatches = [...body.matchAll(
+      /\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*)/gi,
+    )];
+    const itinMatch = itinMatches.find(m => {
+      const before = body.slice(Math.max(0, m.index! - 20), m.index!);
+      return !/date:\s*$/i.test(before);
+    });
+    const genericDateMatch = text.match(
+      /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}\b/i,
+    ) ?? text.match(/\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/);
+    date = itinMatch
+      ? itinMatch[1].trim()
+      : genericDateMatch ? genericDateMatch[0].trim() : null;
+  }
 
-  const date = itineraryDateMatch
-    ? itineraryDateMatch[1].trim()
-    : genericDateMatch ? genericDateMatch[0].trim() : null;
+  // If the date has no 4-digit year (e.g. itinerary "09 Jun"), pull the year from anywhere in the email
+  if (date && !/\b\d{4}\b/.test(date)) {
+    const yearMatch = text.match(/\b(202[5-9]|203\d)\b/);
+    if (yearMatch) date = `${date} ${yearMatch[1]}`;
+  }
 
   // Time — first time in body (departure time)
   const timeMatch = body.match(/\b(\d{1,2}:\d{2}\s*(?:AM|PM))\b/i);
@@ -344,9 +460,11 @@ function detectCategory(
   text: string,
 ): 'concert' | 'sports' | 'theater' | 'dining' | 'festival' | 'trip' | 'other' {
   const lower = text.toLowerCase();
-  if (/concert|gig|tour|music|band|artist|live music|show/.test(lower)) return 'concert';
-  if (/sports?|game|match|nfl|nba|mlb|nhl|soccer|football|basketball|baseball|tennis|golf/.test(lower)) return 'sports';
-  if (/festival|fest|coachella|glastonbury/.test(lower)) return 'festival';
+  // Festival check before concert — "music festival" and named festivals (Coachella, etc.) would
+  // otherwise match the concert pattern first because they contain words like "music" or "show"
+  if (/festival|fest|coachella|glastonbury|lollapalooza|bonnaroo|outside lands/.test(lower)) return 'festival';
+  if (/concert|gig|tour\b|live music|show/.test(lower)) return 'concert';
+  if (/sports?|game|match|nfl|nba|mlb|nhl|mls|soccer|football|basketball|baseball|hockey|tennis|golf|lakers|celtics|knicks|bulls|warriors|heat|nets|sixers|bucks|nuggets|suns|clippers|mavericks|spurs|rockets|pacers|raptors/.test(lower)) return 'sports';
   if (/theater|theatre|broadway|opera|ballet|musical|play/.test(lower)) return 'theater';
   if (/flight|hotel|airline|reservation|check-in|check in|airbnb|trip/.test(lower)) return 'trip';
   if (/restaurant|dining|dinner|reservation|table|chef|cuisine/.test(lower)) return 'dining';
@@ -468,18 +586,29 @@ Deno.serve(async (req: Request) => {
     (id) => fetchMessageDetails(id, token),
   );
 
-  // Load existing gmail tickets for deduplication
-  const { data: existingTickets } = await supabaseAdmin
-    .from('tickets')
-    .select('title, date_str')
-    .eq('user_id', user.id)
-    .eq('source', 'gmail');
+  // Load existing gmail tickets + pending imports for deduplication
+  const [{ data: existingTickets }, { data: existingPending }] = await Promise.all([
+    supabaseAdmin
+      .from('tickets')
+      .select('title, date_str')
+      .eq('user_id', user.id)
+      .eq('source', 'gmail'),
+    supabaseAdmin
+      .from('pending_imports')
+      .select('raw_data')
+      .eq('user_id', user.id)
+      .eq('status', 'pending'),
+  ]);
 
   const existingKeys = new Set(
     (existingTickets ?? []).map((t) => `${(t.title ?? '').toLowerCase()}|${t.date_str ?? ''}`),
   );
+  (existingPending ?? []).forEach((p) => {
+    const rd = p.raw_data as { title?: string; date?: string };
+    existingKeys.add(`${(rd.title ?? '').toLowerCase()}|${rd.date ?? ''}`);
+  });
 
-  // Process each message
+  // Process each message — all go to pending_imports for user review
   for (const detail of details) {
     if (!detail) { result.skipped++; continue; }
 
@@ -488,53 +617,33 @@ Deno.serve(async (req: Request) => {
     // Filter
     if (!passesKeywordFilter(subject, body)) { result.skipped++; continue; }
 
-    // Parse
-    const parsed = parseTicket(subject, body);
+    // Parse (throttle AI calls to stay under Gemini's 15 RPM free-tier limit)
+    const parsed = await parseTicket(subject, body);
+    if (GEMINI_KEY) await new Promise(r => setTimeout(r, 200));
 
     // Deduplicate
     const dedupeKey = `${(parsed.title ?? '').toLowerCase()}|${parsed.date ?? ''}`;
     if (existingKeys.has(dedupeKey)) { result.skipped++; continue; }
-    existingKeys.add(dedupeKey); // prevent dupes within this batch
+    existingKeys.add(dedupeKey);
 
-    if (parsed.confidence >= 0.55) {
-      // High confidence → tickets table
-      await supabaseAdmin.from('tickets').insert({
-        user_id:    user.id,
-        title:      parsed.title,
-        venue_name: parsed.venue,
-        date_str:   parsed.date,
-        time_str:   parsed.time,
-        seat:       parsed.seat,
-        category:   parsed.category,
-        tint:       parsed.tint,
-        image_url:  parsed.image_url,
-        confidence: parsed.confidence,
-        source:     'gmail',
-        status:     'active',
-        is_past:    false,
-      });
-      result.inserted++;
-    } else {
-      // Low confidence → pending_imports table
-      await supabaseAdmin.from('pending_imports').insert({
-        user_id:    user.id,
-        source:     'gmail',
-        status:     'pending',
-        confidence: parsed.confidence,
-        raw_data: {
-          title:    parsed.title,
-          venue:    parsed.venue,
-          date:     parsed.date,
-          time:     parsed.time,
-          seat:     parsed.seat,
-          category: parsed.category,
-          tint:     parsed.tint,
-          image_url: parsed.image_url,
-          subject,
-        },
-      });
-      result.pending++;
-    }
+    await supabaseAdmin.from('pending_imports').insert({
+      user_id:    user.id,
+      source:     'gmail',
+      status:     'pending',
+      confidence: parsed.confidence,
+      raw_data: {
+        title:    parsed.title,
+        venue:    parsed.venue,
+        date:     parsed.date,
+        time:     parsed.time,
+        seat:     parsed.seat,
+        category: parsed.category,
+        tint:     parsed.tint,
+        image_url: parsed.image_url,
+        subject,
+      },
+    });
+    result.pending++;
   }
 
   // Update connection — save new historyId and sync timestamp

@@ -63,6 +63,7 @@ const MOCK_SETLIST: SetlistSong[] = [
   { song: 'You Belong With Me',                     era: 'Fearless Era', time: '8:10 PM' },
 ];
 const SETLIST_PREVIEW = 3;
+const SETLIST_CATEGORIES = new Set(['concert', 'festival']);
 
 /* ─────────── helpers ─────────── */
 const timeAgo = (iso: string): string => {
@@ -626,41 +627,45 @@ export default function EventDetailsScreen(): React.JSX.Element {
           )}
         </View>
 
-        <Divider />
+        {SETLIST_CATEGORIES.has(params.category) && (
+          <>
+            <Divider />
 
-        {/* ── Setlist ── */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Setlist</Text>
-            {setlistSongs.length > SETLIST_PREVIEW && (
-              <TouchableOpacity onPress={() => setSetlistExpanded(e => !e)}>
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
-                  {setlistExpanded ? 'Show Less' : `View All (${setlistSongs.length} songs)`}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {dataLoading ? <ActivityIndicator size="small" color={BRAND_FROM} /> : (
-            <View style={{ gap: 14 }}>
-              {visibleSetlist.map((item, index) => (
-                <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                  <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ width: 28, height: 28, borderRadius: 99, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>{index + 1}</Text>
-                  </LinearGradient>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{item.song}</Text>
-                    {(item.era || item.time) && (
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
-                        {[item.era, item.time].filter(Boolean).join(' • ')}
-                      </Text>
-                    )}
-                  </View>
+            {/* ── Setlist ── */}
+            <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Setlist</Text>
+                {setlistSongs.length > SETLIST_PREVIEW && (
+                  <TouchableOpacity onPress={() => setSetlistExpanded(e => !e)}>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
+                      {setlistExpanded ? 'Show Less' : `View All (${setlistSongs.length} songs)`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {dataLoading ? <ActivityIndicator size="small" color={BRAND_FROM} /> : (
+                <View style={{ gap: 14 }}>
+                  {visibleSetlist.map((item, index) => (
+                    <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                      <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                        style={{ width: 28, height: 28, borderRadius: 99, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>{index + 1}</Text>
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{item.song}</Text>
+                        {(item.era || item.time) && (
+                          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+                            {[item.era, item.time].filter(Boolean).join(' • ')}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
                 </View>
-              ))}
+              )}
             </View>
-          )}
-        </View>
+          </>
+        )}
 
         <Divider />
 

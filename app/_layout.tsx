@@ -154,6 +154,7 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="event-details" />
         <Stack.Screen name="user-profile" />
         <Stack.Screen name="discover-event" />
+        <Stack.Screen name="review-imports" />
       </Stack>
     </SavedEventsProvider>
   );

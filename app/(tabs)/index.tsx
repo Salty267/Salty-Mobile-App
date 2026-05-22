@@ -137,7 +137,8 @@ export default function HomeScreen(): React.JSX.Element {
             category: row.category,
             image: row.image_url ?? DEFAULT_IMG,
             daysAway: Math.max(0, daysUntil(row.date_str) ?? 0),
-          })),
+          }))
+          .sort((a, b) => a.daysAway - b.daysAway),
       );
 
       // On this day: past events whose month+day match today, most recent first
@@ -180,9 +181,15 @@ export default function HomeScreen(): React.JSX.Element {
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  // Re-fetch unread count whenever the home tab regains focus
+  // Re-fetch pending count + unread count whenever home tab regains focus
   useFocusEffect(useCallback(() => {
     if (!userId) return;
+    supabase
+      .from('pending_imports')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .then(({ count }) => setPendingCount(count ?? 0));
     supabase
       .from('notifications')
       .select('id', { count: 'exact', head: true })
@@ -311,11 +318,11 @@ export default function HomeScreen(): React.JSX.Element {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingLeft: 20, paddingRight: 8, gap: 14 }}
           >
-            {upcoming.length === 0 ? (
+            {upcoming.length <= 1 ? (
               <View style={{ paddingHorizontal: 8, justifyContent: 'center' }}>
                 <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>No upcoming tickets yet.</Text>
               </View>
-            ) : upcoming.map(event => (
+            ) : upcoming.slice(1).map(event => (
               <UpcomingCard
                 key={event.id}
                 event={event}
@@ -409,16 +416,16 @@ export default function HomeScreen(): React.JSX.Element {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff', marginBottom: 4 }}>
-                {pendingCount} event{pendingCount === 1 ? '' : 's'} pending review
+                {pendingCount} ticket{pendingCount === 1 ? '' : 's'} waiting for review
               </Text>
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 18 }}>
-                Events detected from your emails and photos.
+                Found in your Gmail — approve to add to your vault.
               </Text>
               <TouchableOpacity
-                onPress={() => router.push('/(tabs)/tickets')}
+                onPress={() => router.push('/review-imports')}
                 style={{ marginTop: 12, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.96)', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Review</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Review now</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
