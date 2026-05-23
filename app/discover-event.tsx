@@ -105,7 +105,7 @@ export default function DiscoverEventScreen(): React.JSX.Element {
       });
       if (cancelled) return;
       if (fnErr || !data?.event) {
-        setError(fnErr?.message ?? 'Failed to load event');
+        setError('Failed to load event. Please try again.');
         setLoading(false);
         return;
       }
@@ -145,8 +145,18 @@ export default function DiscoverEventScreen(): React.JSX.Element {
     );
   };
 
+  const TICKET_DOMAINS = ['ticketmaster.com', 'livenation.com', 'axs.com', 'eventbrite.com', 'seetickets.com', 'dice.fm'];
   const openTickets = () => {
-    if (event?.ticketUrl) Linking.openURL(event.ticketUrl);
+    const url = event?.ticketUrl;
+    if (!url) return;
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      if (url.startsWith('https://') && TICKET_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d))) {
+        Linking.openURL(url);
+      }
+    } catch {
+      // invalid URL — do nothing
+    }
   };
 
   return (

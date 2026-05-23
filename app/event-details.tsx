@@ -294,7 +294,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
       seat: editSeat.trim() || null,
     }).eq('id', params.id);
     setSaving(false);
-    if (error) { Alert.alert('Save failed', error.message); return; }
+    if (error) { Alert.alert('Save failed', 'Could not save your changes. Please try again.'); return; }
     setDisplayTitle(editTitle.trim()); setDisplayVenue(editVenue.trim());
     setDisplayDate(editDate.trim());   setDisplayTime(editTime.trim());
     setDisplaySeat(editSeat.trim());

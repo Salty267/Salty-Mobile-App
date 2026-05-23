@@ -384,6 +384,7 @@ function SearchModal({
 function SearchResultRow({
   result, onSend, onWithdraw,
 }: { result: SearchResult; onSend: () => void; onWithdraw: () => void }): React.JSX.Element {
+  const router = useRouter();
   const name = result.display_name;
   const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
@@ -436,7 +437,15 @@ function SearchResultRow({
           </Text>
         )}
       </View>
-      <ActionButton />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/user-profile', params: { userId: result.id } })}
+          style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="person-outline" size={16} color={BRAND_FROM} />
+        </TouchableOpacity>
+        <ActionButton />
+      </View>
     </View>
   );
 }

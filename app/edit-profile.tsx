@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, Image, TextInput, TouchableOpacity,
   ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale } from '@/lib/layout';
@@ -20,34 +21,122 @@ const BG         = '#eef0fb';
 const BORDER     = '#e6e4f0';
 const SECONDARY  = '#f1eefb';
 
-type Field = { label: string; value: string; onChange?: (v: string) => void; placeholder: string; keyboard?: 'default' | 'email-address' | 'phone-pad'; readOnly?: boolean };
+type Field = {
+  label: string;
+  value: string;
+  onChange?: (v: string) => void;
+  placeholder: string;
+  keyboard?: 'default' | 'email-address' | 'phone-pad';
+  readOnly?: boolean;
+  badgeText?: string;
+  note?: string;
+};
+
+const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
+
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+function formatUnlockDate(d: Date): string {
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
 
 export default function EditProfileScreen(): React.JSX.Element {
   const router  = useRouter();
   const { bottom } = useSafeAreaInsets();
   const { avatarUrl, uploading: avatarUploading, pickAndUpload } = useAvatar();
 
-  const [fullName, setFullName] = useState('');
-  const [phone,    setPhone]    = useState('');
-  const [email,    setEmail]    = useState('');
-  const [saving,   setSaving]   = useState(false);
-  const [saved,    setSaved]    = useState(false);
+  const [userId,           setUserId]           = useState('');
+  const [fullName,         setFullName]         = useState('');
+  const [phone,            setPhone]            = useState('');
+  const [email,            setEmail]            = useState('');
+  const [zipCode,          setZipCode]          = useState('');
+  const [username,         setUsername]         = useState('');
+  const [savedUsername,    setSavedUsername]    = useState('');
+  const [usernameChangedAt, setUsernameChangedAt] = useState<Date | null>(null);
+  const [saving,           setSaving]           = useState(false);
+  const [saved,            setSaved]            = useState(false);
+  const [usernameError,    setUsernameError]    = useState('');
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
+      setUserId(user.id);
       setFullName((user.user_metadata?.full_name as string | undefined) ?? '');
       setPhone((user.user_metadata?.phone_number as string | undefined) ?? '');
       setEmail(user.email ?? '');
+      const { data: profile } = await supabase
+        .from('users')
+        .select('zip_code, username, username_changed_at')
+        .eq('id', user.id)
+        .single();
+      setZipCode(profile?.zip_code ?? '');
+      setUsername(profile?.username ?? '');
+      setSavedUsername(profile?.username ?? '');
+      setUsernameChangedAt(
+        profile?.username_changed_at ? new Date(profile.username_changed_at) : null,
+      );
     });
   }, []);
 
+  const unlockDate = usernameChangedAt ? addMonths(usernameChangedAt, 6) : null;
+  const usernameIsLocked = unlockDate ? new Date() < unlockDate : false;
+
   const handleSave = async () => {
+    // Validate username if changed
+    const newUsername = username.trim().toLowerCase();
+    const usernameChanged = newUsername !== savedUsername;
+
+    if (usernameChanged) {
+      if (usernameIsLocked) {
+        Alert.alert('Username locked', `You can change your username again on ${formatUnlockDate(unlockDate!)}.`);
+        return;
+      }
+      if (!USERNAME_RE.test(newUsername)) {
+        setUsernameError('3–30 characters: lowercase letters, numbers, underscores only.');
+        return;
+      }
+      // Check uniqueness
+      const { data: existing } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', newUsername)
+        .neq('id', userId)
+        .maybeSingle();
+      if (existing) {
+        setUsernameError('That username is already taken.');
+        return;
+      }
+    }
+
+    setUsernameError('');
     setSaving(true);
     setSaved(false);
-    await supabase.auth.updateUser({
-      data: { full_name: fullName.trim(), phone_number: phone.trim() },
-    });
+
+    const profileUpdate: Record<string, unknown> = {
+      zip_code: zipCode.trim() || null,
+    };
+    if (usernameChanged) {
+      profileUpdate.username = newUsername;
+      profileUpdate.username_changed_at = new Date().toISOString();
+    }
+
+    await Promise.all([
+      supabase.auth.updateUser({
+        data: { full_name: fullName.trim(), phone_number: phone.trim() },
+      }),
+      supabase.from('users').update(profileUpdate).eq('id', userId),
+    ]);
+
+    if (usernameChanged) {
+      setSavedUsername(newUsername);
+      setUsername(newUsername);
+      setUsernameChangedAt(new Date());
+    }
+
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -58,15 +147,50 @@ export default function EditProfileScreen(): React.JSX.Element {
     : email[0]?.toUpperCase() ?? '?';
 
   const FIELDS: Field[] = [
-    { label: 'Full Name',     value: fullName, onChange: setFullName, placeholder: 'Enter your full name'   },
-    { label: 'Phone Number',  value: phone,    onChange: setPhone,    placeholder: 'Enter your phone number', keyboard: 'phone-pad' },
-    { label: 'Email',         value: email,    onChange: undefined,   placeholder: 'Email address', keyboard: 'email-address', readOnly: true },
+    {
+      label: 'Full Name',
+      value: fullName,
+      onChange: setFullName,
+      placeholder: 'Enter your full name',
+    },
+    {
+      label: 'Username',
+      value: username,
+      onChange: usernameIsLocked ? undefined : (v) => { setUsername(v.toLowerCase()); setUsernameError(''); },
+      placeholder: 'username',
+      readOnly: usernameIsLocked,
+      badgeText: usernameIsLocked && unlockDate ? `Until ${unlockDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : undefined,
+      note: usernameIsLocked && unlockDate
+        ? `Can be changed again on ${formatUnlockDate(unlockDate)}`
+        : 'Lowercase letters, numbers and underscores only.',
+    },
+    {
+      label: 'Phone Number',
+      value: phone,
+      onChange: setPhone,
+      placeholder: 'Enter your phone number',
+      keyboard: 'phone-pad',
+    },
+    {
+      label: 'Zip Code',
+      value: zipCode,
+      onChange: setZipCode,
+      placeholder: 'Enter your zip code',
+      keyboard: 'phone-pad',
+    },
+    {
+      label: 'Email',
+      value: email,
+      onChange: undefined,
+      placeholder: 'Email address',
+      keyboard: 'email-address',
+      readOnly: true,
+    },
   ];
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={{ flex: 1, backgroundColor: BG }}>
-
 
         {/* ── Header ── */}
         <LinearGradient
@@ -131,7 +255,7 @@ export default function EditProfileScreen(): React.JSX.Element {
           <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             {FIELDS.map((field, i) => (
               <View key={field.label}>
-                <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 }}>
+                <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: field.note ? 6 : 12 }}>
                   <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>
                     {field.label}
                   </Text>
@@ -143,6 +267,8 @@ export default function EditProfileScreen(): React.JSX.Element {
                       placeholderTextColor={BORDER}
                       keyboardType={field.keyboard ?? 'default'}
                       editable={!field.readOnly}
+                      autoCapitalize={field.label === 'Username' ? 'none' : 'words'}
+                      autoCorrect={false}
                       style={{
                         flex: 1,
                         fontFamily: 'DMSans_400Regular',
@@ -152,10 +278,22 @@ export default function EditProfileScreen(): React.JSX.Element {
                     />
                     {field.readOnly && (
                       <View style={{ backgroundColor: SECONDARY, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: BRAND_FROM }}>Locked</Text>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: BRAND_FROM }}>
+                          {field.badgeText ?? 'Locked'}
+                        </Text>
                       </View>
                     )}
                   </View>
+                  {field.note && (
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: field.label === 'Username' && usernameError ? '#ef4444' : MUTED, marginTop: 4, marginBottom: 6 }}>
+                      {field.label === 'Username' && usernameError ? usernameError : field.note}
+                    </Text>
+                  )}
+                  {field.label === 'Username' && usernameError && !field.note && (
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: '#ef4444', marginTop: 4, marginBottom: 6 }}>
+                      {usernameError}
+                    </Text>
+                  )}
                 </View>
                 {i < FIELDS.length - 1 && (
                   <View style={{ height: 1, backgroundColor: BORDER, marginLeft: 16 }} />

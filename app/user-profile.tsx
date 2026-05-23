@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator,
+  View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { scale, SCREEN_W } from '@/lib/layout';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { supabase } from '@/lib/supabase/client';
 import { useFriends } from '@/lib/useFriends';
+import { isEventPast } from '@/lib/parseEventDate';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -21,7 +22,9 @@ const BORDER     = '#e6e4f0';
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D'];
 const BAR_MAX_H = 78;
-const BADGE_W = (SCREEN_W - 40 - 12) / 2;
+const BADGE_W   = (SCREEN_W - 40 - 12) / 2;
+const PHOTO_CELL = Math.floor((SCREEN_W - 40 - 8) / 3);
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85';
 
 const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
   concert:  { label: 'Concerts',  color: BRAND_FROM },
@@ -103,6 +106,15 @@ type BadgeData = {
   hasRepeatShow: boolean;
 };
 
+type TicketHistoryRow = {
+  id: string;
+  title: string | null;
+  venue_name: string | null;
+  date_str: string | null;
+  category: string;
+  image_url: string | null;
+};
+
 const BADGE_DEFS: BadgeDef[] = [
   { id: 'first_show',         icon: 'star-outline',          label: 'First Show',         tagline: 'Welcome to the live life',     from: '#fbbf24', to: '#f97316', condition: d => d.totalShows >= 1   },
   { id: 'double_digits',      icon: 'trophy-outline',        label: 'Double Digits',      tagline: "You're just getting started",  from: '#fb923c', to: '#ef4444', condition: d => d.totalShows >= 10  },
@@ -119,32 +131,41 @@ const BADGE_DEFS: BadgeDef[] = [
 ];
 
 export default function UserProfileScreen(): React.JSX.Element {
-  const router = useRouter();
+  const router    = useRouter();
   const bottomPad = useBottomPad();
-  const params = useLocalSearchParams<{ userId: string; friendshipId: string; mutualEvents: string }>();
-  const { removeFriend } = useFriends();
+  const params    = useLocalSearchParams<{ userId: string; friendshipId: string; mutualEvents: string }>();
+  const { removeFriend, sendRequest, withdrawRequest } = useFriends();
 
-  const userId = params.userId;
-  const friendshipId = params.friendshipId;
+  const userId      = params.userId;
   const mutualEvents = parseInt(params.mutualEvents ?? '0', 10);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [removing, setRemoving] = useState(false);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState<string | null>(null);
+  const [removing,      setRemoving]      = useState(false);
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [lightboxUri,   setLightboxUri]   = useState<string | null>(null);
+
+  // Friendship state
+  const [isFriend,          setIsFriend]          = useState(false);
+  const [friendshipDbId,    setFriendshipDbId]    = useState<string | null>(null);
+  const [friendRequestSent, setFriendRequestSent] = useState(false);
 
   // Profile fields
-  const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [joinYear, setJoinYear] = useState<number | null>(null);
-  const [totalShows, setTotalShows] = useState(0);
-  const [uniqueVenues, setUniqueVenues] = useState(0);
-  const [pastShows, setPastShows] = useState(0);
-  const [yearShows, setYearShows] = useState(0);
-  const [monthlyBars, setMonthlyBars] = useState<number[]>(new Array(12).fill(0));
+  const [displayName,    setDisplayName]    = useState('');
+  const [avatarUrl,      setAvatarUrl]      = useState<string | null>(null);
+  const [joinYear,       setJoinYear]       = useState<number | null>(null);
+  const [totalShows,     setTotalShows]     = useState(0);
+  const [uniqueVenues,   setUniqueVenues]   = useState(0);
+  const [pastShows,      setPastShows]      = useState(0);
+  const [yearShows,      setYearShows]      = useState(0);
+  const [monthlyBars,    setMonthlyBars]    = useState<number[]>(new Array(12).fill(0));
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [dnaSegments, setDnaSegments] = useState<{ label: string; pct: number; color: string }[]>([]);
-  const [mostSeen, setMostSeen] = useState<{ name: string; times: number; from: string; to: string }[]>([]);
+  const [dnaSegments,    setDnaSegments]    = useState<{ label: string; pct: number; color: string }[]>([]);
+  const [mostSeen,       setMostSeen]       = useState<{ name: string; times: number; from: string; to: string }[]>([]);
+
+  // Friends-only content
+  const [tickets, setTickets] = useState<TicketHistoryRow[]>([]);
+  const [photos,  setPhotos]  = useState<{ id: string; url: string }[]>([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -154,29 +175,56 @@ export default function UserProfileScreen(): React.JSX.Element {
       setLoading(true);
       setError(null);
 
-      const [profileRes, ticketsRes] = await Promise.all([
+      const { data: { user: me } } = await supabase.auth.getUser();
+      if (!me || cancelled) return;
+
+      // Check friendship status in a single query (accepted or pending)
+      const { data: friendshipRow } = await supabase
+        .from('friendships')
+        .select('id, status, requester_id')
+        .or(`and(requester_id.eq.${me.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${me.id})`)
+        .maybeSingle();
+
+      const isFriendResult   = friendshipRow?.status === 'accepted';
+      const isSentRequest    = friendshipRow?.status === 'pending' && friendshipRow?.requester_id === me.id;
+
+      setIsFriend(isFriendResult);
+      setFriendshipDbId(friendshipRow?.id ?? null);
+      setFriendRequestSent(isSentRequest);
+
+      const [profileRes, ticketsRes, photosRes] = await Promise.all([
         supabase.from('users').select('display_name, avatar_url, created_at').eq('id', userId).single(),
-        supabase.from('tickets').select('title, venue_name, date_str, category, is_past').eq('user_id', userId).eq('status', 'active'),
+        isFriendResult
+          // Friends: full columns for history list (allowed by RLS)
+          ? supabase.from('tickets')
+              .select('id, title, venue_name, date_str, category, image_url, is_past')
+              .eq('user_id', userId).eq('status', 'active')
+              .order('date_str', { ascending: false })
+          // Non-friends: SECURITY DEFINER RPC returns only aggregate fields, bypassing RLS
+          : supabase.rpc('get_public_ticket_stats', { target_user_id: userId }),
+        isFriendResult
+          ? supabase.from('photos').select('id, storage_url').eq('user_id', userId).order('taken_at', { ascending: false }).limit(30)
+          : Promise.resolve({ data: null, error: null }),
       ]);
 
       if (cancelled) return;
-
-      if (profileRes.error) { setError(profileRes.error.message); setLoading(false); return; }
+      if (profileRes.error) { setError('Could not load profile.'); setLoading(false); return; }
 
       const p = profileRes.data;
       setDisplayName(p.display_name ?? 'Friend');
       setAvatarUrl(p.avatar_url ?? null);
       setJoinYear(p.created_at ? new Date(p.created_at).getFullYear() : null);
 
-      const tickets = ticketsRes.data ?? [];
-      setTotalShows(tickets.length);
-      setUniqueVenues(new Set(tickets.map(t => t.venue_name).filter(Boolean)).size);
-      setPastShows(tickets.filter(t => t.is_past).length);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const allTickets: any[] = ticketsRes.data ?? [];
+      setTotalShows(allTickets.length);
+      setUniqueVenues(new Set(allTickets.map(t => t.venue_name).filter(Boolean)).size);
+      setPastShows(allTickets.filter(t => isEventPast(t.date_str)).length);
 
       const currentYear = new Date().getFullYear();
       const bars = new Array(12).fill(0);
       let thisYear = 0;
-      for (const t of tickets) {
+      for (const t of allTickets) {
         const parsed = parseDateStr(t.date_str);
         if (parsed && parsed.year === currentYear) { bars[parsed.month]++; thisYear++; }
       }
@@ -184,7 +232,7 @@ export default function UserProfileScreen(): React.JSX.Element {
       setYearShows(thisYear);
 
       const catCounts: Record<string, number> = {};
-      for (const t of tickets) catCounts[t.category] = (catCounts[t.category] ?? 0) + 1;
+      for (const t of allTickets) catCounts[t.category] = (catCounts[t.category] ?? 0) + 1;
       setCategoryCounts(catCounts);
 
       const totalCats = Object.values(catCounts).reduce((s, n) => s + n, 0);
@@ -196,12 +244,28 @@ export default function UserProfileScreen(): React.JSX.Element {
         );
       }
 
-      const titleCounts: Record<string, number> = {};
-      for (const t of tickets) if (t.title) titleCounts[t.title] = (titleCounts[t.title] ?? 0) + 1;
-      setMostSeen(
-        Object.entries(titleCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
-          .map(([name, times], i) => ({ name, times, from: CARD_GRADIENTS[i % CARD_GRADIENTS.length][0], to: CARD_GRADIENTS[i % CARD_GRADIENTS.length][1] })),
-      );
+      if (isFriendResult) {
+        const titleCounts: Record<string, number> = {};
+        for (const t of allTickets) {
+          if (t.title) titleCounts[t.title] = (titleCounts[t.title] ?? 0) + 1;
+        }
+        setMostSeen(
+          Object.entries(titleCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+            .map(([name, times], i) => ({ name, times, from: CARD_GRADIENTS[i % CARD_GRADIENTS.length][0], to: CARD_GRADIENTS[i % CARD_GRADIENTS.length][1] })),
+        );
+
+        setTickets(allTickets.map(t => ({
+          id:         t.id,
+          title:      t.title      ?? null,
+          venue_name: t.venue_name ?? null,
+          date_str:   t.date_str   ?? null,
+          category:   t.category,
+          image_url:  t.image_url  ?? null,
+        })));
+
+        const rawPhotos = (photosRes.data ?? []) as { id: string; storage_url: string }[];
+        setPhotos(rawPhotos.map(ph => ({ id: ph.id, url: ph.storage_url })));
+      }
 
       setLoading(false);
     };
@@ -211,26 +275,52 @@ export default function UserProfileScreen(): React.JSX.Element {
   }, [userId]);
 
   const handleUnfriend = useCallback(async () => {
-    if (!friendshipId) return;
+    if (!friendshipDbId) return;
     setRemoving(true);
-    try { await removeFriend(friendshipId); router.back(); }
+    try { await removeFriend(friendshipDbId); router.back(); }
     catch { setRemoving(false); }
-  }, [friendshipId, removeFriend, router]);
+  }, [friendshipDbId, removeFriend, router]);
 
-  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const handleAddFriend = useCallback(async () => {
+    try {
+      await sendRequest(userId);
+      const { data: { user: me } } = await supabase.auth.getUser();
+      if (!me) return;
+      const { data: row } = await supabase
+        .from('friendships')
+        .select('id')
+        .eq('requester_id', me.id)
+        .eq('addressee_id', userId)
+        .eq('status', 'pending')
+        .maybeSingle();
+      setFriendshipDbId(row?.id ?? null);
+      setFriendRequestSent(true);
+    } catch {}
+  }, [sendRequest, userId]);
+
+  const handleWithdraw = useCallback(async () => {
+    if (!friendshipDbId) return;
+    try {
+      await withdrawRequest(friendshipDbId, userId);
+      setFriendRequestSent(false);
+      setFriendshipDbId(null);
+    } catch {}
+  }, [withdrawRequest, friendshipDbId, userId]);
+
+  const initials  = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
   const levelInfo = getLevelInfo(totalShows);
-  const maxBar = Math.max(...monthlyBars, 1);
+  const maxBar    = Math.max(...monthlyBars, 1);
 
   const badgeData: BadgeData = {
     totalShows, uniqueVenues, categoryCounts,
-    categoryCount: Object.keys(categoryCounts).length,
+    categoryCount:   Object.keys(categoryCounts).length,
     accountAgeYears: joinYear ? new Date().getFullYear() - joinYear : 0,
-    monthsActive: monthlyBars.filter(v => v > 0).length,
-    hasRepeatShow: mostSeen.some(s => s.times >= 2),
+    monthsActive:    monthlyBars.filter(v => v > 0).length,
+    hasRepeatShow:   mostSeen.some(s => s.times >= 2),
   };
-  const allBadges = BADGE_DEFS.map(b => ({ ...b, earned: b.condition(badgeData) }));
-  const earnedCount = allBadges.filter(b => b.earned).length;
-  const sortedBadges = [...allBadges.filter(b => b.earned), ...allBadges.filter(b => !b.earned)];
+  const allBadges      = BADGE_DEFS.map(b => ({ ...b, earned: b.condition(badgeData) }));
+  const earnedCount    = allBadges.filter(b => b.earned).length;
+  const sortedBadges   = [...allBadges.filter(b => b.earned), ...allBadges.filter(b => !b.earned)];
   const displayedBadges = showAllBadges ? sortedBadges : sortedBadges.filter(b => b.earned);
 
   if (loading) {
@@ -332,10 +422,10 @@ export default function UserProfileScreen(): React.JSX.Element {
           shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.13, shadowRadius: 20, elevation: 6,
         }}>
           {([
-            [String(totalShows), 'Shows'],
-            [String(uniqueVenues), 'Venues'],
-            [String(pastShows), 'Attended'],
-            [String(mutualEvents), 'Mutual'],
+            [String(totalShows),  'Shows'],
+            [String(uniqueVenues),'Venues'],
+            [String(pastShows),   'Attended'],
+            [String(mutualEvents),'Mutual'],
           ] as [string, string][]).map(([val, label], i) => (
             <View key={label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: BORDER }}>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: i === 3 ? BRAND_FROM : FG }}>{val}</Text>
@@ -343,6 +433,33 @@ export default function UserProfileScreen(): React.JSX.Element {
             </View>
           ))}
         </View>
+
+        {/* ── Friend CTA (non-friends only) ── */}
+        {!isFriend && (
+          <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+            {friendRequestSent ? (
+              <TouchableOpacity
+                onPress={handleWithdraw}
+                activeOpacity={0.85}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, backgroundColor: '#f1eefb' }}
+              >
+                <Ionicons name="time-outline" size={18} color={MUTED} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: MUTED }}>Request Pending · Tap to cancel</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={handleAddFriend} activeOpacity={0.88} style={{ borderRadius: 16, overflow: 'hidden' }}>
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 }}
+                >
+                  <Ionicons name="person-add-outline" size={18} color="#fff" />
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Add Friend</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* ── Year in Live ── */}
         <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
@@ -397,7 +514,7 @@ export default function UserProfileScreen(): React.JSX.Element {
           </View>
         )}
 
-        {/* ── Most Seen ── */}
+        {/* ── Most Seen (friends only) ── */}
         {mostSeen.length > 0 && (
           <View style={{ marginTop: 28 }}>
             <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, paddingHorizontal: 20, marginBottom: 12 }}>Most seen</Text>
@@ -416,6 +533,58 @@ export default function UserProfileScreen(): React.JSX.Element {
                 </View>
               ))}
             </ScrollView>
+          </View>
+        )}
+
+        {/* ── Ticket History (friends) / Lock (non-friends) ── */}
+        {isFriend && tickets.length > 0 && (
+          <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 12 }}>Their Tickets</Text>
+            <View style={{ gap: 10 }}>
+              {tickets.map(ticket => {
+                const catColor = CATEGORY_CONFIG[ticket.category]?.color ?? '#94a3b8';
+                const catLabel = CATEGORY_CONFIG[ticket.category]?.label ?? ticket.category;
+                const subtitle = [ticket.venue_name, ticket.date_str].filter(Boolean).join(' · ');
+                return (
+                  <View key={ticket.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 12, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 }}>
+                    <Image
+                      source={{ uri: ticket.image_url ?? DEFAULT_IMAGE }}
+                      style={{ width: 56, height: 56, borderRadius: 10 }}
+                      resizeMode="cover"
+                    />
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <View style={{ backgroundColor: catColor, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.4 }}>{catLabel}</Text>
+                        </View>
+                      </View>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG, lineHeight: 18 }} numberOfLines={1}>
+                        {ticket.title ?? 'Event'}
+                      </Text>
+                      {!!subtitle && (
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>
+                          {subtitle}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* ── Photos (friends only) ── */}
+        {isFriend && photos.length > 0 && (
+          <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 12 }}>Their Photos</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {photos.map(photo => (
+                <TouchableOpacity key={photo.id} onPress={() => setLightboxUri(photo.url)} activeOpacity={0.88}>
+                  <Image source={{ uri: photo.url }} style={{ width: PHOTO_CELL, height: PHOTO_CELL, borderRadius: 10 }} resizeMode="cover" />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
 
@@ -461,8 +630,8 @@ export default function UserProfileScreen(): React.JSX.Element {
           </View>
         </View>
 
-        {/* ── Remove Friend ── */}
-        {friendshipId && (
+        {/* ── Remove Friend (friends only, at bottom) ── */}
+        {isFriend && (
           <View style={{ paddingHorizontal: 20, marginTop: 32 }}>
             <TouchableOpacity
               onPress={handleUnfriend}
@@ -481,6 +650,19 @@ export default function UserProfileScreen(): React.JSX.Element {
         )}
 
       </ScrollView>
+
+      {/* ── Lightbox ── */}
+      <Modal visible={!!lightboxUri} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' }}
+          onPress={() => setLightboxUri(null)}
+          activeOpacity={1}
+        >
+          {lightboxUri && (
+            <Image source={{ uri: lightboxUri }} style={{ width: SCREEN_W, height: SCREEN_W }} resizeMode="contain" />
+          )}
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }

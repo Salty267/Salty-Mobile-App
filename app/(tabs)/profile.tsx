@@ -13,6 +13,7 @@ import { useSidebar } from '@/lib/SidebarContext';
 import { useAvatar } from '@/lib/useAvatar';
 import { supabase } from '@/lib/supabase/client';
 import { useFriends } from '@/lib/useFriends';
+import { isEventPast } from '@/lib/parseEventDate';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 const BRAND_FROM = '#4f6cf2';
@@ -215,7 +216,7 @@ export default function ProfileScreen(): React.JSX.Element {
       // Stats
       setTotalShows(tickets.length);
       setUniqueVenues(new Set(tickets.map(t => t.venue_name).filter(Boolean)).size);
-      setPastShows(tickets.filter(t => t.is_past).length);
+      setPastShows(tickets.filter(t => isEventPast(t.date_str)).length);
 
       // Monthly bars for current year
       const currentYear = new Date().getFullYear();
@@ -294,10 +295,7 @@ export default function ProfileScreen(): React.JSX.Element {
   const levelInfo = getLevelInfo(totalShows);
   const maxBar = Math.max(...monthlyBars, 1);
 
-  const locationLine = [
-    zipCode,
-    joinYear ? `Live since ${joinYear}` : null,
-  ].filter(Boolean).join(' · ') || '–';
+  const locationLine = joinYear ? `Live since ${joinYear}` : null;
 
   const crewData = friends.slice(0, 3).map(f => ({
     id: f.id,
@@ -374,12 +372,22 @@ export default function ProfileScreen(): React.JSX.Element {
                   @{username}
                 </Text>
               )}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 }}>
-                <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.9)" />
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
-                  {locationLine}
-                </Text>
-              </View>
+              {zipCode && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                  <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.9)" />
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                    {zipCode}
+                  </Text>
+                </View>
+              )}
+              {locationLine && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: zipCode ? 2 : 4 }}>
+                  <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.9)" />
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                    {locationLine}
+                  </Text>
+                </View>
+              )}
 
               {/* Progress bar */}
               <View style={{ width: '100%', maxWidth: 280, marginTop: 20 }}>

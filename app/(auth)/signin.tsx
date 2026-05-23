@@ -9,6 +9,13 @@ import { supabase } from '@/lib/supabase/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
+function friendlyAuthError(msg: string): string {
+  if (msg.includes('Invalid login credentials')) return 'Incorrect email or password.';
+  if (msg.includes('Email not confirmed')) return 'Please verify your email before signing in.';
+  if (msg.includes('Too many requests') || msg.includes('rate limit')) return 'Too many attempts. Please wait a moment.';
+  return 'Sign-in failed. Please try again.';
+}
+
 const BG     = '#FBF8F1';
 const DEEP   = '#1A0848';
 const EMBER  = '#E8581A';
@@ -26,7 +33,7 @@ export default function SignInScreen(): React.JSX.Element {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
+    if (error) setError(friendlyAuthError(error.message));
     setLoading(false);
   };
 
@@ -39,7 +46,7 @@ export default function SignInScreen(): React.JSX.Element {
         provider: 'google',
         options: { redirectTo },
       });
-      if (error) { setError(error.message); return; }
+      if (error) { setError('Could not start Google sign-in. Please try again.'); return; }
       if (!data.url) { setError('Could not open Google sign-in.'); return; }
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);

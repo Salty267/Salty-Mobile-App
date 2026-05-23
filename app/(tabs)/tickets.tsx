@@ -149,7 +149,7 @@ export default function TicketsScreen(): React.JSX.Element {
         },
       });
       if (error || !data.url) {
-        Alert.alert('Gmail Error', `Could not start OAuth: ${error?.message ?? 'No URL returned'}`);
+        Alert.alert('Gmail Error', 'Could not start Google sign-in. Please try again.');
         return;
       }
 
@@ -195,7 +195,7 @@ export default function TicketsScreen(): React.JSX.Element {
         .maybeSingle();
 
       if (upsertError) {
-        Alert.alert('Gmail Error', `DB error: ${upsertError.message}`);
+        Alert.alert('Gmail Error', 'Could not save Gmail connection. Please try again.');
         return;
       }
 

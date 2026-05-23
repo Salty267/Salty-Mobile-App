@@ -368,8 +368,6 @@ async function parseTicket(subject: string, body: string): Promise<ParsedTicket>
 // ─── Regex Parser (fallback) ──────────────────────────────────────────────────
 
 function parseTicketRegex(subject: string, body: string): ParsedTicket {
-  console.log('SUBJECT:', subject);
-  console.log('BODY_SAMPLE:', body.substring(0, 1000));
   const text = subject + '\n' + body;
 
   // Title & venue — for flights, match each "City, US (XXX)" independently

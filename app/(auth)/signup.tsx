@@ -90,7 +90,19 @@ export default function SignupScreen(): React.JSX.Element {
       },
     });
 
-    if (signUpErr) { setError(signUpErr.message); setLoading(false); return; }
+    if (signUpErr) {
+      const msg = signUpErr.message;
+      const friendly = msg.includes('already registered') || msg.includes('already exists')
+        ? 'An account with this email already exists.'
+        : msg.includes('Password should be')
+        ? 'Password must be at least 6 characters.'
+        : msg.includes('rate limit') || msg.includes('Too many')
+        ? 'Too many attempts. Please wait a moment.'
+        : 'Could not create account. Please try again.';
+      setError(friendly);
+      setLoading(false);
+      return;
+    }
 
     router.replace({ pathname: '/(auth)/verify-otp', params: { email: email.trim() } } as any);
   };
