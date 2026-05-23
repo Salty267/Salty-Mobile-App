@@ -34,6 +34,14 @@ type Field = {
 
 const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
 
+function normalizePhone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.length > 7) return `+${digits}`;
+  return null;
+}
+
 function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
@@ -118,6 +126,7 @@ export default function EditProfileScreen(): React.JSX.Element {
 
     const profileUpdate: Record<string, unknown> = {
       zip_code: zipCode.trim() || null,
+      phone_number: normalizePhone(phone.trim()),
     };
     if (usernameChanged) {
       profileUpdate.username = newUsername;

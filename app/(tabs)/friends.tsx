@@ -14,6 +14,7 @@ import { useFriends } from '@/lib/useFriends';
 import type { AcceptedFriend, PendingRequest } from '@/lib/useFriends';
 import { useUserSearch } from '@/lib/useUserSearch';
 import type { SearchResult } from '@/lib/useUserSearch';
+import { useContactMatches } from '@/lib/useContactMatches';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -42,8 +43,19 @@ export default function FriendsScreen(): React.JSX.Element {
     friends, sentRequests, pendingRequests,
   );
 
+  const {
+    results: contactResults, loading: contactLoading,
+    error: contactError, permissionDenied,
+    load: loadContacts, optimisticSend: contactOptimisticSend,
+  } = useContactMatches(friends, sentRequests, pendingRequests);
+
   const handleSend = async (addresseeId: string) => {
     optimisticSend(addresseeId);
+    try { await sendRequest(addresseeId); } catch {}
+  };
+
+  const handleSendFromContacts = async (addresseeId: string) => {
+    contactOptimisticSend(addresseeId);
     try { await sendRequest(addresseeId); } catch {}
   };
 
@@ -176,6 +188,12 @@ export default function FriendsScreen(): React.JSX.Element {
         searching={searching}
         onSend={handleSend}
         onWithdraw={handleWithdraw}
+        contactResults={contactResults}
+        contactLoading={contactLoading}
+        contactError={contactError}
+        permissionDenied={permissionDenied}
+        onLoadContacts={loadContacts}
+        onSendContact={handleSendFromContacts}
       />
     </View>
   );
@@ -296,12 +314,18 @@ function EmptyFriends({ onAddPress }: { onAddPress: () => void }): React.JSX.Ele
 
 function SearchModal({
   visible, onClose, query, onQueryChange, results, searching, onSend, onWithdraw,
+  contactResults, contactLoading, contactError, permissionDenied, onLoadContacts, onSendContact,
 }: {
   visible: boolean; onClose: () => void;
   query: string; onQueryChange: (q: string) => void;
   results: SearchResult[]; searching: boolean;
   onSend: (id: string) => void; onWithdraw: (fid: string, addresseeId: string) => void;
+  contactResults: SearchResult[]; contactLoading: boolean;
+  contactError: string | null; permissionDenied: boolean;
+  onLoadContacts: () => void; onSendContact: (id: string) => void;
 }): React.JSX.Element {
+  const showContacts = query.trim().length < 2;
+
   return (
     <Modal
       visible={visible}
@@ -352,22 +376,75 @@ function SearchModal({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 10 }}
         >
-          {query.trim().length < 2 && (
-            <View style={{ alignItems: 'center', paddingTop: 48 }}>
-              <Ionicons name="search-outline" size={48} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>
-                Search by @username or display name
-              </Text>
-            </View>
+          {/* ── Contacts section (shown when search bar is empty) ── */}
+          {showContacts && (
+            <>
+              <TouchableOpacity
+                onPress={onLoadContacts}
+                disabled={contactLoading}
+                activeOpacity={0.85}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: SURFACE, borderRadius: 16, paddingVertical: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
+              >
+                {contactLoading
+                  ? <ActivityIndicator size="small" color={BRAND_FROM} />
+                  : <Ionicons name="people-outline" size={20} color={BRAND_FROM} />
+                }
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: BRAND_FROM }}>
+                  {contactLoading ? 'Scanning contacts…' : 'Find from Contacts'}
+                </Text>
+              </TouchableOpacity>
+
+              {permissionDenied && (
+                <View style={{ alignItems: 'center', paddingVertical: 12, gap: 4 }}>
+                  <Ionicons name="lock-closed-outline" size={24} color={MUTED} />
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>
+                    Contacts access was denied. Enable it in your phone settings to find friends.
+                  </Text>
+                </View>
+              )}
+
+              {contactError && !permissionDenied && (
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: '#e55', textAlign: 'center' }}>
+                  {contactError}
+                </Text>
+              )}
+
+              {!contactLoading && !permissionDenied && contactResults.length > 0 && (
+                <>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 4 }}>
+                    People you know
+                  </Text>
+                  {contactResults.map(result => (
+                    <SearchResultRow
+                      key={result.id}
+                      result={result}
+                      onSend={() => onSendContact(result.id)}
+                      onWithdraw={() => {}}
+                    />
+                  ))}
+                </>
+              )}
+
+              {!contactLoading && !permissionDenied && contactResults.length === 0 && contactError === null && (
+                <View style={{ alignItems: 'center', paddingTop: 32 }}>
+                  <Ionicons name="search-outline" size={48} color={MUTED} />
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>
+                    Search by @username or display name
+                  </Text>
+                </View>
+              )}
+            </>
           )}
-          {query.trim().length >= 2 && !searching && results.length === 0 && (
+
+          {/* ── Username/name search results ── */}
+          {!showContacts && query.trim().length >= 2 && !searching && results.length === 0 && (
             <View style={{ alignItems: 'center', paddingTop: 48 }}>
               <Ionicons name="person-outline" size={48} color={MUTED} />
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 12 }}>No users found</Text>
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6 }}>Try a different username or name.</Text>
             </View>
           )}
-          {results.map(result => (
+          {!showContacts && results.map(result => (
             <SearchResultRow
               key={result.id}
               result={result}
