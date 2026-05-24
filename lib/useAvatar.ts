@@ -38,7 +38,7 @@ export function useAvatar() {
     }
 
     // 'limited' = user granted access to specific photos only (iOS 14+)
-    if (status !== 'granted' && status !== 'limited') return;
+    if (status !== 'granted' && (status as string) !== 'limited') return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],

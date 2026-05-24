@@ -111,8 +111,8 @@ export default function RootLayout(): React.JSX.Element | null {
           if (screen) router.push(`/(tabs)/${screen}` as Parameters<typeof router.push>[0]);
         });
         notifCleanup = () => {
-          if (notificationListener.current) N.removeNotificationSubscription(notificationListener.current);
-          if (responseListener.current) N.removeNotificationSubscription(responseListener.current);
+          notificationListener.current?.remove();
+          responseListener.current?.remove();
         };
       })();
     }

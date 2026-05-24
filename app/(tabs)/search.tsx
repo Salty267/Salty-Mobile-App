@@ -164,7 +164,7 @@ export default function DiscoverScreen(): React.JSX.Element {
     const avatarById: Record<string, string | null> = {};
     for (const p of profilesRes.data ?? []) avatarById[p.id] = p.avatar_url;
 
-    const byTitle: Record<string, { ticket: (typeof ticketsRes.data)[0]; users: string[]; count: number }> = {};
+    const byTitle: Record<string, { ticket: NonNullable<typeof ticketsRes.data>[number]; users: string[]; count: number }> = {};
     for (const t of ticketsRes.data ?? []) {
       const key = t.title ?? 'Untitled';
       if (!byTitle[key]) byTitle[key] = { ticket: t, users: [], count: 0 };

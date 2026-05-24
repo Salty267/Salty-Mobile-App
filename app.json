@@ -8,7 +8,7 @@
     "scheme": "salty",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash-transparent.png",
       "resizeMode": "contain",
       "backgroundColor": "#080808"
     },
@@ -16,8 +16,13 @@
       "supportsTablet": false,
       "bundleIdentifier": "ai.saltydigital.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Salty uses your location to show events happening near you."
+        "NSLocationWhenInUseUsageDescription": "Salty uses your location to show events happening near you.",
+        "ITSAppUsesNonExemptEncryption": false
       }
+    },
+    "androidStatusBar": {
+      "translucent": true,
+      "backgroundColor": "#00000000"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,15 +30,12 @@
         "backgroundColor": "#080808"
       },
       "package": "ai.saltydigital.app",
-      "statusBar": {
-        "translucent": true,
-        "backgroundColor": "#00000000"
-      },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -41,6 +43,12 @@
       "expo-secure-store",
       "expo-font",
       "expo-web-browser",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Salty uses your contacts to help you find friends on the app."
+        }
+      ],
       [
         "expo-notifications",
         {
