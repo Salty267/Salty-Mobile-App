@@ -5,7 +5,7 @@ import { SavedEventsProvider } from '@/lib/SavedEventsContext';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { View } from 'react-native';
+import { View, AppState } from 'react-native';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase/client';
@@ -127,6 +127,39 @@ export default function RootLayout(): React.JSX.Element | null {
     };
   }, []);
 
+  // Trigger artist-alert check when app comes to foreground (throttled to ~6 h)
+  useEffect(() => {
+    if (!session) return;
+    const THROTTLE_MS = 6 * 60 * 60 * 1000;
+    let lastChecked = 0;
+
+    const checkAlerts = async () => {
+      if (Date.now() - lastChecked < THROTTLE_MS) return;
+      lastChecked = Date.now();
+      const { data: { session: s } } = await supabase.auth.getSession();
+      if (!s) return;
+      try {
+        await fetch(
+          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/check-artist-alerts`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${s.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: '{}',
+          },
+        );
+      } catch { /* best-effort */ }
+    };
+
+    checkAlerts();
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active') checkAlerts();
+    });
+    return () => sub.remove();
+  }, [session]);
+
   useProtectedRoute(session, isLoading);
 
   if (!fontsLoaded || isLoading) {
@@ -155,6 +188,7 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="user-profile" />
         <Stack.Screen name="discover-event" />
         <Stack.Screen name="review-imports" />
+        <Stack.Screen name="following" />
       </Stack>
     </SavedEventsProvider>
   );

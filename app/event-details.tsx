@@ -15,6 +15,7 @@ import { useBottomPad } from '@/lib/useBottomPad';
 import { useSavedEvents } from '@/lib/SavedEventsContext';
 import { supabase } from '@/lib/supabase/client';
 import type { AcceptedFriend } from '@/lib/useFriends';
+import { useFollowedArtists } from '@/lib/useFollowedArtists';
 
 /* ─────────── constants ─────────── */
 const BRAND_FROM = '#4f6cf2';
@@ -87,6 +88,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const bottomPad = useBottomPad();
   const { saveEvent, unsaveEvent, isSaved } = useSavedEvents();
   const saved = isSaved(params.id);
+  const { isFollowing, followArtist, unfollowArtist } = useFollowedArtists();
 
   /* ── auth ── */
   const [currentUserId,      setCurrentUserId]      = useState<string | null>(null);
@@ -530,7 +532,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
         </View>
 
         {/* ── Action Buttons ── */}
-        <View style={{ paddingHorizontal: 20, paddingBottom: 18, flexDirection: 'row', gap: 12 }}>
+        <View style={{ paddingHorizontal: 20, paddingBottom: 18, flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity onPress={handleShare} activeOpacity={0.85} style={{ flex: 1, borderRadius: 12, overflow: 'hidden' }}>
             <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 15 }}>
@@ -538,10 +540,24 @@ export default function EventDetailsScreen(): React.JSX.Element {
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Share</Text>
             </LinearGradient>
           </TouchableOpacity>
+          {displayTitle ? (() => {
+            const following = isFollowing(displayTitle);
+            return (
+              <TouchableOpacity
+                onPress={() => following ? unfollowArtist(displayTitle) : followArtist(displayTitle)}
+                activeOpacity={0.85}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: following ? BRAND_FROM : `${FG}20`, backgroundColor: following ? `${BRAND_FROM}12` : 'transparent' }}
+              >
+                <Ionicons name={following ? 'notifications' : 'notifications-outline'} size={16} color={following ? BRAND_FROM : FG} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: following ? BRAND_FROM : FG }}>
+                  {following ? 'Following' : 'Follow'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })() : null}
           <TouchableOpacity onPress={handleDelete} activeOpacity={0.85}
-            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: `${FG}20` }}>
+            style={{ width: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: `${FG}20` }}>
             <Ionicons name="trash-outline" size={16} color={FG} />
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Delete</Text>
           </TouchableOpacity>
         </View>
 

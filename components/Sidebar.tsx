@@ -27,11 +27,12 @@ type MenuItem = {
 };
 
 const MENU_BASE: MenuItem[] = [
-  { icon: 'film-outline',        label: 'Memories'     },
-  { icon: 'heart-outline',       label: 'Saved Events' },
-  { icon: 'people-outline',      label: 'Friends'      },
-  { icon: 'settings-outline',    label: 'Settings'     },
-  { icon: 'chatbubble-outline',  label: 'Feedback'     },
+  { icon: 'film-outline',           label: 'Memories'     },
+  { icon: 'heart-outline',          label: 'Saved Events' },
+  { icon: 'people-outline',         label: 'Friends'      },
+  { icon: 'notifications-outline',  label: 'Following'    },
+  { icon: 'settings-outline',       label: 'Settings'     },
+  { icon: 'chatbubble-outline',     label: 'Feedback'     },
 ];
 
 type Props = { visible: boolean; onClose: () => void };
@@ -192,6 +193,7 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
                   else if (item.label === 'Settings') { onClose(); router.push('/settings'); }
                   else if (item.label === 'Saved Events') { onClose(); router.push('/(tabs)/saved-events'); }
                   else if (item.label === 'Friends') { onClose(); router.push('/(tabs)/friends'); }
+                  else if (item.label === 'Following') { onClose(); router.push('/following'); }
                   else if (item.label === 'Feedback') { onClose(); router.push('/feedback'); }
                 }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 12, paddingVertical: 13, borderRadius: 16 }}

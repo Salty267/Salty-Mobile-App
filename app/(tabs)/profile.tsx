@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, Image, TouchableOpacity,
-  ScrollView,
+  ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SCREEN_W, scale } from '@/lib/layout';
@@ -15,6 +15,10 @@ import { supabase } from '@/lib/supabase/client';
 import { useFriends } from '@/lib/useFriends';
 import { isEventPast } from '@/lib/parseEventDate';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import WrappedCard from '@/components/WrappedCard';
+import { useFollowedArtists } from '@/lib/useFollowedArtists';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -158,6 +162,23 @@ export default function ProfileScreen(): React.JSX.Element {
   const bottomPad = useBottomPad();
   const { avatarUrl } = useAvatar();
   const { friends } = useFriends();
+  const { isFollowing, followArtist, unfollowArtist } = useFollowedArtists();
+
+  const wrappedShotRef = useRef<ViewShot>(null);
+  const [sharingWrapped, setSharingWrapped] = useState(false);
+
+  const handleShareWrapped = async () => {
+    if (!wrappedShotRef.current) return;
+    setSharingWrapped(true);
+    try {
+      const uri = await (wrappedShotRef.current as any).capture();
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your Salty Wrapped' });
+    } catch {
+      Alert.alert('Could not share', 'Please try again.');
+    } finally {
+      setSharingWrapped(false);
+    }
+  };
 
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [displayName, setDisplayName] = useState('');
@@ -497,23 +518,38 @@ export default function ProfileScreen(): React.JSX.Element {
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
-              {mostSeen.map((item, i) => (
-                <View key={item.name} style={{ width: 120, height: 120, borderRadius: 18, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 4 }}>
-                  <LinearGradient
-                    colors={[item.from, item.to]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ flex: 1, padding: 10, justifyContent: 'space-between' }}
-                  >
-                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG }}>{i + 1}</Text>
-                    </View>
-                    <View>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }} numberOfLines={1}>{item.name}</Text>
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.9)', marginTop: 2 }}>seen {item.times}×</Text>
-                    </View>
-                  </LinearGradient>
-                </View>
-              ))}
+              {mostSeen.map((item, i) => {
+                const following = isFollowing(item.name);
+                return (
+                  <View key={item.name} style={{ width: 120, height: 120, borderRadius: 18, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 4 }}>
+                    <LinearGradient
+                      colors={[item.from, item.to]}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={{ flex: 1, padding: 10, justifyContent: 'space-between' }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG }}>{i + 1}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => following ? unfollowArtist(item.name) : followArtist(item.name)}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          <Ionicons
+                            name={following ? 'notifications' : 'notifications-outline'}
+                            size={15}
+                            color={following ? '#fff' : 'rgba(255,255,255,0.7)'}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      <View>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }} numberOfLines={1}>{item.name}</Text>
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.9)', marginTop: 2 }}>seen {item.times}×</Text>
+                      </View>
+                    </LinearGradient>
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -562,6 +598,27 @@ export default function ProfileScreen(): React.JSX.Element {
               </View>
             ))}
           </View>
+        </View>
+
+        {/* ── Share Wrapped ── */}
+        <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
+          <TouchableOpacity
+            onPress={handleShareWrapped}
+            disabled={sharingWrapped}
+            activeOpacity={0.85}
+            style={{ borderRadius: 16, overflow: 'hidden' }}
+          >
+            <LinearGradient
+              colors={['#0d0822', '#4f1d8f']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16 }}
+            >
+              <Ionicons name="share-social-outline" size={18} color="#fff" />
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>
+                {sharingWrapped ? 'Preparing…' : 'Share Your Wrapped'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
         {/* ── Your Crew ── */}
@@ -634,6 +691,22 @@ export default function ProfileScreen(): React.JSX.Element {
         )}
 
       </ScrollView>
+
+      {/* Off-screen card captured by ViewShot — never visible to user */}
+      <View style={{ position: 'absolute', top: 0, left: -9999, opacity: 0, pointerEvents: 'none' }}>
+        <ViewShot ref={wrappedShotRef} options={{ format: 'png', quality: 1 }}>
+          <WrappedCard
+            username={username ?? ''}
+            year={new Date().getFullYear()}
+            totalShows={totalShows}
+            topArtists={mostSeen.map(s => ({ name: s.name, times: s.times }))}
+            topCategory={dnaSegments.length > 0 ? { label: dnaSegments[0].label, pct: dnaSegments[0].pct } : null}
+            levelLabel={levelInfo.label}
+            levelNum={levelInfo.lvlNum}
+            earnedBadges={earnedCount}
+          />
+        </ViewShot>
+      </View>
     </View>
   );
 }
