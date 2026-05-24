@@ -189,6 +189,7 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="discover-event" />
         <Stack.Screen name="review-imports" />
         <Stack.Screen name="following" />
+        <Stack.Screen name="scan-ticket" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
     </SavedEventsProvider>
   );

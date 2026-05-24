@@ -46,6 +46,7 @@ const DB_TO_DISPLAY: Record<string, string> = {
 
 type PendingImport = {
   id: string;
+  source: string;
   confidence: number;
   raw_data: {
     title: string | null;
@@ -83,7 +84,7 @@ export default function ReviewImportsScreen(): React.JSX.Element {
       if (!user || !active) { setLoading(false); return; }
       const { data } = await supabase
         .from('pending_imports')
-        .select('id, confidence, raw_data')
+        .select('id, source, confidence, raw_data')
         .eq('user_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
@@ -137,7 +138,7 @@ export default function ReviewImportsScreen(): React.JSX.Element {
         tint,
         image_url:  d.image_url,
         confidence: item.confidence,
-        source:     'gmail',
+        source:     item.source ?? 'gmail',
         status:     'active',
         is_past:    false,
       });

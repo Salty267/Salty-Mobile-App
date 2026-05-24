@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Image,
   ActivityIndicator, Linking, Platform,
@@ -10,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SCREEN_W } from '@/lib/layout';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { supabase } from '@/lib/supabase/client';
+import { useSavedEvents } from '@/lib/SavedEventsContext';
+import { useFollowedArtists } from '@/lib/useFollowedArtists';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -20,6 +22,14 @@ const BG         = '#eef0fb';
 const BORDER     = '#e6e4f0';
 
 const HERO_H = Math.round(SCREEN_W * 0.65);
+
+const CATEGORY_TINTS: Record<string, string> = {
+  concert:  '#FAC775',
+  sports:   '#E8581A',
+  festival: '#FFCBA4',
+  theater:  '#C8B8FF',
+  other:    '#b0b8e0',
+};
 
 const CATEGORY_COLORS: Record<string, [string, string]> = {
   concert:  ['#4f6cf2', '#a25cf2'],
@@ -90,9 +100,36 @@ export default function DiscoverEventScreen(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
 
+  const { saveEvent, unsaveEvent, isSaved } = useSavedEvents();
+  const saved = isSaved(params.tmId ?? '');
+
+  const { isFollowing, followArtist, unfollowArtist } = useFollowedArtists();
+  const entityType = (event?.category ?? params.category) === 'sports' ? 'team' : 'artist';
+
   const heroImage = params.imageUrl
     || CATEGORY_FALLBACK[params.category]
     || DEFAULT_IMAGE;
+
+  const toggleSave = useCallback(() => {
+    const id = params.tmId;
+    if (!id) return;
+    if (saved) {
+      unsaveEvent(id);
+    } else {
+      const cat = event?.category ?? params.category ?? 'other';
+      saveEvent({
+        id,
+        title:    event?.title    ?? params.title    ?? '',
+        subtitle: event?.genre    ?? undefined,
+        venue:    event?.venue?.name ?? params.venue ?? '',
+        date:     event?.dateStr  ?? params.dateStr  ?? '',
+        time:     event?.timeStr  ?? params.timeStr  ?? '',
+        category: cat,
+        image:    event?.imageUrl ?? heroImage,
+        tint:     CATEGORY_TINTS[cat] ?? '#b0b8e0',
+      });
+    }
+  }, [saved, event, params, saveEvent, unsaveEvent, heroImage]);
 
   useEffect(() => {
     if (!params.tmId) return;
@@ -187,6 +224,12 @@ export default function DiscoverEventScreen(): React.JSX.Element {
                 style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="chevron-back" size={20} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={toggleSave}
+                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name={saved ? 'heart' : 'heart-outline'} size={20} color={saved ? '#ff6b8a' : '#fff'} />
               </TouchableOpacity>
             </View>
           </SafeAreaView>
@@ -317,6 +360,26 @@ export default function DiscoverEventScreen(): React.JSX.Element {
                         }
                       </View>
                       <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, flex: 1 }}>{a.name}</Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          isFollowing(a.name)
+                            ? unfollowArtist(a.name)
+                            : followArtist(a.name, undefined, entityType)
+                        }
+                        style={{
+                          paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99,
+                          borderWidth: 1.5,
+                          borderColor: isFollowing(a.name) ? BRAND_FROM : BORDER,
+                          backgroundColor: isFollowing(a.name) ? `${BRAND_FROM}14` : 'transparent',
+                        }}
+                      >
+                        <Text style={{
+                          fontFamily: 'DMSans_700Bold', fontSize: 11,
+                          color: isFollowing(a.name) ? BRAND_FROM : MUTED,
+                        }}>
+                          {isFollowing(a.name) ? 'Following' : 'Follow'}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   ))}
                 </View>

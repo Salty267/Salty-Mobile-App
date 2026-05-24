@@ -16,6 +16,7 @@ import { useSavedEvents } from '@/lib/SavedEventsContext';
 import { supabase } from '@/lib/supabase/client';
 import type { AcceptedFriend } from '@/lib/useFriends';
 import { useFollowedArtists } from '@/lib/useFollowedArtists';
+import { isEventPast } from '@/lib/parseEventDate';
 
 /* ─────────── constants ─────────── */
 const BRAND_FROM = '#4f6cf2';
@@ -52,17 +53,6 @@ type TagRow  = { id: string; text: string };
 type MediaRow = { id: string; url: string };
 type SetlistSong = { song: string; era?: string; time?: string };
 
-/* ─────────── fallback setlist ─────────── */
-const MOCK_SETLIST: SetlistSong[] = [
-  { song: 'Miss Americana & The Heartbreak Prince', era: 'Lover Era',    time: '7:32 PM' },
-  { song: 'The Archer',                             era: 'Lover Era',    time: '7:36 PM' },
-  { song: 'Lover',                                  era: 'Lover Era',    time: '7:40 PM' },
-  { song: 'Cruel Summer',                           era: 'Lover Era',    time: '7:44 PM' },
-  { song: 'All Too Well (10 Min Version)',          era: 'Red Era',      time: '7:52 PM' },
-  { song: 'We Are Never Getting Back Together',     era: 'Red Era',      time: '8:02 PM' },
-  { song: 'Love Story',                             era: 'Fearless Era', time: '8:06 PM' },
-  { song: 'You Belong With Me',                     era: 'Fearless Era', time: '8:10 PM' },
-];
 const SETLIST_PREVIEW = 3;
 const SETLIST_CATEGORIES = new Set(['concert', 'festival']);
 
@@ -108,6 +98,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const [media,           setMedia]           = useState<MediaRow[]>([]);
   const [setlistSongs,    setSetlistSongs]    = useState<SetlistSong[]>([]);
   const [setlistExpanded, setSetlistExpanded] = useState(false);
+  const [setlistLoading,  setSetlistLoading]  = useState(false);
   const [dataLoading,     setDataLoading]     = useState(true);
 
   /* ── friends (lazy) ── */
@@ -199,7 +190,24 @@ export default function EventDetailsScreen(): React.JSX.Element {
       if (mediaRes.data) setMedia(mediaRes.data.map(r => ({ id: r.id, url: r.storage_url })));
 
       const songs = setlistRes.data?.songs;
-      setSetlistSongs(Array.isArray(songs) && songs.length > 0 ? (songs as SetlistSong[]) : MOCK_SETLIST);
+      if (Array.isArray(songs) && songs.length > 0) {
+        setSetlistSongs(songs as SetlistSong[]);
+      } else if (SETLIST_CATEGORIES.has(params.category)) {
+        setSetlistLoading(true);
+        supabase.functions.invoke('setlist-lookup', {
+          body: {
+            ticketId: params.id,
+            artistName: ticketRes.data?.title ?? params.title,
+            dateStr: ticketRes.data?.date_str ?? params.date,
+          },
+        }).then(({ data }) => {
+          if (!active) return;
+          if (Array.isArray(data?.songs) && data.songs.length > 0) {
+            setSetlistSongs(data.songs as SetlistSong[]);
+          }
+          setSetlistLoading(false);
+        });
+      }
 
       setDataLoading(false);
     };
@@ -628,7 +636,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
                   )}
                 </TouchableOpacity>
               ))}
-              {!mediaEditMode && (
+              {!mediaEditMode && isEventPast(displayDate) && (
                 <TouchableOpacity onPress={pickMedia} activeOpacity={0.8}
                   style={{ width: MEDIA_CELL, height: MEDIA_CELL, borderRadius: 8, backgroundColor: BG, borderWidth: 1.5, borderColor: `${FG}18`, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                   {uploading ? <ActivityIndicator size="small" color={MUTED} /> : (
@@ -659,7 +667,13 @@ export default function EventDetailsScreen(): React.JSX.Element {
                   </TouchableOpacity>
                 )}
               </View>
-              {dataLoading ? <ActivityIndicator size="small" color={BRAND_FROM} /> : (
+              {setlistLoading ? (
+                <ActivityIndicator size="small" color={BRAND_FROM} />
+              ) : setlistSongs.length === 0 ? (
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center', paddingVertical: 8 }}>
+                  No setlist available yet
+                </Text>
+              ) : (
                 <View style={{ gap: 14 }}>
                   {visibleSetlist.map((item, index) => (
                     <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>

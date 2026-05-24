@@ -351,12 +351,20 @@ export default function TicketsScreen(): React.JSX.Element {
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your vault</Text>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>My Tickets</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => setAddVisible(true)}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Ionicons name="add" size={22} color="#fff" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => router.push('/scan-ticket')}
+                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="camera-outline" size={20} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setAddVisible(true)}
+                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="add" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={{ flexDirection: 'row', marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 3 }}>
@@ -465,6 +473,30 @@ export default function TicketsScreen(): React.JSX.Element {
             </View>
           </View>
         )}
+
+        {/* ── Scan Photo Card ── */}
+        <TouchableOpacity
+          onPress={() => router.push('/scan-ticket')}
+          activeOpacity={0.85}
+          style={{ backgroundColor: SURFACE, borderRadius: 18, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}
+        >
+          <LinearGradient
+            colors={[`${BRAND_TO}12`, `${BRAND_FROM}08`]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1.5, borderColor: `${BRAND_TO}22`, borderRadius: 18 }}
+          >
+            <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: `${BRAND_TO}18`, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="camera-outline" size={18} color={BRAND_TO} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Scan a Photo</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 1 }}>
+                Import a ticket from a photo or QR code
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* ── Ticket list ── */}
         {ticketsLoading ? (

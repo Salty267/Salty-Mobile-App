@@ -64,7 +64,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Salty needs access to your photos to set a profile picture."
+          "photosPermission": "Salty needs access to your photos to set a profile picture.",
+          "cameraPermission": "Salty uses your camera to scan ticket photos."
         }
       ]
     ],

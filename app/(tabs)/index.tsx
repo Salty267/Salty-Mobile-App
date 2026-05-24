@@ -69,7 +69,7 @@ type FabAction = {
 
 const FAB_ACTIONS: FabAction[] = [
   { icon: 'create-outline', label: 'Add manually', route: '/(tabs)/tickets', color: BRAND_FROM, bg: '#eef0fb' },
-  { icon: 'camera-outline', label: 'Scan photo',   route: '/(tabs)/tickets', color: '#a25cf2',  bg: '#f3eeff' },
+  { icon: 'camera-outline', label: 'Scan photo',   route: '/scan-ticket',    color: '#a25cf2',  bg: '#f3eeff' },
   { icon: 'mail-outline',   label: 'Import Gmail', route: '/(tabs)/tickets', color: '#E8581A',  bg: '#fdebd9' },
 ];
 

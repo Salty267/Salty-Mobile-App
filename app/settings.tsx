@@ -38,6 +38,7 @@ type NotificationPreferences = {
   new_detections:    boolean;
   setlist_available: boolean;
   photos_added:      boolean;
+  artist_alerts:     boolean;
 };
 
 const NOTIF_TOGGLE_ROWS: { key: keyof NotificationPreferences; label: string; sub: string }[] = [
@@ -46,6 +47,7 @@ const NOTIF_TOGGLE_ROWS: { key: keyof NotificationPreferences; label: string; su
   { key: 'new_detections',    label: 'New Detections',   sub: 'When AI finds a ticket in your inbox' },
   { key: 'setlist_available', label: 'Setlists',         sub: 'When a setlist is posted for an event' },
   { key: 'photos_added',      label: 'Photos Added',     sub: 'When photos are uploaded to an event'  },
+  { key: 'artist_alerts',    label: 'Artist Alerts',    sub: 'New shows from artists you follow'      },
 ];
 
 const SUPPORT_ITEMS = [
@@ -93,6 +95,7 @@ export default function SettingsScreen(): React.JSX.Element {
     new_detections:    true,
     setlist_available: true,
     photos_added:      true,
+    artist_alerts:     true,
   });
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -125,6 +128,7 @@ export default function SettingsScreen(): React.JSX.Element {
           new_detections:    data.new_detections    ?? true,
           setlist_available: data.setlist_available ?? true,
           photos_added:      data.photos_added      ?? true,
+          artist_alerts:     data.artist_alerts     ?? true,
         });
       }
     });

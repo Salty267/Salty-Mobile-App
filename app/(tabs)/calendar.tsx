@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, LayoutAnimation, UIManager, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, LayoutAnimation, UIManager, Platform, ActivityIndicator } from 'react-native';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { scale } from '@/lib/layout';
+import { useFocusEffect } from '@react-navigation/native';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -11,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSidebar } from '@/lib/SidebarContext';
+import { supabase } from '@/lib/supabase/client';
+import { parseEventDate } from '@/lib/parseEventDate';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -22,13 +25,14 @@ const BG         = '#eef0fb';
 const DAYS   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-type Event = { id: string; title: string; time: string; category: string; tint: string; day: number };
-
-const EVENTS: Event[] = [
-  { id: '1', title: 'Taylor Swift — Eras Tour', time: '7:30 PM', category: 'Concert',  tint: '#FAC775', day: 15 },
-  { id: '2', title: 'Lakers vs Warriors',        time: '8:00 PM', category: 'Sports',   tint: '#E8581A', day: 10 },
-  { id: '3', title: 'Jazz Festival',             time: '4:00 PM', category: 'Festival', tint: '#A8E6D3', day: 22 },
-];
+type TicketData = {
+  id: string;
+  title: string | null;
+  time_str: string | null;
+  category: string;
+  tint: string | null;
+  date_str: string | null;
+};
 
 function buildCalendar(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -46,10 +50,41 @@ export default function CalendarScreen(): React.JSX.Element {
   const [year,  setYear]  = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState(today.getDate());
+  const [allTickets, setAllTickets] = useState<TicketData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const cells        = buildCalendar(year, month);
-  const eventDays    = new Set(EVENTS.map(e => e.day));
-  const dayEvents    = EVENTS.filter(e => e.day === selectedDay);
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) { setLoading(false); return; }
+      const { data } = await supabase
+        .from('tickets')
+        .select('id, title, time_str, category, tint, date_str')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+      if (cancelled) return;
+      if (data) { LA(); setAllTickets(data); }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []));
+
+  const cells = buildCalendar(year, month);
+
+  const monthTickets = allTickets.filter(t => {
+    const parsed = parseEventDate(t.date_str);
+    return parsed !== null && parsed.getFullYear() === year && parsed.getMonth() === month;
+  });
+  const eventDays = new Set(
+    monthTickets
+      .map(t => parseEventDate(t.date_str)?.getDate())
+      .filter((d): d is number => d !== undefined && d !== null)
+  );
+  const dayEvents = monthTickets.filter(t => {
+    const parsed = parseEventDate(t.date_str);
+    return parsed !== null && parsed.getDate() === selectedDay;
+  });
 
   const prevMonth = () => {
     if (month === 0) { setMonth(11); setYear(y => y - 1); }
@@ -163,7 +198,9 @@ export default function CalendarScreen(): React.JSX.Element {
             {selectedDay} {MONTHS[month]}
           </Text>
 
-          {dayEvents.length === 0 ? (
+          {loading ? (
+            <ActivityIndicator color={BRAND_FROM} style={{ marginTop: 24 }} />
+          ) : dayEvents.length === 0 ? (
             <View style={{ alignItems: 'center', paddingVertical: 32 }}>
               <Ionicons name="calendar-outline" size={40} color={MUTED} />
               <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 12, textAlign: 'center' }}>
@@ -172,24 +209,28 @@ export default function CalendarScreen(): React.JSX.Element {
             </View>
           ) : (
             <View style={{ gap: 12 }}>
-              {dayEvents.map(event => (
+              {dayEvents.map(ticket => (
                 <View
-                  key={event.id}
+                  key={ticket.id}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: SURFACE, borderRadius: 18, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.09, shadowRadius: 12, elevation: 3 }}
                 >
-                  <View style={{ width: scale(46), height: scale(46), borderRadius: 14, backgroundColor: `${event.tint}44`, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: scale(46), height: scale(46), borderRadius: 14, backgroundColor: `${ticket.tint ?? '#b0b8e0'}44`, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="ticket-outline" size={22} color={FG} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
-                      {event.title}
+                      {ticket.title ?? 'Untitled'}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <View style={{ backgroundColor: `${event.tint}55`, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{event.category}</Text>
+                      <View style={{ backgroundColor: `${ticket.tint ?? '#b0b8e0'}55`, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{ticket.category}</Text>
                       </View>
-                      <Ionicons name="time-outline" size={11} color={MUTED} />
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>{event.time}</Text>
+                      {ticket.time_str ? (
+                        <>
+                          <Ionicons name="time-outline" size={11} color={MUTED} />
+                          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>{ticket.time_str}</Text>
+                        </>
+                      ) : null}
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={MUTED} />

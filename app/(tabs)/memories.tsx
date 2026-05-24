@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Image, Dimensions, Modal,
-  Share, ActivityIndicator, Animated, StyleSheet,
+  Share, ActivityIndicator, Animated, StyleSheet, Alert,
   LayoutAnimation, UIManager, Platform,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -77,6 +78,8 @@ export default function MemoriesScreen(): React.JSX.Element {
   const [onThisDay,       setOnThisDay]       = useState<{ ticket: TicketRow; label: string } | null>(null);
   const [monthChips,      setMonthChips]      = useState<string[]>(['All']);
   const [activeChip,      setActiveChip]      = useState('All');
+  const [userId,          setUserId]          = useState<string | null>(null);
+  const [uploadingId,     setUploadingId]     = useState<string | null>(null);
 
   /* ── load ── */
   useEffect(() => {
@@ -84,6 +87,7 @@ export default function MemoriesScreen(): React.JSX.Element {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !active) { setLoading(false); return; }
+      if (active) setUserId(user.id);
 
       const { data: ticketRows } = await supabase
         .from('tickets')
@@ -202,6 +206,49 @@ export default function MemoriesScreen(): React.JSX.Element {
     load();
     return () => { active = false; };
   }, []);
+
+  const handlePhotoUpload = async (ticketId: string) => {
+    if (!userId) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'], allowsMultipleSelection: true, quality: 0.8, base64: true,
+    });
+    if (result.canceled) return;
+    setUploadingId(ticketId);
+    for (const asset of result.assets) {
+      try {
+        if (!asset.base64) continue;
+        const mime = asset.mimeType ?? 'image/jpeg';
+        const contentType = (mime === 'image/heic' || mime === 'image/heif') ? 'image/jpeg' : mime;
+        const ext  = contentType.split('/')[1] ?? 'jpg';
+        const path = `${userId}/${ticketId}/${Date.now()}.${ext}`;
+        const raw   = atob(asset.base64);
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        const { error: upErr } = await supabase.storage
+          .from('ticket-photos').upload(path, bytes, { contentType });
+        if (upErr) throw upErr;
+        const { data: { publicUrl } } = supabase.storage.from('ticket-photos').getPublicUrl(path);
+        await supabase.from('photos').insert({
+          ticket_id: ticketId, user_id: userId, storage_url: publicUrl, match_method: 'manual',
+        });
+        const newPhoto = { url: publicUrl, ticketId };
+        setAllPhotos(prev => [newPhoto, ...prev]);
+        setTotalPhotos(prev => prev + 1);
+        setTimeline(prev => prev.map(group => ({
+          ...group,
+          data: group.data.map(m => m.id === ticketId ? { ...m, photos: m.photos + 1 } : m),
+        })));
+      } catch {
+        Alert.alert('Upload failed', 'Could not upload one or more photos.');
+      }
+    }
+    setUploadingId(null);
+  };
 
   const reelImages = activeReel
     ? (() => {
@@ -421,7 +468,12 @@ export default function MemoriesScreen(): React.JSX.Element {
                     <View style={{ flex: 1, height: 1, backgroundColor: BORDER }} />
                   </View>
                   {group.data.map(memory => (
-                    <MemoryCard key={memory.id} memory={memory} />
+                    <MemoryCard
+                      key={memory.id}
+                      memory={memory}
+                      onPhotoUpload={() => handlePhotoUpload(memory.id)}
+                      uploading={uploadingId === memory.id}
+                    />
                   ))}
                 </View>
               ))
@@ -577,7 +629,11 @@ function ReelViewer({
 }
 
 /* ─── Memory Card ───────────────────────────────────────────────── */
-function MemoryCard({ memory }: { memory: Memory }): React.JSX.Element {
+function MemoryCard({ memory, onPhotoUpload, uploading }: {
+  memory: Memory;
+  onPhotoUpload: () => void;
+  uploading: boolean;
+}): React.JSX.Element {
   const router = useRouter();
 
   const navToDetails = () => {
@@ -653,7 +709,6 @@ function MemoryCard({ memory }: { memory: Memory }): React.JSX.Element {
         {/* Actions */}
         <View style={{ flexDirection: 'row', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: BORDER }}>
           {([
-            { icon: 'camera-outline' as const,        label: 'Photos',  onPress: navToDetails },
             { icon: 'musical-notes-outline' as const, label: 'Setlist', onPress: navToDetails },
             { icon: 'pencil-outline' as const,        label: 'Notes',   onPress: navToDetails },
             { icon: 'share-social-outline' as const,  label: 'Share',   onPress: handleShare  },
@@ -663,6 +718,20 @@ function MemoryCard({ memory }: { memory: Memory }): React.JSX.Element {
               <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: MUTED }}>{label}</Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            onPress={onPhotoUpload}
+            disabled={uploading}
+            activeOpacity={0.7}
+            style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: 6, borderRadius: 10 }}
+          >
+            {uploading
+              ? <ActivityIndicator size="small" color={BRAND_FROM} />
+              : <Ionicons name="camera-outline" size={16} color={MUTED} />
+            }
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: uploading ? BRAND_FROM : MUTED }}>
+              {uploading ? 'Uploading…' : 'Photos'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
