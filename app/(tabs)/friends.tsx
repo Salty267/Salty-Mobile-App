@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, ScrollView, Image,
   Modal, TextInput, ActivityIndicator,
 } from 'react-native';
+import { useFriendActivity, type ActivityItem } from '@/lib/useFriendActivity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { scale } from '@/lib/layout';
@@ -36,6 +37,8 @@ export default function FriendsScreen(): React.JSX.Element {
     loading, error, refresh,
     sendRequest, acceptRequest, declineRequest, withdrawRequest,
   } = useFriends();
+
+  const { items: activityItems, loading: activityLoading } = useFriendActivity(friends);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
@@ -138,19 +141,9 @@ export default function FriendsScreen(): React.JSX.Element {
             </View>
           )}
 
-          {/* ── Activity placeholder ── */}
+          {/* ── Activity Feed ── */}
           {friends.length > 0 && (
-            <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginBottom: 14, letterSpacing: -0.2 }}>
-                Recent Activity
-              </Text>
-              <View style={{ backgroundColor: SURFACE, borderRadius: 16, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2, alignItems: 'center', gap: 8 }}>
-                <Ionicons name="sparkles-outline" size={24} color={MUTED} />
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>
-                  Activity from your friends will appear here.
-                </Text>
-              </View>
-            </View>
+            <ActivityFeed items={activityItems} loading={activityLoading} />
           )}
 
           {/* ── Friends list ── */}
@@ -522,6 +515,85 @@ function SearchResultRow({
           <Ionicons name="person-outline" size={16} color={BRAND_FROM} />
         </TouchableOpacity>
         <ActionButton />
+      </View>
+    </View>
+  );
+}
+
+// ── Activity Feed ─────────────────────────────────────────────────────────────
+
+const timeAgo = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)  return `${d}d ago`;
+  return `${Math.floor(d / 7)}w ago`;
+};
+
+function ActivityFeed({ items, loading }: { items: ActivityItem[]; loading: boolean }): React.JSX.Element {
+  return (
+    <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginBottom: 14, letterSpacing: -0.2 }}>
+        Recent Activity
+      </Text>
+      {loading ? (
+        <ActivityIndicator size="small" color={BRAND_FROM} style={{ marginTop: 8 }} />
+      ) : items.length === 0 ? (
+        <View style={{ backgroundColor: SURFACE, borderRadius: 16, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2, alignItems: 'center', gap: 8 }}>
+          <Ionicons name="sparkles-outline" size={24} color={MUTED} />
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>
+            No recent activity yet.
+          </Text>
+        </View>
+      ) : (
+        <View style={{ gap: 10 }}>
+          {items.map((item, i) => <ActivityCard key={i} item={item} />)}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function ActivityCard({ item }: { item: ActivityItem }): React.JSX.Element {
+  const name   = item.friendName ?? 'Someone';
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const isTicket = item.type === 'ticket';
+  const iconName  = isTicket ? 'ticket-outline' : 'musical-notes-outline';
+  const iconBg    = isTicket ? `${BRAND_FROM}18` : '#1DB95418';
+  const iconColor = isTicket ? BRAND_FROM : '#1DB954';
+
+  const label = isTicket
+    ? name + ' added an event'
+    : name + ' started following';
+  const title = isTicket ? item.title : item.artistName;
+  const sub   = isTicket ? [item.venue, item.date].filter(Boolean).join(' · ') : null;
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
+      <AvatarOrInitials uri={item.friendAvatar} initials={initials} size={44} />
+      <View style={{ flex: 1, gap: 1 }}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }} numberOfLines={1}>
+          {label}
+        </Text>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>
+          {title}
+        </Text>
+        {sub ? (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+            {sub}
+          </Text>
+        ) : null}
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 3 }}>
+          {timeAgo(item.createdAt)}
+        </Text>
+      </View>
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }}>
+        <Ionicons name={iconName as any} size={16} color={iconColor} />
       </View>
     </View>
   );

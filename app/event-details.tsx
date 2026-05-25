@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Image,
   Share, Alert, Modal, TextInput, KeyboardAvoidingView,
@@ -10,7 +10,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import * as Sharing from 'expo-sharing';
+import ViewShot from 'react-native-view-shot';
+import { useSpotifyExport } from '@/lib/useSpotifyExport';
+import { openAppleMusicSearch, openYouTubeMusicSearch } from '@/lib/musicDeepLinks';
 import { SCREEN_W } from '@/lib/layout';
+
+WebBrowser.maybeCompleteAuthSession();
 import { useBottomPad } from '@/lib/useBottomPad';
 import { useSavedEvents } from '@/lib/SavedEventsContext';
 import { supabase } from '@/lib/supabase/client';
@@ -79,6 +86,8 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const { saveEvent, unsaveEvent, isSaved } = useSavedEvents();
   const saved = isSaved(params.id);
   const { isFollowing, followArtist, unfollowArtist } = useFollowedArtists();
+  const { exportToSpotify, status: spotifyStatus, playlistUrl, errorMsg: spotifyError } = useSpotifyExport();
+  const setlistCardRef = useRef<ViewShot>(null);
 
   /* ── auth ── */
   const [currentUserId,      setCurrentUserId]      = useState<string | null>(null);
@@ -111,6 +120,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const [tagModalVisible,    setTagModalVisible]    = useState(false);
   const [editModalVisible,   setEditModalVisible]   = useState(false);
   const [attendeeModalVisible, setAttendeeModalVisible] = useState(false);
+  const [exportModalVisible,   setExportModalVisible]   = useState(false);
   const [editingNoteId,      setEditingNoteId]      = useState<string | null>(null);
 
   /* ── inputs ── */
@@ -126,6 +136,17 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const [mediaEditMode, setMediaEditMode] = useState(false);
 
   /* ────────── load all data ────────── */
+  useEffect(() => {
+    if (spotifyStatus === 'done' && playlistUrl) {
+      Alert.alert('Playlist Created', 'Your setlist has been added to Spotify.', [
+        { text: 'Open in Spotify', onPress: () => Linking.openURL(playlistUrl!) },
+        { text: 'OK', style: 'cancel' },
+      ]);
+    } else if (spotifyStatus === 'error' && spotifyError) {
+      Alert.alert('Export Failed', spotifyError);
+    }
+  }, [spotifyStatus, playlistUrl, spotifyError]);
+
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -280,6 +301,20 @@ export default function EventDetailsScreen(): React.JSX.Element {
       { text: 'Spam',                   onPress: () => submitReport('spam') },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  const handleShareSetlist = async () => {
+    try {
+      const uri = await (setlistCardRef.current as any).capture();
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share Setlist' });
+      } else {
+        await Share.share({ url: uri, title: `${displayTitle} Setlist` });
+      }
+    } catch {
+      Alert.alert('Share Failed', 'Could not generate the setlist image.');
+    }
   };
 
   const handleTopEllipsis = () => {
@@ -659,13 +694,35 @@ export default function EventDetailsScreen(): React.JSX.Element {
             <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Setlist</Text>
-                {setlistSongs.length > SETLIST_PREVIEW && (
-                  <TouchableOpacity onPress={() => setSetlistExpanded(e => !e)}>
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
-                      {setlistExpanded ? 'Show Less' : `View All (${setlistSongs.length} songs)`}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  {setlistSongs.length > 0 && (
+                    <>
+                      <TouchableOpacity
+                        onPress={handleShareSetlist}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                      >
+                        <Ionicons name="share-social-outline" size={14} color={BRAND_FROM} />
+                        <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Share</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setExportModalVisible(true)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                      >
+                        <Ionicons name="musical-notes-outline" size={14} color={BRAND_FROM} />
+                        <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Export</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  {setlistSongs.length > SETLIST_PREVIEW && (
+                    <TouchableOpacity onPress={() => setSetlistExpanded(e => !e)}>
+                      <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
+                        {setlistExpanded ? 'Show Less' : `View All (${setlistSongs.length} songs)`}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
               {setlistLoading ? (
                 <ActivityIndicator size="small" color={BRAND_FROM} />
@@ -740,6 +797,20 @@ export default function EventDetailsScreen(): React.JSX.Element {
         </View>
 
       </ScrollView>
+
+      {/* ── Off-screen setlist card for sharing ── */}
+      <ViewShot
+        ref={setlistCardRef}
+        options={{ format: 'png', quality: 1 }}
+        style={{ position: 'absolute', left: SCREEN_W * 2 }}
+      >
+        <SetlistShareCard
+          title={displayTitle}
+          venue={displayVenue}
+          date={displayDate}
+          songs={setlistSongs}
+        />
+      </ViewShot>
 
       {/* ══ Modals ══ */}
 
@@ -879,11 +950,143 @@ export default function EventDetailsScreen(): React.JSX.Element {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* ── Export to Music App Modal ── */}
+      <Modal
+        visible={exportModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setExportModalVisible(false)}
+      >
+        <Pressable style={{ flex: 1 }} onPress={() => setExportModalVisible(false)} />
+        <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginBottom: 6 }}>Export Setlist</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginBottom: 24 }}>
+            {setlistSongs.length} songs • {displayTitle}
+          </Text>
+
+          {/* Spotify */}
+          <TouchableOpacity
+            onPress={async () => { setExportModalVisible(false); await exportToSpotify(setlistSongs, displayTitle); }}
+            activeOpacity={0.8}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14, backgroundColor: '#1DB95415', borderWidth: 1, borderColor: '#1DB95430', marginBottom: 10 }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#1DB954', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="musical-note" size={18} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Spotify</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Create a playlist with all songs</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+          </TouchableOpacity>
+
+          {/* Apple Music */}
+          <TouchableOpacity
+            onPress={async () => { setExportModalVisible(false); await openAppleMusicSearch(`${displayTitle} setlist`); }}
+            activeOpacity={0.8}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14, backgroundColor: '#fa2d4815', borderWidth: 1, borderColor: '#fa2d4830', marginBottom: 10 }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#fa2d48', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="logo-apple" size={20} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Apple Music</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Search for songs in Apple Music</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+          </TouchableOpacity>
+
+          {/* YouTube Music */}
+          <TouchableOpacity
+            onPress={async () => { setExportModalVisible(false); await openYouTubeMusicSearch(setlistSongs, displayTitle); }}
+            activeOpacity={0.8}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14, backgroundColor: '#FF000015', borderWidth: 1, borderColor: '#FF000030' }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#FF0000', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="logo-youtube" size={20} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>YouTube Music</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Browse songs on YouTube Music</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
     </View>
   );
 }
 
 /* ─────────── sub-components ─────────── */
+
+const CARD_W = 360;
+const MAX_CARD_SONGS = 12;
+
+function SetlistShareCard({ title, venue, date, songs }: {
+  title: string; venue: string; date: string; songs: SetlistSong[];
+}): React.JSX.Element {
+  const visible = songs.slice(0, MAX_CARD_SONGS);
+  const extra   = songs.length - visible.length;
+
+  return (
+    <View style={{ width: CARD_W, backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden' }}>
+      {/* Header gradient */}
+      <LinearGradient
+        colors={['#4f6cf2', '#a25cf2']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={{ paddingHorizontal: 24, paddingTop: 28, paddingBottom: 22 }}
+      >
+        <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)', letterSpacing: 4 }}>
+          SETLIST
+        </Text>
+        <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 32, color: '#fff', letterSpacing: 1, marginTop: 4, lineHeight: 36 }} numberOfLines={2}>
+          {title}
+        </Text>
+        {(venue || date) && (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 6 }} numberOfLines={1}>
+            {[venue, date].filter(Boolean).join(' · ')}
+          </Text>
+        )}
+      </LinearGradient>
+
+      {/* Song list */}
+      <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20, gap: 12 }}>
+        {visible.map((song, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#a25cf2', width: 22, textAlign: 'right' }}>
+              {i + 1}
+            </Text>
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 14, color: '#1a1530', flex: 1 }} numberOfLines={1}>
+              {song.song}
+            </Text>
+            {song.era ? (
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: '#6b6a85' }} numberOfLines={1}>
+                {song.era}
+              </Text>
+            ) : null}
+          </View>
+        ))}
+        {extra > 0 && (
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: '#6b6a85', marginTop: 4, textAlign: 'center' }}>
+            +{extra} more songs
+          </Text>
+        )}
+      </View>
+
+      {/* Footer */}
+      <View style={{ borderTopWidth: 1, borderTopColor: '#f1eefb', paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 18, color: '#4f6cf2', letterSpacing: 3 }}>
+          SALTY
+        </Text>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: '#6b6a85' }}>
+          {songs.length} songs
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 function Divider(): React.JSX.Element {
   return <View style={{ height: 1, backgroundColor: `${FG}10`, marginHorizontal: 20 }} />;
 }

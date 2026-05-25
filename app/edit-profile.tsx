@@ -151,6 +151,33 @@ export default function EditProfileScreen(): React.JSX.Element {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all your data — tickets, photos, friends, and activity. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account', style: 'destructive',
+          onPress: () => Alert.alert(
+            'Last chance',
+            'Are you absolutely sure? Your data will be gone forever.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Yes, delete everything', style: 'destructive', onPress: confirmDeleteAccount },
+            ]
+          ),
+        },
+      ]
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    const { error } = await supabase.functions.invoke('delete-account');
+    if (error) { Alert.alert('Error', 'Failed to delete account. Please try again.'); return; }
+    await supabase.auth.signOut();
+  };
+
   const initials = fullName
     ? fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : email[0]?.toUpperCase() ?? '?';
@@ -337,6 +364,16 @@ export default function EditProfileScreen(): React.JSX.Element {
                   </>
               }
             </LinearGradient>
+          </TouchableOpacity>
+
+          {/* ── Delete Account ── */}
+          <TouchableOpacity
+            onPress={handleDeleteAccount}
+            activeOpacity={0.8}
+            style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 }}
+          >
+            <Ionicons name="trash-outline" size={16} color="#ef4444" />
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 14, color: '#ef4444' }}>Delete Account</Text>
           </TouchableOpacity>
 
         </ScrollView>

@@ -182,6 +182,8 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="(tabs)" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="auth/callback" options={{ animation: 'none', gestureEnabled: false }} />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="help" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="event-details" />
