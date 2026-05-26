@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "ai.saltydigital.app",
+      "bundleIdentifier": "ai.saltydigital.saltybeta",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Salty uses your location to show events happening near you.",
         "ITSAppUsesNonExemptEncryption": false
@@ -29,7 +29,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#080808"
       },
-      "package": "ai.saltydigital.app",
+      "package": "ai.saltydigital.saltybeta",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
