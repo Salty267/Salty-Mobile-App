@@ -227,29 +227,44 @@ async function fetchMessageDetails(
   return { subject, body, from };
 }
 
-function extractBody(payload: {
-  mimeType?: string;
-  body?: { data?: string };
-  parts?: unknown[];
-}): string {
-  if (!payload) return '';
+type EmailPart = { mimeType?: string; body?: { data?: string }; parts?: unknown[] };
+
+function decodeBase64(data: string): string {
+  try { return atob(data.replace(/-/g, '+').replace(/_/g, '/')); } catch { return ''; }
+}
+
+// Collect ALL text content from an email part tree.
+// Returns { plain: string, html: string } so the caller can combine them.
+function collectParts(payload: EmailPart): { plain: string; html: string } {
+  let plain = '';
+  let html  = '';
+  if (!payload) return { plain, html };
 
   if (payload.body?.data) {
-    try {
-      return atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-    } catch {
-      return '';
-    }
+    const decoded = decodeBase64(payload.body.data);
+    if (payload.mimeType === 'text/plain') plain += decoded + '\n';
+    else if (payload.mimeType === 'text/html') html += decoded + '\n';
   }
 
   if (Array.isArray(payload.parts)) {
-    for (const part of payload.parts as typeof payload[]) {
-      const text = extractBody(part);
-      if (text) return text;
+    for (const part of payload.parts as EmailPart[]) {
+      const sub = collectParts(part);
+      plain += sub.plain;
+      html  += sub.html;
     }
   }
 
-  return '';
+  return { plain, html };
+}
+
+function extractBody(payload: EmailPart): string {
+  const { plain, html } = collectParts(payload);
+  const plainClean = plain.trim();
+  const htmlClean  = stripHtml(html).trim();
+  // Always prefer stripped HTML for ticket emails — addresses, times, venues live in HTML structure.
+  // Append plain text only if it adds content not already in HTML.
+  if (htmlClean && plainClean) return htmlClean + '\n' + plainClean;
+  return htmlClean || plainClean;
 }
 
 // ─── Filter ───────────────────────────────────────────────────────────────────
@@ -276,46 +291,65 @@ function passesKeywordFilter(subject: string, body: string, from: string): boole
 
 type TicketFields = Omit<ParsedTicket, 'confidence' | 'tint' | 'image_url'>;
 
-async function parseTicketWithAI(subject: string, body: string): Promise<TicketFields | null> {
-  if (!ANTHROPIC_KEY) return null;
-  const truncated = body.slice(0, 4000);
-  const prompt = `You are a ticket extraction expert. Analyze this email.
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
-QUALIFY as a ticket (is_ticket: true):
-- Live concerts, shows, DJ events, parties with music, nightclub events, Bollywood events
+async function parseTicketWithAI(subject: string, body: string): Promise<TicketFields | null> {
+  if (!ANTHROPIC_KEY) { console.error('[AI] ANTHROPIC_API_KEY is not set — skipping AI'); return null; }
+  console.log('[AI] calling Claude for subject:', subject.slice(0, 80));
+  const truncated = body.slice(0, 6000);
+  const prompt = `You are an expert at extracting event/ticket information from emails.
+
+STEP 1 — Is this a ticket? Set is_ticket=true ONLY for:
+- Live concerts, DJ events, music shows, nightclub/Bollywood/cultural events
 - Sports games (NFL, NBA, MLB, NHL, soccer, etc.)
 - Theater, opera, ballet, musicals
 - Music festivals
-- Flights, hotel stays, Airbnb, car rentals, travel itineraries
-- Restaurant reservations (OpenTable, Resy, etc.)
+- Flights, hotels, Airbnb, car rentals, travel itineraries
+- Restaurant reservations
 
-DISQUALIFY (is_ticket: false):
-- Parking or toll receipts
-- Package/shipping confirmations (UPS, FedEx, Amazon)
-- Account notifications, promos, subscription renewals, billing
-- Refund confirmations
-- Movie theater tickets (Fandango, AMC, Regal)
+Set is_ticket=false for: parking, shipping/packages, account alerts, refunds, movie tickets.
 
-CATEGORY RULES — pick the MOST SPECIFIC match:
-- concert: concerts, DJ sets, live music, nightclub events, dance parties, Bollywood shows, cultural events with performances
-- sports: sports games only (NFL, NBA, MLB, NHL, MLS, tennis, golf tournaments, etc.)
-- theater: Broadway, opera, ballet, plays, musicals
-- festival: multi-day music/arts festivals (Coachella, Lollapalooza, etc.)
-- trip: flights, hotel bookings, travel itineraries, Airbnb, car rentals — ANY travel confirmation
-- dining: restaurant reservations
-- other: everything else that qualifies
+STEP 2 — Category (pick most specific):
+concert | sports | theater | festival | trip | dining | other
 
-EXTRACTION RULES:
-- title: The actual event/show/artist name. Rules:
-  * NEVER start the title with "for", "your", "tickets for", "re:", "fwd:"
-  * NEVER include a person's name (e.g. "Travel Itinerary for John" → extract the destination instead)
-  * For flights/travel: extract the route from the body (e.g. "Chicago → New York"), NOT the subject line
-  * For concerts/events: use the artist or show name (e.g. "Bollywood Affair" not "for Bollywood Affair")
-  * For hotels: use "Hotel: [Hotel Name]" or "[City] Hotel Stay"
-- venue: The venue or location name only. No city+state unless part of the venue name. For flights: departure airport name.
-- date: Format exactly as "Mon DD, YYYY" (e.g., "Aug 15, 2026"). Search the FULL body — it may be buried.
-- time: Format exactly as "H:MM AM/PM" (e.g., "8:00 PM"). 12-hour format only.
-- seat: Section/row/seat number. If no seat: use the order or confirmation number.
+STEP 3 — Extract fields. TITLE is the most critical:
+
+WRONG ✗  "Travel Itinerary for Rahul Boyapati"   ← person's name, uses subject verbatim
+WRONG ✗  "for Bollywood Affair: Pre-Valentines"  ← starts with "for"
+WRONG ✗  "Your Tickets for Radiohead"             ← starts with "your"
+WRONG ✗  "Flight Confirmation"                    ← useless generic phrase
+RIGHT ✓  "Portland → Chicago"                     ← flight: read body for origin+destination cities
+RIGHT ✓  "Bollywood Affair: Pre-Valentines Desi Party"  ← concert: exact event name, no prefix
+RIGHT ✓  "Chicago Marriott Downtown"              ← hotel: hotel name
+RIGHT ✓  "Radiohead"                              ← concert: artist name
+
+Title rules:
+1. NEVER start with: for / your / tickets for / re: / fwd:
+2. NEVER include a person's full name
+3. Flights: IGNORE the subject. Scan the body for departure city and arrival city → "City A → City B"
+4. Concerts/events: strip any "for " or "your tickets for " prefix, use the event/artist name directly
+
+venue: Location of the event. Search the full body — it is always present.
+- Use a named venue if visible (club, arena, theater, hotel name)
+- If no named venue, use the street address or "City, STATE"
+- For flights: departure airport or departure city
+- Never leave this blank if any location info exists anywhere in the email
+date: Use the 3-letter MONTH abbreviation + day + year. Examples: "Feb 07, 2025" or "Nov 28, 2024". NEVER use day-of-week abbreviations (Mon/Tue/Fri). Scan the full body carefully.
+time: "H:MM AM/PM" format (12-hour). Example: "8:00 PM".
+seat: Row/seat or confirmation number.
 
 Subject: ${subject}
 Body: ${truncated}`;
@@ -330,7 +364,7 @@ Body: ${truncated}`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
+        max_tokens: 1024,
         tools: [{
           name: 'extract_ticket',
           description: 'Extract event/ticket info from an email',
@@ -352,13 +386,23 @@ Body: ${truncated}`;
         messages: [{ role: 'user', content: prompt }],
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[AI] Claude error', res.status, errText.slice(0, 200));
+      return null;
+    }
     const json = await res.json();
+    console.log('[AI] Claude response stop_reason:', json.stop_reason, 'content blocks:', json.content?.length);
     const toolUse = json.content?.find((b: { type: string }) => b.type === 'tool_use') as { input: Record<string, string> } | undefined;
-    if (!toolUse) return null;
+    if (!toolUse) { console.error('[AI] No tool_use block found'); return null; }
     const p = toolUse.input;
     if (!p.is_ticket) return null;
-    const orNull = (s: string | undefined) => (s && s.trim() ? s.trim() : null);
+    const orNull = (s: string | undefined) => {
+      if (!s || !s.trim()) return null;
+      const v = s.trim();
+      if (/^<?(unknown|n\/a|none|tbd|not\s+available)>?$/i.test(v)) return null;
+      return v;
+    };
     return {
       title:    orNull(cleanTitle(p.title ?? '')),
       venue:    orNull(p.venue),
@@ -379,6 +423,14 @@ async function parseTicket(subject: string, body: string): Promise<ParsedTicket>
   if (!fields) {
     const r = parseTicketRegex(subject, body);
     fields = { title: r.title, venue: r.venue, date: r.date, time: r.time, seat: r.seat, category: r.category };
+  } else if (!fields.title && fields.category === 'trip') {
+    // AI got category right but returned no usable title — regex is better at extracting flight routes
+    const r = parseTicketRegex(subject, body);
+    // Only use regex title if it's a real route (contains →), not a fallback subject-line title
+    if (r.title && r.title.includes('→')) {
+      fields.title = r.title;
+      if (!fields.venue && r.venue) fields.venue = r.venue;
+    }
   }
 
   const { title, venue, date, time, seat, category } = fields;
@@ -506,15 +558,18 @@ function parseTicketRegex(subject: string, body: string): ParsedTicket {
 }
 
 function cleanTitle(title: string): string {
-  return title
+  const cleaned = title
     .replace(/^(?:fwd?|re|fw):\s*/i, '')
     .replace(/^(?:your\s+)?(?:tickets?\s+)?for\s+/i, '')
     .replace(/^your\s+/i, '')
-    .replace(/\s+for\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*$/g, '') // strip " for John Smith" suffix
+    .replace(/\s+for\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*$/g, '')
     .replace(/\btravel\s+itinerary\b/i, '')
     .replace(/^\|\s*/, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+  // Treat AI placeholder responses as empty
+  if (/^<?(unknown|n\/a|none|tbd|not\s+available)>?$/i.test(cleaned)) return '';
+  return cleaned;
 }
 
 function cleanSubject(subject: string): string {
