@@ -37,11 +37,7 @@ export default function SignupScreen(): React.JSX.Element {
     if (!clean) { setUsernameStatus('idle'); return; }
     if (!usernameIsValid(clean)) { setUsernameStatus('invalid'); return; }
     setUsernameStatus('checking');
-    const { data } = await supabase
-      .from('users')
-      .select('id')
-      .eq('username', clean)
-      .maybeSingle();
+    const { data } = await supabase.rpc('is_username_taken', { p_username: clean });
     setUsernameStatus(data ? 'taken' : 'available');
   }, []);
 

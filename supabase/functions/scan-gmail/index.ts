@@ -78,7 +78,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85';
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const GEMINI_KEY = Deno.env.get('GOOGLE_AI_STUDIO_KEY') ?? '';
+const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const MAX_MESSAGES = 500;
 const CONCURRENCY = 20;
 
@@ -276,62 +276,96 @@ function passesKeywordFilter(subject: string, body: string, from: string): boole
 
 type TicketFields = Omit<ParsedTicket, 'confidence' | 'tint' | 'image_url'>;
 
-async function parseTicketWithAI(subject: string, body: string, apiKey: string): Promise<TicketFields | null> {
+async function parseTicketWithAI(subject: string, body: string): Promise<TicketFields | null> {
+  if (!ANTHROPIC_KEY) return null;
   const truncated = body.slice(0, 4000);
-  const prompt = `Extract event ticket info from this email. Return JSON with:
-- is_ticket: true ONLY for live experiences a person attends — concerts, sports games, theater/shows, music festivals, flights/hotels/travel, or restaurant reservations. Set false for: parking, tolls, package delivery, account emails, refunds, subscriptions, movie theater tickets, or any non-experience confirmation.
-- title: event or show name (empty string if unknown)
-- venue: venue or location name (empty string if unknown)
-- date: date like "Aug 15, 2026" (empty string if unknown)
-- time: time like "8:00 PM" (empty string if unknown)
-- seat: seat, section, or ticket number (empty string if unknown)
-- category: one of concert|sports|theater|festival|trip|dining|other
+  const prompt = `You are a ticket extraction expert. Analyze this email.
+
+QUALIFY as a ticket (is_ticket: true):
+- Live concerts, shows, DJ events, parties with music, nightclub events, Bollywood events
+- Sports games (NFL, NBA, MLB, NHL, soccer, etc.)
+- Theater, opera, ballet, musicals
+- Music festivals
+- Flights, hotel stays, Airbnb, car rentals, travel itineraries
+- Restaurant reservations (OpenTable, Resy, etc.)
+
+DISQUALIFY (is_ticket: false):
+- Parking or toll receipts
+- Package/shipping confirmations (UPS, FedEx, Amazon)
+- Account notifications, promos, subscription renewals, billing
+- Refund confirmations
+- Movie theater tickets (Fandango, AMC, Regal)
+
+CATEGORY RULES — pick the MOST SPECIFIC match:
+- concert: concerts, DJ sets, live music, nightclub events, dance parties, Bollywood shows, cultural events with performances
+- sports: sports games only (NFL, NBA, MLB, NHL, MLS, tennis, golf tournaments, etc.)
+- theater: Broadway, opera, ballet, plays, musicals
+- festival: multi-day music/arts festivals (Coachella, Lollapalooza, etc.)
+- trip: flights, hotel bookings, travel itineraries, Airbnb, car rentals — ANY travel confirmation
+- dining: restaurant reservations
+- other: everything else that qualifies
+
+EXTRACTION RULES:
+- title: The actual event/show/artist name. Rules:
+  * NEVER start the title with "for", "your", "tickets for", "re:", "fwd:"
+  * NEVER include a person's name (e.g. "Travel Itinerary for John" → extract the destination instead)
+  * For flights/travel: extract the route from the body (e.g. "Chicago → New York"), NOT the subject line
+  * For concerts/events: use the artist or show name (e.g. "Bollywood Affair" not "for Bollywood Affair")
+  * For hotels: use "Hotel: [Hotel Name]" or "[City] Hotel Stay"
+- venue: The venue or location name only. No city+state unless part of the venue name. For flights: departure airport name.
+- date: Format exactly as "Mon DD, YYYY" (e.g., "Aug 15, 2026"). Search the FULL body — it may be buried.
+- time: Format exactly as "H:MM AM/PM" (e.g., "8:00 PM"). 12-hour format only.
+- seat: Section/row/seat number. If no seat: use the order or confirmation number.
 
 Subject: ${subject}
 Body: ${truncated}`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                is_ticket: { type: 'BOOLEAN' },
-                title:     { type: 'STRING' },
-                venue:     { type: 'STRING' },
-                date:      { type: 'STRING' },
-                time:      { type: 'STRING' },
-                seat:      { type: 'STRING' },
-                category:  { type: 'STRING', enum: ['concert', 'sports', 'theater', 'festival', 'trip', 'dining', 'other'] },
-              },
-              required: ['is_ticket', 'category'],
-            },
-            temperature: 0,
-          },
-        }),
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
       },
-    );
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        tools: [{
+          name: 'extract_ticket',
+          description: 'Extract event/ticket info from an email',
+          input_schema: {
+            type: 'object',
+            properties: {
+              is_ticket: { type: 'boolean' },
+              title:     { type: 'string' },
+              venue:     { type: 'string' },
+              date:      { type: 'string' },
+              time:      { type: 'string' },
+              seat:      { type: 'string' },
+              category:  { type: 'string', enum: ['concert', 'sports', 'theater', 'festival', 'trip', 'dining', 'other'] },
+            },
+            required: ['is_ticket', 'category'],
+          },
+        }],
+        tool_choice: { type: 'any' },
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
     if (!res.ok) return null;
     const json = await res.json();
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return null;
-    const p = JSON.parse(text);
+    const toolUse = json.content?.find((b: { type: string }) => b.type === 'tool_use') as { input: Record<string, string> } | undefined;
+    if (!toolUse) return null;
+    const p = toolUse.input;
     if (!p.is_ticket) return null;
     const orNull = (s: string | undefined) => (s && s.trim() ? s.trim() : null);
     return {
-      title:    orNull(p.title),
+      title:    orNull(cleanTitle(p.title ?? '')),
       venue:    orNull(p.venue),
       date:     orNull(p.date),
       time:     orNull(p.time),
       seat:     orNull(p.seat),
-      category: p.category ?? 'other',
+      category: (p.category as ParsedTicket['category']) ?? 'other',
     };
   } catch {
     return null;
@@ -341,9 +375,7 @@ Body: ${truncated}`;
 async function parseTicket(subject: string, body: string): Promise<ParsedTicket> {
   let fields: TicketFields | null = null;
 
-  if (GEMINI_KEY) {
-    fields = await parseTicketWithAI(subject, body, GEMINI_KEY);
-  }
+  fields = await parseTicketWithAI(subject, body);
   if (!fields) {
     const r = parseTicketRegex(subject, body);
     fields = { title: r.title, venue: r.venue, date: r.date, time: r.time, seat: r.seat, category: r.category };
@@ -473,6 +505,18 @@ function parseTicketRegex(subject: string, body: string): ParsedTicket {
   };
 }
 
+function cleanTitle(title: string): string {
+  return title
+    .replace(/^(?:fwd?|re|fw):\s*/i, '')
+    .replace(/^(?:your\s+)?(?:tickets?\s+)?for\s+/i, '')
+    .replace(/^your\s+/i, '')
+    .replace(/\s+for\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*$/g, '') // strip " for John Smith" suffix
+    .replace(/\btravel\s+itinerary\b/i, '')
+    .replace(/^\|\s*/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function cleanSubject(subject: string): string {
   return subject
     .replace(/^(?:fwd?|re|fw):\s*/i, '')
@@ -480,6 +524,8 @@ function cleanSubject(subject: string): string {
     .replace(/#\s*\d+/g, '')
     .replace(/(?:confirmation|booking|order|ticket|receipt)\s*(?:number|no\.?)?\s*[\w-]*/gi, '')
     .replace(/^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+/i, '')
+    .replace(/^(?:your\s+)?(?:tickets?\s+)?for\s+/i, '')
+    .replace(/^your\s+/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
@@ -490,10 +536,10 @@ function detectCategory(
   const lower = text.toLowerCase();
   // Festival check before concert — named festivals would otherwise match concert's "music"/"show"
   if (/festival|fest\b|coachella|glastonbury|lollapalooza|bonnaroo|outside lands|burning man|acl fest|governors ball|wristband|lineup/.test(lower)) return 'festival';
-  if (/concert|gig|tour\b|live music|amphitheater|amphitheatre|pavilion|ticketmaster|seatgeek|stubhub|axs\.com|livenation/.test(lower)) return 'concert';
+  if (/flight|airline|itinerary|boarding pass|check-in|check in|airbnb|booking\.com|hotels\.com|hotel confirmation|your stay|expedia|vrbo|enterprise rent|hertz|avis|car rental|travel itinerary/.test(lower)) return 'trip';
+  if (/concert|gig|tour\b|live music|amphitheater|amphitheatre|pavilion|ticketmaster|seatgeek|stubhub|axs\.com|livenation|dj\b|nightclub|bollywood|party\b|affair\b|gala\b|cultural event/.test(lower)) return 'concert';
   if (/sports?|game\b|match\b|nfl|nba|mlb|nhl|mls|soccer|football|basketball|baseball|hockey|tennis|golf|game day|matchday|lakers|celtics|knicks|bulls|warriors|heat|nets|sixers|bucks|nuggets|suns|clippers|mavericks|spurs|rockets|pacers|raptors|yankees|mets|cubs|sox|dodgers/.test(lower)) return 'sports';
   if (/theater|theatre|broadway|off-broadway|opera|ballet|musical\b|telecharge|theatermania|your performance|curtain/.test(lower)) return 'theater';
-  if (/flight|airline|itinerary|boarding pass|check-in|check in|airbnb|booking\.com|hotels\.com|hotel confirmation|your stay|expedia|vrbo|enterprise rent|hertz|avis|car rental/.test(lower)) return 'trip';
   if (/restaurant|opentable|resy\.com|your reservation|dining reservation|your table|party of \d|sevenrooms|tock|chef|cuisine/.test(lower)) return 'dining';
   return 'other';
 }
@@ -644,9 +690,7 @@ Deno.serve(async (req: Request) => {
     // Filter
     if (!passesKeywordFilter(subject, body, from)) { result.skipped++; continue; }
 
-    // Parse (throttle AI calls to stay under Gemini's 15 RPM free-tier limit)
     const parsed = await parseTicket(subject, body);
-    if (GEMINI_KEY) await new Promise(r => setTimeout(r, 200));
 
     // Reject unrecognized category — not a supported experience type
     if (parsed.category === 'other') { result.skipped++; continue; }

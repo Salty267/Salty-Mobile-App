@@ -22,21 +22,25 @@ const CATEGORY_IMAGES: Record<string, string> = {
   other:    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=85',
 };
 
-const GEMINI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 
-const PROMPT = `Analyze this image of a ticket, event pass, booking confirmation, or QR code.
-If you see a QR code, decode its content and use that information to extract ticket details.
-Return is_ticket=true ONLY for real event or experience tickets: concerts, sports games, theater shows, festivals, travel (flights/hotels), and dining reservations.
-Set is_ticket=false for parking, packages, subscription renewals, or non-event items.
-Extract all visible fields:
-- title: the event name, show name, or restaurant name (empty string if not found)
-- venue: the venue, location, or restaurant (empty string if not found)
-- date: formatted as "Aug 15, 2026" — convert any date format you see (empty string if not found)
-- time: formatted as "8:00 PM" (empty string if not found)
-- seat: seat number, section, row, or ticket/confirmation number (empty string if not found)
-- category: one of concert | sports | theater | festival | trip | dining | other
-Use empty string (never null) for any field you cannot determine.`;
+const EXTRACT_TICKET_TOOL = {
+  name: 'extract_ticket',
+  description: 'Extract event/ticket info from a ticket image',
+  input_schema: {
+    type: 'object',
+    properties: {
+      is_ticket: { type: 'boolean' },
+      title:     { type: 'string' },
+      venue:     { type: 'string' },
+      date:      { type: 'string' },
+      time:      { type: 'string' },
+      seat:      { type: 'string' },
+      category:  { type: 'string', enum: ['concert', 'sports', 'theater', 'festival', 'trip', 'dining', 'other'] },
+    },
+    required: ['is_ticket', 'category'],
+  },
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -79,9 +83,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: 'imageBase64 is required' }), { status: 400, headers: HEADERS });
   }
 
-  // ── Gemini Vision ─────────────────────────────────────────────────────────
-  const apiKey = Deno.env.get('GOOGLE_AI_STUDIO_KEY');
-  if (!apiKey) {
+  // ── Claude Haiku Vision ───────────────────────────────────────────────────
+  if (!ANTHROPIC_KEY) {
     return new Response(JSON.stringify({ error: 'AI service not configured' }), { status: 500, headers: HEADERS });
   }
 
@@ -92,50 +95,49 @@ Deno.serve(async (req) => {
   };
 
   try {
-    const geminiRes = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inlineData: { mimeType, data: imageBase64 } },
-            { text: PROMPT },
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        tools: [EXTRACT_TICKET_TOOL],
+        tool_choice: { type: 'any' },
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageBase64 } },
+            { type: 'text', text: `Analyze this ticket image. Extract all visible info using the extract_ticket tool.
+Set is_ticket=true for: concerts, sports, theater, festivals, flights, hotels, restaurant reservations.
+Set is_ticket=false for: parking, packages, subscriptions, movie theater tickets, refunds.
+- title: event/artist name (for flights: "City A → City B")
+- venue: venue name only (for flights: departure airport)
+- date: format as "Mon DD, YYYY" (e.g., "Aug 15, 2026")
+- time: format as "H:MM AM/PM" (e.g., "8:00 PM")
+- seat: section/row/seat or confirmation number` },
           ],
         }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'OBJECT',
-            properties: {
-              is_ticket: { type: 'BOOLEAN' },
-              title:     { type: 'STRING' },
-              venue:     { type: 'STRING' },
-              date:      { type: 'STRING' },
-              time:      { type: 'STRING' },
-              seat:      { type: 'STRING' },
-              category:  {
-                type: 'STRING',
-                enum: ['concert', 'sports', 'theater', 'festival', 'trip', 'dining', 'other'],
-              },
-            },
-            required: ['is_ticket', 'category'],
-          },
-          temperature: 0,
-        },
       }),
     });
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error('Gemini error:', errText);
+    if (!claudeRes.ok) {
+      const errText = await claudeRes.text();
+      console.error('Claude error:', errText);
       return new Response(JSON.stringify({ error: 'Vision service error' }), { status: 500, headers: HEADERS });
     }
 
-    const geminiJson = await geminiRes.json();
-    const raw = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
-    parsed = JSON.parse(raw);
+    const claudeJson = await claudeRes.json();
+    const toolUse = claudeJson.content?.find((b: { type: string }) => b.type === 'tool_use') as { input: Record<string, string> } | undefined;
+    if (!toolUse) {
+      return new Response(JSON.stringify({ error: 'Failed to analyze image' }), { status: 500, headers: HEADERS });
+    }
+    parsed = toolUse.input as typeof parsed;
   } catch (e) {
-    console.error('Gemini parse error:', e);
+    console.error('Claude parse error:', e);
     return new Response(JSON.stringify({ error: 'Failed to analyze image' }), { status: 500, headers: HEADERS });
   }
 
