@@ -58,7 +58,24 @@ const CATEGORY_TINTS: Record<string, string> = {
 };
 const CATEGORIES = Object.keys(CATEGORY_TINTS);
 
+const IMAP_PROVIDERS: Record<string, { host: string; port: number; label: string; hint: string }> = {
+  'outlook.com': { host: 'outlook.office365.com', port: 993, label: 'Outlook',   hint: 'Use your Microsoft account password.' },
+  'hotmail.com': { host: 'outlook.office365.com', port: 993, label: 'Hotmail',   hint: 'Use your Microsoft account password.' },
+  'live.com':    { host: 'outlook.office365.com', port: 993, label: 'Live',      hint: 'Use your Microsoft account password.' },
+  'yahoo.com':   { host: 'imap.mail.yahoo.com',   port: 993, label: 'Yahoo',     hint: 'Generate an app password at myaccount.yahoo.com.' },
+  'ymail.com':   { host: 'imap.mail.yahoo.com',   port: 993, label: 'Yahoo',     hint: 'Generate an app password at myaccount.yahoo.com.' },
+  'icloud.com':  { host: 'imap.mail.me.com',      port: 993, label: 'iCloud',    hint: 'Generate an app-specific password at appleid.apple.com.' },
+  'me.com':      { host: 'imap.mail.me.com',      port: 993, label: 'iCloud',    hint: 'Generate an app-specific password at appleid.apple.com.' },
+  'aol.com':     { host: 'imap.aol.com',          port: 993, label: 'AOL',       hint: 'Generate an app password in your AOL account security settings.' },
+};
+
+function detectImapProvider(email: string) {
+  const domain = email.split('@')[1]?.toLowerCase() ?? '';
+  return IMAP_PROVIDERS[domain] ?? null;
+}
+
 type AddForm = { title: string; venue: string; date: string; time: string; category: string; seat: string };
+type ImapForm = { email: string; password: string };
 
 function formatLastScanned(ts: string | null): string {
   if (!ts) return 'Never scanned';
@@ -85,6 +102,18 @@ export default function TicketsScreen(): React.JSX.Element {
   const [addVisible,     setAddVisible]    = useState(false);
   const [form,           setForm]          = useState<AddForm>({ title: '', venue: '', date: '', time: '', category: 'Concert', seat: '' });
 
+  // IMAP (non-Gmail) connection state
+  const [imapConnected,      setImapConnected]      = useState(false);
+  const [imapEmail,          setImapEmail]          = useState('');
+  const [imapLastSyncedAt,   setImapLastSyncedAt]   = useState<string | null>(null);
+  const [imapConsent,        setImapConsent]        = useState(false);
+  const [imapScanning,       setImapScanning]       = useState(false);
+  const [imapConnecting,     setImapConnecting]     = useState(false);
+  const [showImapModal,      setShowImapModal]      = useState(false);
+  const [showImapConsent,    setShowImapConsent]    = useState(false);
+  const [imapForm,           setImapForm]           = useState<ImapForm>({ email: '', password: '' });
+  const [imapError,          setImapError]          = useState<string | null>(null);
+
   // Load tickets from Supabase
   useEffect(() => {
     let active = true;
@@ -106,7 +135,12 @@ export default function TicketsScreen(): React.JSX.Element {
           .select('email, last_synced_at, gemini_consent')
           .eq('user_id', uid)
           .maybeSingle(),
-      ]).then(([ticketsRes, gmailRes]) => {
+        supabase
+          .from('imap_connections')
+          .select('email, last_synced_at, ai_consent')
+          .eq('user_id', uid)
+          .maybeSingle(),
+      ]).then(([ticketsRes, gmailRes, imapRes]) => {
         if (!active) return;
 
         if (ticketsRes.data) {
@@ -119,6 +153,14 @@ export default function TicketsScreen(): React.JSX.Element {
           setGmailEmail(gmailRes.data.email);
           setLastSyncedAt(gmailRes.data.last_synced_at ?? null);
           setGeminiConsent(gmailRes.data.gemini_consent ?? false);
+        }
+
+        if (imapRes.data) {
+          LA();
+          setImapConnected(true);
+          setImapEmail(imapRes.data.email);
+          setImapLastSyncedAt(imapRes.data.last_synced_at ?? null);
+          setImapConsent(imapRes.data.ai_consent ?? false);
         }
 
         setTicketsLoading(false);
@@ -256,6 +298,94 @@ export default function TicketsScreen(): React.JSX.Element {
     runScan();
   }, [runScan]);
 
+  const handleConnectImap = async () => {
+    const { email, password } = imapForm;
+    if (!email.trim() || !password.trim()) {
+      setImapError('Please enter your email and password.');
+      return;
+    }
+    if (email.toLowerCase().includes('@gmail.com')) {
+      setImapError('Gmail accounts should use the "Connect Gmail" button above.');
+      return;
+    }
+    const provider = detectImapProvider(email);
+    if (!provider) {
+      setImapError('Email provider not recognised. Please contact support.');
+      return;
+    }
+
+    setImapConnecting(true);
+    setImapError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('imap_connections')
+        .upsert(
+          {
+            user_id:      user.id,
+            email:        email.trim(),
+            provider:     provider.label.toLowerCase(),
+            imap_host:    provider.host,
+            imap_port:    provider.port,
+            password:     password,
+            connected_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        );
+
+      if (error) {
+        setImapError('Could not save connection. Please try again.');
+        return;
+      }
+
+      LA();
+      setImapConnected(true);
+      setImapEmail(email.trim());
+      setImapLastSyncedAt(null);
+      setShowImapModal(false);
+      setImapForm({ email: '', password: '' });
+    } finally {
+      setImapConnecting(false);
+    }
+  };
+
+  const runImapScan = useCallback(async () => {
+    setImapScanning(true);
+    try {
+      const { data: scanResult, error } = await supabase.functions.invoke('scan-imap');
+      if (error) {
+        Alert.alert('Scan Error', error.message.includes('IMAP connection failed')
+          ? 'Could not connect to your mail server. Please check your password and try reconnecting.'
+          : 'Scan failed. Please try again.');
+        return;
+      }
+      setImapLastSyncedAt(new Date().toISOString());
+      if ((scanResult?.pending ?? 0) > 0) {
+        router.push('/review-imports');
+      }
+    } finally {
+      setImapScanning(false);
+    }
+  }, [router]);
+
+  const handleScanImap = useCallback(() => {
+    if (imapScanning) return;
+    if (!imapConsent) { setShowImapConsent(true); return; }
+    runImapScan();
+  }, [imapScanning, imapConsent, runImapScan]);
+
+  const handleImapConsentAccept = useCallback(async () => {
+    setShowImapConsent(false);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('imap_connections').update({ ai_consent: true }).eq('user_id', user.id);
+      setImapConsent(true);
+    }
+    runImapScan();
+  }, [runImapScan]);
+
   // Reload tickets + gmail status whenever the tab is focused
   const firstFocus = useRef(true);
   useFocusEffect(useCallback(() => {
@@ -274,7 +404,12 @@ export default function TicketsScreen(): React.JSX.Element {
           .select('email, last_synced_at, gemini_consent')
           .eq('user_id', user.id)
           .maybeSingle(),
-      ]).then(([ticketsRes, gmailRes]) => {
+        supabase
+          .from('imap_connections')
+          .select('email, last_synced_at, ai_consent')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ]).then(([ticketsRes, gmailRes, imapRes]) => {
         if (ticketsRes.data) { LA(); setTickets(ticketsRes.data.map(mapRow)); }
         if (gmailRes.data && !gmailConnected) {
           setGmailConnected(true);
@@ -282,9 +417,15 @@ export default function TicketsScreen(): React.JSX.Element {
           setLastSyncedAt(gmailRes.data.last_synced_at ?? null);
           setGeminiConsent(gmailRes.data.gemini_consent ?? false);
         }
+        if (imapRes.data && !imapConnected) {
+          setImapConnected(true);
+          setImapEmail(imapRes.data.email);
+          setImapLastSyncedAt(imapRes.data.last_synced_at ?? null);
+          setImapConsent(imapRes.data.ai_consent ?? false);
+        }
       });
     });
-  }, [gmailConnected]));
+  }, [gmailConnected, imapConnected]));
 
   const handleAddTicket = async () => {
     if (!form.title.trim()) return;
@@ -474,6 +615,88 @@ export default function TicketsScreen(): React.JSX.Element {
           </View>
         )}
 
+        {/* ── Other Email (IMAP) Card ── */}
+        {!imapConnected ? (
+          <LinearGradient
+            colors={['#f8f7ff', '#eef0fb']}
+            style={{ borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: `${BRAND_FROM}22` }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 }}>
+                <Ionicons name="mail-open-outline" size={18} color={BRAND_FROM} />
+              </View>
+              <View>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Connect Other Email</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 1 }}>
+                  Outlook, Yahoo, iCloud & more
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => { setImapError(null); setShowImapModal(true); }}
+              activeOpacity={0.85}
+              style={{ overflow: 'hidden', borderRadius: 12 }}
+            >
+              <LinearGradient
+                colors={[BRAND_FROM, BRAND_TO]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 11 }}
+              >
+                <Ionicons name="mail-open-outline" size={15} color="#fff" />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>Connect Email Account</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        ) : (
+          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: `${FG}08` }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: scale(34), height: scale(34), borderRadius: 9, backgroundColor: '#f0f4ff', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="mail-open-outline" size={16} color={BRAND_FROM} />
+                </View>
+                <View>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{imapEmail}</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }}>
+                    Last scanned: {formatLastScanned(imapLastSyncedAt)}
+                  </Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Connected</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 }}>
+              <View>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Scan Inbox</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+                  Find new tickets in your inbox
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleScanImap}
+                disabled={imapScanning}
+                activeOpacity={0.85}
+                style={{ overflow: 'hidden', borderRadius: 12 }}
+              >
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10 }}
+                >
+                  {imapScanning
+                    ? <ActivityIndicator color="#fff" size="small" style={{ width: 16, height: 16 }} />
+                    : <Ionicons name="refresh-outline" size={15} color="#fff" />
+                  }
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>
+                    {imapScanning ? 'Scanning…' : 'Scan Now'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* ── Scan Photo Card ── */}
         <TouchableOpacity
           onPress={() => router.push('/scan-ticket')}
@@ -621,7 +844,7 @@ export default function TicketsScreen(): React.JSX.Element {
             </View>
             <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, marginBottom: 10 }}>Before we scan</Text>
             <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, lineHeight: 21, marginBottom: 20 }}>
-              To detect tickets in your emails, Salty sends the subject and content of matching emails to Google AI for parsing. No email data is stored — only the ticket details extracted from it.
+              To detect tickets in your emails, Salty sends the subject and content of matching emails to Claude AI for parsing. No email data is stored — only the ticket details extracted from it.
             </Text>
             <TouchableOpacity onPress={handleConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 14, marginBottom: 10 }}>
               <LinearGradient
@@ -638,13 +861,120 @@ export default function TicketsScreen(): React.JSX.Element {
           </View>
         </View>
       </Modal>
+      {/* ── IMAP Setup Modal ── */}
+      <Modal visible={showImapModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowImapModal(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={{ flex: 1, backgroundColor: BG }}>
+            <LinearGradient
+              colors={[BRAND_FROM, BRAND_TO]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+            >
+              <SafeAreaView edges={['top']}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+                  <TouchableOpacity
+                    onPress={() => setShowImapModal(false)}
+                    style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="close" size={20} color="#fff" />
+                  </TouchableOpacity>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }}>Connect Email</Text>
+                  <View style={{ width: 40 }} />
+                </View>
+              </SafeAreaView>
+            </LinearGradient>
+
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40, gap: 16 }}>
+              {imapError && (
+                <View style={{ backgroundColor: '#FDEBD9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderLeftWidth: 4, borderLeftColor: '#E8581A' }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: '#E8581A' }}>{imapError}</Text>
+                </View>
+              )}
+
+              {(() => {
+                const provider = detectImapProvider(imapForm.email);
+                return provider ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: `${BRAND_FROM}12`, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 }}>
+                    <Ionicons name="checkmark-circle" size={16} color={BRAND_FROM} />
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: FG, flex: 1 }}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold' }}>{provider.label}</Text> detected. {provider.hint}
+                    </Text>
+                  </View>
+                ) : null;
+              })()}
+
+              <FormField
+                label="Email address"
+                value={imapForm.email}
+                onChangeText={t => setImapForm(f => ({ ...f, email: t }))}
+                placeholder="you@outlook.com"
+              />
+              <FormField
+                label="App password"
+                value={imapForm.password}
+                onChangeText={t => setImapForm(f => ({ ...f, password: t }))}
+                placeholder="App-specific password"
+                secureTextEntry
+              />
+
+              <View style={{ backgroundColor: `${FG}08`, borderRadius: 12, padding: 14, gap: 6 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG }}>Supported providers</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, lineHeight: 18 }}>
+                  Outlook · Hotmail · Live · Yahoo Mail · iCloud Mail · AOL{'\n'}
+                  Most providers require an app-specific password when 2FA is enabled.
+                </Text>
+              </View>
+
+              <TouchableOpacity onPress={handleConnectImap} disabled={imapConnecting} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 16, marginTop: 4 }}>
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ height: 52, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {imapConnecting
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>Connect Account</Text>
+                  }
+                </LinearGradient>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── IMAP AI Consent Modal ── */}
+      <Modal visible={showImapConsent} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: 24, padding: 24, width: '100%' }}>
+            <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f3f0ff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Ionicons name="shield-checkmark-outline" size={26} color={BRAND_FROM} />
+            </View>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, marginBottom: 10 }}>Before we scan</Text>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, lineHeight: 21, marginBottom: 20 }}>
+              To detect tickets in your emails, Salty sends the subject and content of matching emails to Claude AI for parsing. No email data is stored — only the ticket details extracted from it.
+            </Text>
+            <TouchableOpacity onPress={handleImapConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 14, marginBottom: 10 }}>
+              <LinearGradient
+                colors={[BRAND_FROM, BRAND_TO]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ height: 50, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>I Understand, Continue</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowImapConsent(false)} style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 // ── Form Field ─────────────────────────────────────────────────────────────────
-function FormField({ label, value, onChangeText, placeholder }: {
-  label: string; value: string; onChangeText: (t: string) => void; placeholder: string;
+function FormField({ label, value, onChangeText, placeholder, secureTextEntry }: {
+  label: string; value: string; onChangeText: (t: string) => void; placeholder: string; secureTextEntry?: boolean;
 }): React.JSX.Element {
   return (
     <View>
@@ -654,6 +984,8 @@ function FormField({ label, value, onChangeText, placeholder }: {
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor="#6b6a85"
+        secureTextEntry={secureTextEntry}
+        autoCapitalize="none"
         style={{
           backgroundColor: '#ffffff', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13,
           fontFamily: 'DMSans_400Regular', fontSize: 14, color: '#1a1530',
