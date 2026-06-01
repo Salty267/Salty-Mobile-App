@@ -36,7 +36,9 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
       ]
     },
     "plugins": [
@@ -76,7 +78,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "0fee49d4-95eb-41b8-a791-736a65cb1f98"
+        "projectId": "30d12c70-71cd-4231-8547-1c7b732d610b"
       }
     }
   }
