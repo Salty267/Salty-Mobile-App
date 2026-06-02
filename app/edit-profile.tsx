@@ -68,6 +68,10 @@ export default function EditProfileScreen(): React.JSX.Element {
   const [saving,           setSaving]           = useState(false);
   const [saved,            setSaved]            = useState(false);
   const [usernameError,    setUsernameError]    = useState('');
+  const [changePwForm,     setChangePwForm]     = useState({ current: '', next: '', confirm: '' });
+  const [changingPw,       setChangingPw]       = useState(false);
+  const [pwSaved,          setPwSaved]          = useState(false);
+  const [pwError,          setPwError]          = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -149,6 +153,35 @@ export default function EditProfileScreen(): React.JSX.Element {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleChangePassword = async () => {
+    const { current, next, confirm } = changePwForm;
+    if (!current || !next || !confirm) { setPwError('Please fill in all fields.'); return; }
+    if (next.length < 8) { setPwError('New password must be at least 8 characters.'); return; }
+    if (next !== confirm) { setPwError('New passwords do not match.'); return; }
+
+    setChangingPw(true);
+    setPwError('');
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: current });
+    if (signInError) {
+      setPwError('Current password is incorrect.');
+      setChangingPw(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: next });
+    if (error) {
+      setPwError('Failed to update password. Please try again.');
+      setChangingPw(false);
+      return;
+    }
+
+    setChangingPw(false);
+    setPwSaved(true);
+    setChangePwForm({ current: '', next: '', confirm: '' });
+    setTimeout(() => setPwSaved(false), 2500);
   };
 
   const handleDeleteAccount = () => {
@@ -365,6 +398,70 @@ export default function EditProfileScreen(): React.JSX.Element {
               }
             </LinearGradient>
           </TouchableOpacity>
+
+          {/* ── Change Password ── */}
+          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3, marginTop: 24 }}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Change Password</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>
+                Must be signed in with email to change your password.
+              </Text>
+            </View>
+
+            {pwError ? (
+              <View style={{ marginHorizontal: 16, marginTop: 10, backgroundColor: '#FDEBD9', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderLeftWidth: 3, borderLeftColor: '#E8581A' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: '#E8581A' }}>{pwError}</Text>
+              </View>
+            ) : null}
+
+            {[
+              { key: 'current' as const, label: 'Current Password',  placeholder: 'Enter current password' },
+              { key: 'next'    as const, label: 'New Password',       placeholder: 'At least 8 characters' },
+              { key: 'confirm' as const, label: 'Confirm New Password', placeholder: 'Re-enter new password' },
+            ].map(({ key, label, placeholder }, i) => (
+              <View key={key}>
+                <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>{label}</Text>
+                  <TextInput
+                    value={changePwForm[key]}
+                    onChangeText={v => setChangePwForm(f => ({ ...f, [key]: v }))}
+                    placeholder={placeholder}
+                    placeholderTextColor={BORDER}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    style={{ fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG }}
+                  />
+                </View>
+                {i < 2 && <View style={{ height: 1, backgroundColor: BORDER, marginLeft: 16 }} />}
+              </View>
+            ))}
+
+            <View style={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 8 }}>
+              <TouchableOpacity
+                onPress={handleChangePassword}
+                disabled={changingPw}
+                activeOpacity={0.85}
+                style={{ overflow: 'hidden', borderRadius: 14, opacity: changingPw ? 0.7 : 1 }}
+              >
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+                >
+                  {changingPw
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <>
+                        <Ionicons name={pwSaved ? 'checkmark-circle' : 'lock-closed-outline'} size={16} color="#fff" />
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>
+                          {pwSaved ? 'Password updated!' : 'Update Password'}
+                        </Text>
+                      </>
+                  }
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* ── Delete Account ── */}
           <TouchableOpacity
