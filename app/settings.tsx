@@ -82,12 +82,12 @@ export default function SettingsScreen(): React.JSX.Element {
   const [autoScanTime,   setAutoScanTime]   = useState('9:00 AM');
   const [connecting,     setConnecting]     = useState(false);
   const [notifPrefs,     setNotifPrefs]     = useState<NotificationPreferences>({
-    event_reminders:   true,
-    friend_activity:   true,
-    new_detections:    true,
-    setlist_available: true,
-    photos_added:      true,
-    artist_alerts:     true,
+    event_reminders:   false,
+    friend_activity:   false,
+    new_detections:    false,
+    setlist_available: false,
+    photos_added:      false,
+    artist_alerts:     false,
   });
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -196,14 +196,18 @@ export default function SettingsScreen(): React.JSX.Element {
         style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
               style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: '#fff', letterSpacing: -0.3 }}>Settings</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Preferences</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Settings</Text>
+            </View>
+            <View style={{ width: 40 }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -213,56 +217,33 @@ export default function SettingsScreen(): React.JSX.Element {
         {/* ── Gmail ── */}
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Gmail</Text>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
-
-            {/* Connection row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: gmailConnected ? 1 : 0, borderBottomColor: '#f1eefb', gap: 14 }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/tickets')}
+            activeOpacity={gmailConnected ? 1 : 0.85}
+            style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 14 }}>
               <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="mail" size={18} color="#E8581A" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>
-                  {gmailConnected ? 'Connected Gmail' : 'Connect Gmail'}
+                  {gmailConnected ? 'Gmail connected' : 'Connect Gmail'}
                 </Text>
                 <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }} numberOfLines={1}>
-                  {gmailConnected ? gmailEmail : 'Import tickets from your inbox'}
+                  {gmailConnected ? gmailEmail : 'Manage in My Tickets'}
                 </Text>
               </View>
               {gmailConnected ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Connected</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Active</Text>
                 </View>
               ) : (
-                <TouchableOpacity onPress={handleConnectGmail} disabled={connecting} style={{ overflow: 'hidden', borderRadius: 10 }} activeOpacity={0.85}>
-                  <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>
-                    {connecting
-                      ? <ActivityIndicator color="#fff" size="small" />
-                      : <><Ionicons name="logo-google" size={13} color="#fff" /><Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>Connect</Text></>
-                    }
-                  </LinearGradient>
-                </TouchableOpacity>
+                <Ionicons name="chevron-forward" size={16} color={MUTED} />
               )}
             </View>
-
-            {/* Auto-scan — only when connected */}
-            {gmailConnected && (
-              <>
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, opacity: 0.6 }}>
-                  <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="time-outline" size={18} color={BRAND_FROM} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Auto-scan</Text>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>Scan inbox automatically every day</Text>
-                  </View>
-                  <View style={{ backgroundColor: `${BRAND_FROM}18`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: BRAND_FROM }}>Coming Soon</Text>
-                  </View>
-                </View>
-              </>
-            )}
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Notifications ── */}
@@ -298,7 +279,7 @@ export default function SettingsScreen(): React.JSX.Element {
           <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             <SettingsRow icon="lock-closed-outline" label="Privacy" onPress={() => router.push('/privacy')} />
             <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 66 }} />
-            <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => Linking.openURL('https://saltydigital.ai/terms')} last />
+            <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => WebBrowser.openBrowserAsync('https://saltydigital.ai/terms')} last />
           </View>
         </View>
 
@@ -306,9 +287,7 @@ export default function SettingsScreen(): React.JSX.Element {
         <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
           <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Support</Text>
           <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
-            <SettingsRow icon="help-circle-outline" label="Help & Support" onPress={() => router.push('/help')} />
-            <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 66 }} />
-            <SettingsRow icon="star-outline" label="Rate the App" onPress={handleRateApp} last />
+            <SettingsRow icon="help-circle-outline" label="Help & Support" onPress={() => router.push('/help')} last />
           </View>
         </View>
 

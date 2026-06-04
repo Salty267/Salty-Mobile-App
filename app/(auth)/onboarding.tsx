@@ -289,22 +289,22 @@ export default function OnboardingScreen(): React.JSX.Element {
         <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
           <TouchableOpacity
             style={{ backgroundColor: DEEP, borderRadius: 18, paddingVertical: 18, alignItems: 'center', justifyContent: 'center' }}
-            onPress={() => router.push('/(auth)/signup')}
+            onPress={() => router.push('/(auth)/signin' as any)}
             activeOpacity={0.85}
           >
             <Text style={{ fontSize: 14, fontFamily: 'DMSans_700Bold', color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-              Create Account
+              Log In
             </Text>
           </TouchableOpacity>
 
           <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: Math.max(12, insets.bottom) }}>
             <Text style={{ fontSize: 12.5, fontFamily: 'DMSans_400Regular', color: `${DEEP}88` }}>
-              Already have an account?{' '}
+              Don't have an account?{' '}
               <Text
                 style={{ fontFamily: 'DMSans_700Bold', color: '#5B2FD4', textDecorationLine: 'underline' }}
-                onPress={() => router.push('/(auth)/signin' as any)}
+                onPress={() => router.push('/(auth)/signup')}
               >
-                Log in
+                Sign up
               </Text>
             </Text>
           </View>

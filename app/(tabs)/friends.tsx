@@ -10,6 +10,7 @@ import { scale } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSidebar } from '@/lib/SidebarContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFriends } from '@/lib/useFriends';
 import type { AcceptedFriend, PendingRequest } from '@/lib/useFriends';
@@ -30,6 +31,7 @@ const BG         = '#eef0fb';
 export default function FriendsScreen(): React.JSX.Element {
   const bottomPad = useBottomPad();
   const router = useRouter();
+  const { openSidebar } = useSidebar();
   const [searchVisible, setSearchVisible] = useState(false);
 
   const {
@@ -77,12 +79,15 @@ export default function FriendsScreen(): React.JSX.Element {
         <SafeAreaView edges={['top']}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
-              onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}
+              onPress={openSidebar}
               style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="chevron-back" size={20} color="#fff" />
+              <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 28, letterSpacing: 6, color: '#fff' }}>FRIENDS</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your crew</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Friends</Text>
+            </View>
             <TouchableOpacity
               onPress={() => setSearchVisible(true)}
               style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}

@@ -67,6 +67,7 @@ export default function EditProfileScreen(): React.JSX.Element {
   const [usernameChangedAt, setUsernameChangedAt] = useState<Date | null>(null);
   const [saving,           setSaving]           = useState(false);
   const [saved,            setSaved]            = useState(false);
+  const [photoSaved,       setPhotoSaved]       = useState(false);
   const [usernameError,    setUsernameError]    = useState('');
   const [changePwForm,     setChangePwForm]     = useState({ current: '', next: '', confirm: '' });
   const [changingPw,       setChangingPw]       = useState(false);
@@ -265,11 +266,11 @@ export default function EditProfileScreen(): React.JSX.Element {
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 24, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+          style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
         >
           <SafeAreaView edges={['top']}>
             {/* Nav row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
               <TouchableOpacity
                 onPress={() => router.back()}
                 style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
@@ -277,26 +278,17 @@ export default function EditProfileScreen(): React.JSX.Element {
                 <Ionicons name="chevron-back" size={22} color="#fff" />
               </TouchableOpacity>
 
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }}>Edit Profile</Text>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your account</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Edit Profile</Text>
+              </View>
 
-              <TouchableOpacity
-                onPress={handleSave}
-                disabled={saving}
-                style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.22)' }}
-                activeOpacity={0.8}
-              >
-                {saving
-                  ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>
-                      {saved ? '✓ Saved' : 'Save'}
-                    </Text>
-                }
-              </TouchableOpacity>
+              <View style={{ width: 40 }} />
             </View>
 
             {/* Avatar */}
             <View style={{ alignItems: 'center' }}>
-              <TouchableOpacity onPress={pickAndUpload} activeOpacity={0.85}>
+              <TouchableOpacity onPress={async () => { await pickAndUpload(); setPhotoSaved(true); setTimeout(() => setPhotoSaved(false), 2000); }} activeOpacity={0.85}>
                 <View style={{ width: scale(88), height: scale(88), borderRadius: scale(44), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)', overflow: 'hidden' }}>
                   {avatarUrl
                     ? <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -312,7 +304,7 @@ export default function EditProfileScreen(): React.JSX.Element {
                 </View>
               </TouchableOpacity>
               <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 10 }}>
-                Tap to change photo
+                {photoSaved ? '✓ Photo updated' : 'Tap to change photo'}
               </Text>
             </View>
           </SafeAreaView>

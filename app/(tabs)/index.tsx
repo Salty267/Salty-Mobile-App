@@ -45,33 +45,7 @@ type UpcomingEvent = {
   image: string;
 };
 
-type QuickAction = {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  route: string;
-  color: string;
-  bg: string;
-};
 
-const QUICK_ACTIONS: QuickAction[] = [
-  { icon: 'mail-outline',     label: 'Scan Gmail', route: '/(tabs)/tickets',  color: '#E8581A',  bg: '#fdebd9' },
-  { icon: 'calendar-outline', label: 'Calendar',   route: '/(tabs)/calendar', color: '#a25cf2',  bg: '#f3eeff' },
-  { icon: 'people-outline',   label: 'Friends',    route: '/(tabs)/friends',  color: '#059669',  bg: '#d1fae5' },
-];
-
-type FabAction = {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  route: string;
-  color: string;
-  bg: string;
-};
-
-const FAB_ACTIONS: FabAction[] = [
-  { icon: 'create-outline', label: 'Add manually', route: '/(tabs)/tickets', color: BRAND_FROM, bg: '#eef0fb' },
-  { icon: 'camera-outline', label: 'Scan photo',   route: '/scan-ticket',    color: '#a25cf2',  bg: '#f3eeff' },
-  { icon: 'mail-outline',   label: 'Import Gmail', route: '/(tabs)/tickets', color: '#E8581A',  bg: '#fdebd9' },
-];
 
 type OnThisDayEvent = {
   id: string;
@@ -88,11 +62,11 @@ export default function HomeScreen(): React.JSX.Element {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
-  const [fabOpen, setFabOpen] = useState(false);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
   const [onThisDay, setOnThisDay] = useState<OnThisDayEvent | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [hasUnread, setHasUnread] = useState(false);
+  const [stats, setStats] = useState({ shows: 0, artists: 0, upcoming: 0 });
 
   // Async data: user identity + tickets
   useEffect(() => {
@@ -125,9 +99,17 @@ export default function HomeScreen(): React.JSX.Element {
       const thisMonth = now.getMonth();
       const thisDay = now.getDate();
 
+      const pastTickets  = data.filter(row => isEventPast(row.date_str));
+      const upcomingRows = data.filter(row => !isEventPast(row.date_str));
+      const uniqueArtists = new Set(
+        pastTickets.filter(t => t.category === 'concert' || t.category === 'festival')
+          .map(t => (t.title ?? '').toLowerCase().trim())
+          .filter(Boolean)
+      ).size;
+      setStats({ shows: pastTickets.length, artists: uniqueArtists, upcoming: upcomingRows.length });
+
       setUpcoming(
-        data
-          .filter(row => !isEventPast(row.date_str))
+        upcomingRows
           .map(row => ({
             id: row.id,
             title: row.title ?? 'Untitled',
@@ -138,7 +120,7 @@ export default function HomeScreen(): React.JSX.Element {
             image: row.image_url ?? DEFAULT_IMG,
             daysAway: Math.max(0, daysUntil(row.date_str) ?? 0),
           }))
-          .sort((a, b) => a.daysAway - b.daysAway),
+          .sort((a, b) => a.daysAway - b.daysAway)
       );
 
       // On this day: past events whose month+day match today, most recent first
@@ -210,14 +192,14 @@ export default function HomeScreen(): React.JSX.Element {
         style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Ionicons name="star" size={16} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: '#fff', letterSpacing: -0.2 }}>Salty</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4 }}>Salty</Text>
             </View>
 
             <TouchableOpacity
@@ -319,8 +301,22 @@ export default function HomeScreen(): React.JSX.Element {
             contentContainerStyle={{ paddingLeft: 20, paddingRight: 8, gap: 14 }}
           >
             {upcoming.length <= 1 ? (
-              <View style={{ paddingHorizontal: 8, justifyContent: 'center' }}>
+              <View style={{ paddingHorizontal: 8, justifyContent: 'center', gap: 10 }}>
                 <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>No upcoming tickets yet.</Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/scan-ticket')}
+                  activeOpacity={0.85}
+                  style={{ overflow: 'hidden', borderRadius: 12, alignSelf: 'flex-start' }}
+                >
+                  <LinearGradient
+                    colors={[BRAND_FROM, BRAND_TO]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}
+                  >
+                    <Ionicons name="camera-outline" size={14} color="#fff" />
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>Scan your first ticket</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               </View>
             ) : upcoming.slice(1).map(event => (
               <UpcomingCard
@@ -343,18 +339,24 @@ export default function HomeScreen(): React.JSX.Element {
           </ScrollView>
         </View>
 
-        {/* ── Quick Actions ── */}
+        {/* ── Stats strip ── */}
         <View style={{ paddingHorizontal: 20, paddingTop: 28 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 14 }}>Quick actions</Text>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {QUICK_ACTIONS.map(action => (
-              <QuickActionBtn
-                key={action.label}
-                action={action}
-                onPress={() => router.push(action.route as any)}
-              />
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/memories')}
+            style={{ backgroundColor: SURFACE, borderRadius: 20, paddingVertical: 20, paddingHorizontal: 8, flexDirection: 'row', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}
+          >
+            {[
+              { value: stats.shows,   label: 'SHOWS'    },
+              { value: stats.artists, label: 'ARTISTS'  },
+              { value: stats.upcoming,label: 'UPCOMING' },
+            ].map((s, i) => (
+              <View key={s.label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: '#eee' }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 30, color: FG, letterSpacing: -1 }}>{s.value}</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: MUTED, letterSpacing: 1.5, marginTop: 3 }}>{s.label}</Text>
+              </View>
             ))}
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── On This Day ── */}
@@ -405,7 +407,7 @@ export default function HomeScreen(): React.JSX.Element {
         )}
 
         {/* ── Detection banner ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+        {pendingCount > 0 && <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
           <LinearGradient
             colors={[BRAND_FROM, BRAND_TO]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
@@ -429,48 +431,25 @@ export default function HomeScreen(): React.JSX.Element {
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </View>
+        </View>}
 
       </ScrollView>
 
-      {/* FAB backdrop */}
-      {fabOpen && (
-        <TouchableOpacity
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(26,21,48,0.45)' }}
-          activeOpacity={1}
-          onPress={() => setFabOpen(false)}
-        />
-      )}
 
-      {/* FAB + Speed Dial */}
-      <View style={{ position: 'absolute', bottom: TAB_BAR_H + bottomInset + 8, right: 20, alignItems: 'flex-end', gap: 12 }}>
-        {fabOpen && FAB_ACTIONS.map(action => (
-          <TouchableOpacity
-            key={action.label}
-            activeOpacity={0.85}
-            onPress={() => { setFabOpen(false); router.push(action.route as any); }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-          >
-            <View style={{ backgroundColor: SURFACE, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 7, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>{action.label}</Text>
-            </View>
-            <View style={{ width: 44, height: 44, borderRadius: 999, backgroundColor: action.bg, alignItems: 'center', justifyContent: 'center', shadowColor: action.color, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 4 }}>
-              <Ionicons name={action.icon} size={20} color={action.color} />
-            </View>
-          </TouchableOpacity>
-        ))}
 
+      {/* Ask AI FAB */}
+      <View style={{ position: 'absolute', bottom: TAB_BAR_H + bottomInset + 8, right: 20 }}>
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ width: 56, height: 56, borderRadius: 999 }}
+          style={{ width: 56, height: 56, borderRadius: 999, shadowColor: BRAND_FROM, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.38, shadowRadius: 14, elevation: 8 }}
         >
           <TouchableOpacity
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
             activeOpacity={0.85}
-            onPress={() => setFabOpen(v => !v)}
+            onPress={() => router.push('/ask')}
           >
-            <Ionicons name={fabOpen ? 'close' : 'add'} size={28} color="#fff" />
+            <Ionicons name="sparkles" size={24} color="#fff" />
           </TouchableOpacity>
         </LinearGradient>
       </View>
@@ -479,21 +458,6 @@ export default function HomeScreen(): React.JSX.Element {
   );
 }
 
-// ── Quick Action Button ────────────────────────────────────────────────────────
-function QuickActionBtn({ action, onPress }: { action: QuickAction; onPress: () => void }): React.JSX.Element {
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={{ flex: 1, alignItems: 'center', gap: 8 }}>
-      <View style={{
-        width: 54, height: 54, borderRadius: 16, backgroundColor: action.bg,
-        alignItems: 'center', justifyContent: 'center',
-        shadowColor: action.color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 8, elevation: 3,
-      }}>
-        <Ionicons name={action.icon} size={22} color={action.color} />
-      </View>
-      <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 11, color: FG, textAlign: 'center' }} numberOfLines={1}>{action.label}</Text>
-    </TouchableOpacity>
-  );
-}
 
 // ── Upcoming Card ──────────────────────────────────────────────────────────────
 function UpcomingCard({ event, onPress }: { event: UpcomingEvent; onPress?: () => void }): React.JSX.Element {

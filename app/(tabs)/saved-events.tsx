@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSidebar } from '@/lib/SidebarContext';
 import { useSavedEvents, type SavedEvent } from '@/lib/SavedEventsContext';
+import { useRouter } from 'expo-router';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -203,6 +204,7 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
 
 // ── Empty State ───────────────────────────────────────────────────────────────
 function EmptyState({ filtered }: { filtered: boolean }): React.JSX.Element {
+  const router = useRouter();
   return (
     <View style={{ alignItems: 'center', paddingTop: 60 }}>
       <Ionicons name="heart-outline" size={52} color={MUTED} />
@@ -214,6 +216,22 @@ function EmptyState({ filtered }: { filtered: boolean }): React.JSX.Element {
           ? 'Try a different filter or save more events.'
           : 'Heart events to save them here for quick access.'}
       </Text>
+      {!filtered && (
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/search')}
+          activeOpacity={0.85}
+          style={{ marginTop: 20, overflow: 'hidden', borderRadius: 14 }}
+        >
+          <LinearGradient
+            colors={[BRAND_FROM, BRAND_TO]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 22, paddingVertical: 12 }}
+          >
+            <Ionicons name="compass-outline" size={15} color="#fff" />
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Discover events</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

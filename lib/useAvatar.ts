@@ -56,7 +56,9 @@ export function useAvatar() {
       if (!user) return;
 
       const asset = result.assets[0];
-      const ext  = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const rawExt = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+      // HEIC/HEIF from iOS — remap to jpeg since the picker re-encodes it
+      const ext  = (rawExt === 'heic' || rawExt === 'heif') ? 'jpg' : rawExt;
       const mime = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
       const path = `${user.id}/avatar.${ext}`;
 
@@ -67,7 +69,7 @@ export function useAvatar() {
 
       const { error: uploadErr } = await supabase.storage
         .from('avatars')
-        .upload(path, bytes.buffer, { upsert: true, contentType: mime });
+        .upload(path, bytes, { upsert: true, contentType: mime });
 
       if (uploadErr) throw uploadErr;
 

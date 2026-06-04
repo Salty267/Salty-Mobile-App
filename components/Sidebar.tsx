@@ -78,32 +78,35 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
 
   useEffect(() => {
     if (visible) {
-      // Show modal first, then slide in
       slideAnim.setValue(-SIDEBAR_W);
       fadeAnim.setValue(0);
       setModalVisible(true);
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0, duration: 320,
-          easing: Easing.out(Easing.bezier(0.25, 0.46, 0.45, 0.94)),
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1, duration: 280,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start();
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            damping: 24,
+            stiffness: 220,
+            mass: 0.9,
+            overshootClamping: true,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 1, duration: 220,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
     } else {
-      // Slide out first, then hide modal
       Animated.parallel([
         Animated.timing(slideAnim, {
-          toValue: -SIDEBAR_W, duration: 260,
-          easing: Easing.in(Easing.bezier(0.55, 0, 0.55, 0.2)),
+          toValue: -SIDEBAR_W, duration: 200,
+          easing: Easing.in(Easing.bezier(0.4, 0, 0.6, 1)),
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
-          toValue: 0, duration: 220,
+          toValue: 0, duration: 180,
           easing: Easing.in(Easing.ease),
           useNativeDriver: true,
         }),
@@ -125,6 +128,7 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
+      hardwareAccelerated
     >
       {/* Dark overlay */}
       <Animated.View style={{ flex: 1, opacity: fadeAnim }}>

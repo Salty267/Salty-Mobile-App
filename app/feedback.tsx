@@ -116,16 +116,18 @@ export default function FeedbackScreen(): React.JSX.Element {
           style={{ paddingBottom: 28, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
         >
           <SafeAreaView edges={['top']}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
               <TouchableOpacity
                 onPress={() => router.back()}
                 style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="chevron-back" size={22} color="#fff" />
               </TouchableOpacity>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3, marginLeft: 14 }}>
-                Send Feedback
-              </Text>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Tell us what you think</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Feedback</Text>
+              </View>
+              <View style={{ width: 40 }} />
             </View>
             <View style={{ paddingHorizontal: 20 }}>
               <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: '#fff', letterSpacing: 0.5 }}>

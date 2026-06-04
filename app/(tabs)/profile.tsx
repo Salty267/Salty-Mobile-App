@@ -351,7 +351,7 @@ export default function ProfileScreen(): React.JSX.Element {
           style={{ paddingBottom: 56, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}
         >
           <SafeAreaView edges={['top']}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
               <TouchableOpacity onPress={openSidebar} style={ICON_BTN}>
                 <Ionicons name="menu" size={20} color="#fff" />
               </TouchableOpacity>
@@ -459,7 +459,7 @@ export default function ProfileScreen(): React.JSX.Element {
                 {yearShows} show{yearShows !== 1 ? 's' : ''} this year
               </Text>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/memories')}>
               <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Recap →</Text>
             </TouchableOpacity>
           </View>

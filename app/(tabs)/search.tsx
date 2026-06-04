@@ -97,6 +97,32 @@ function resolveImage(imageUrl: string | null, category: string): string {
   return CATEGORY_IMAGES[category] ?? DEFAULT_IMAGE;
 }
 
+// ── Zip → city lookup (zippopotam.us) ────────────────────────────────────────
+
+function countryCodeToEmoji(code: string): string {
+  return code.toUpperCase().replace(/./g, c =>
+    String.fromCodePoint(c.charCodeAt(0) + 127397)
+  );
+}
+
+async function fetchCityByZip(zip: string): Promise<CityLocation | null> {
+  try {
+    const res = await fetch(`https://api.zippopotam.us/us/${zip.trim()}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const place = json.places?.[0];
+    if (!place) return null;
+    return {
+      city:        place['place name'],
+      country:     json.country,
+      countryCode: json['country abbreviation'],
+      emoji:       countryCodeToEmoji(json['country abbreviation']),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen(): React.JSX.Element {
@@ -104,13 +130,22 @@ export default function DiscoverScreen(): React.JSX.Element {
   const router    = useRouter();
   const bottomPad = useBottomPad();
   const { zipCode } = useZipLocation();
-  // customCity overrides zip-based local search for the session
-  const [customCity, setCustomCity]       = useState<CityLocation | null>(null);
+  const [customCity,    setCustomCity]    = useState<CityLocation | null>(null);
+  const [accountCity,   setAccountCity]   = useState<CityLocation | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
 
+  // Resolve account zip → city name for display
+  useEffect(() => {
+    if (zipCode && !accountCity) {
+      fetchCityByZip(zipCode).then(city => { if (city) setAccountCity(city); });
+    }
+  }, [zipCode]);
+
   const locationLabel = customCity
-    ? `${customCity.emoji} ${customCity.city}, ${customCity.country}`
-    : zipCode ? `Within 200 mi of ${zipCode}` : 'Set location';
+    ? `${customCity.emoji} ${customCity.city}`
+    : accountCity
+      ? `${accountCity.emoji} ${accountCity.city}`
+      : zipCode ? `📍 ${zipCode}` : 'Set location';
 
   // Search state
   const [query, setQuery]               = useState('');
@@ -311,90 +346,76 @@ export default function DiscoverScreen(): React.JSX.Element {
         style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 }}>
-
-            {/* Title row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="menu" size={20} color="#fff" />
-              </TouchableOpacity>
-              <Text style={{ flex: 1, fontFamily: 'BebasNeue_400Regular', fontSize: 28, letterSpacing: 6, color: '#fff', textAlign: 'center' }}>DISCOVER</Text>
-              <View style={{ width: 40 }} />
-            </View>
-
-            {/* Search bar */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: scale(48), paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.96)' }}>
-              <Ionicons name="search-outline" size={16} color={MUTED} />
-              <TextInput
-                placeholder="Search events, artists, venues…"
-                placeholderTextColor={MUTED}
-                value={query}
-                onChangeText={setQuery}
-                returnKeyType="search"
-                style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG }}
-              />
-              {isSearching && (
-                searching
-                  ? <ActivityIndicator size="small" color={MUTED} />
-                  : <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="close-circle" size={18} color={MUTED} />
-                    </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Location bar */}
-            <TouchableOpacity
-              onPress={() => setPickerVisible(true)}
-              activeOpacity={0.8}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 }}
-            >
-              <Ionicons name="location" size={15} color="#fff" />
-              <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: 13, color: '#fff' }} numberOfLines={1}>
-                {locationLabel}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: '#fff' }}>Change</Text>
-                <Ionicons name="chevron-down" size={11} color="#fff" />
-              </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
-
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Discover</Text>
+            </View>
+            <View style={{ width: 40 }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
       {/* ── Content ── */}
-      {isSearching ? (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: bottomPad, gap: 12 }}
-        >
-          {searching ? (
-            <View style={{ alignItems: 'center', paddingTop: 48 }}>
-              <ActivityIndicator size="large" color={BRAND_FROM} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12 }}>Searching…</Text>
-            </View>
-          ) : searchResults.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingTop: 48 }}>
-              <Ionicons name="search-outline" size={48} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16 }}>No results found</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6, textAlign: 'center' }}>
-                Try a different search term
-              </Text>
-            </View>
-          ) : (
-            <>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-              </Text>
-              {searchResults.map(item => (
-                <SearchResultRow key={item.key} item={item} onPress={() => navigateToEvent(item)} />
-              ))}
-            </>
-          )}
-        </ScrollView>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: bottomPad }}
+      >
+
+        {/* ── Search bar ── */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: scale(48), paddingHorizontal: 16, borderRadius: 16, backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
+            <Ionicons name="search-outline" size={16} color={MUTED} />
+            <TextInput
+              placeholder="Search events, artists, venues…"
+              placeholderTextColor={MUTED}
+              value={query}
+              onChangeText={setQuery}
+              returnKeyType="search"
+              style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG }}
+            />
+            {isSearching && (
+              searching
+                ? <ActivityIndicator size="small" color={MUTED} />
+                : <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="close-circle" size={18} color={MUTED} />
+                  </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* ── Search results (shown when typing) ── */}
+        {isSearching ? (
+          <View style={{ paddingHorizontal: 20, paddingTop: 20, gap: 12 }}>
+            {searching ? (
+              <View style={{ alignItems: 'center', paddingTop: 48 }}>
+                <ActivityIndicator size="large" color={BRAND_FROM} />
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12 }}>Searching…</Text>
+              </View>
+            ) : searchResults.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingTop: 48 }}>
+                <Ionicons name="search-outline" size={48} color={MUTED} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16 }}>No results found</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6, textAlign: 'center' }}>
+                  Try a different search term
+                </Text>
+              </View>
+            ) : (
+              <>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                  {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                </Text>
+                {searchResults.map(item => (
+                  <SearchResultRow key={item.key} item={item} onPress={() => navigateToEvent(item)} />
+                ))}
+              </>
+            )}
+          </View>
+        ) : (
+          <>
 
           {/* ── Category pills ── */}
           <View style={{ paddingTop: 20 }}>
@@ -475,8 +496,19 @@ export default function DiscoverScreen(): React.JSX.Element {
 
           {/* ── Trending Now ── */}
           <View style={{ paddingTop: 28 }}>
-            <View style={{ paddingHorizontal: 20, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 14 }}>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }}>Trending Now</Text>
+              <TouchableOpacity
+                onPress={() => setPickerVisible(true)}
+                activeOpacity={0.8}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: `${BRAND_FROM}12`, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 }}
+              >
+                <Ionicons name="location" size={12} color={BRAND_FROM} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: BRAND_FROM }} numberOfLines={1}>
+                  {customCity ? customCity.city : zipCode ? 'Near You' : 'Set location'}
+                </Text>
+                <Ionicons name="chevron-down" size={11} color={BRAND_FROM} />
+              </TouchableOpacity>
             </View>
 
             {/* Tab toggle */}
@@ -532,8 +564,10 @@ export default function DiscoverScreen(): React.JSX.Element {
             )}
           </View>
 
-        </ScrollView>
-      )}
+          </>
+        )}
+      </ScrollView>
+
       {/* ── Location Picker Modal ── */}
       <LocationPicker
         visible={pickerVisible}
@@ -560,17 +594,46 @@ function LocationPicker({
   onSelect: (city: CityLocation) => void;
   onReset: () => void;
 }): React.JSX.Element {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery,  setSearchQuery]  = useState('');
+  const [accountCity,  setAccountCity]  = useState<CityLocation | null>(null);
+  const [zipResult,    setZipResult]    = useState<CityLocation | null>(null);
+  const [zipLoading,   setZipLoading]   = useState(false);
+  const zipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Resolve account zip → city when picker opens
+  useEffect(() => {
+    if (visible && accountZip && !accountCity) {
+      fetchCityByZip(accountZip).then(city => { if (city) setAccountCity(city); });
+    }
+  }, [visible, accountZip]);
+
+  // Debounced zip lookup while typing
+  useEffect(() => {
+    const isZip = /^\d{5}$/.test(searchQuery.trim());
+    if (!isZip) { setZipResult(null); return; }
+    setZipLoading(true);
+    if (zipTimer.current) clearTimeout(zipTimer.current);
+    zipTimer.current = setTimeout(async () => {
+      const city = await fetchCityByZip(searchQuery.trim());
+      setZipResult(city);
+      setZipLoading(false);
+    }, 400);
+    return () => { if (zipTimer.current) clearTimeout(zipTimer.current); };
+  }, [searchQuery]);
 
   const trimmed = searchQuery.trim().toLowerCase();
-  const filtered = trimmed.length >= 1
-    ? POPULAR_CITIES.filter(c =>
-        c.city.toLowerCase().includes(trimmed) ||
-        c.country.toLowerCase().includes(trimmed)
-      )
-    : POPULAR_CITIES;
+  const isZipQuery = /^\d{3,5}$/.test(searchQuery.trim());
 
-  const handleClose = () => { setSearchQuery(''); onClose(); };
+  const filtered = isZipQuery
+    ? (zipResult ? [zipResult] : [])
+    : trimmed.length >= 1
+      ? POPULAR_CITIES.filter(c =>
+          c.city.toLowerCase().includes(trimmed) ||
+          c.country.toLowerCase().includes(trimmed)
+        )
+      : POPULAR_CITIES;
+
+  const handleClose = () => { setSearchQuery(''); setZipResult(null); onClose(); };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
@@ -593,14 +656,18 @@ function LocationPicker({
 
               {/* Search bar inside header */}
               <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10, height: scale(48), paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.96)' }}>
-                <Ionicons name="search-outline" size={16} color={MUTED} />
+                {zipLoading
+                  ? <ActivityIndicator size="small" color={MUTED} />
+                  : <Ionicons name="search-outline" size={16} color={MUTED} />
+                }
                 <TextInput
-                  placeholder="Search city or country…"
+                  placeholder="City, country, or zip code…"
                   placeholderTextColor={MUTED}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   autoFocus
                   autoCorrect={false}
+                  keyboardType="default"
                   style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG }}
                 />
                 {searchQuery.length > 0 && (
@@ -617,8 +684,8 @@ function LocationPicker({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 16 }}
           >
-            {/* Reset to account zip */}
-            {currentCity && accountZip && (
+            {/* Your location (resolved from account zip) */}
+            {accountZip && (
               <TouchableOpacity
                 onPress={() => { setSearchQuery(''); onReset(); }}
                 activeOpacity={0.8}
@@ -630,13 +697,20 @@ function LocationPicker({
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}
                 >
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="refresh-outline" size={20} color="#fff" />
+                    <Text style={{ fontSize: 20 }}>{accountCity ? accountCity.emoji : '📍'}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Reset to my location</Text>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>Within 200 miles of {accountZip}</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>
+                      {accountCity ? `${accountCity.city}, ${accountCity.country}` : 'My location'}
+                    </Text>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                      Zip code {accountZip} · tap to reset
+                    </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
+                  {currentCity
+                    ? <Ionicons name="refresh-outline" size={18} color="rgba(255,255,255,0.8)" />
+                    : <Ionicons name="checkmark-circle" size={20} color="rgba(255,255,255,0.9)" />
+                  }
                 </LinearGradient>
               </TouchableOpacity>
             )}
@@ -644,14 +718,23 @@ function LocationPicker({
             {/* City list */}
             <View>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>
-                {trimmed.length >= 1 ? 'Search Results' : 'Popular Cities'}
+                {isZipQuery ? 'Zip code result' : trimmed.length >= 1 ? 'Search Results' : 'Popular Cities'}
               </Text>
 
-              {filtered.length === 0 ? (
+              {isZipQuery && zipLoading ? (
+                <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 24, alignItems: 'center', gap: 8 }}>
+                  <ActivityIndicator color={BRAND_FROM} />
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>Looking up zip code…</Text>
+                </View>
+              ) : filtered.length === 0 ? (
                 <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 24, alignItems: 'center', gap: 8 }}>
                   <Ionicons name="location-outline" size={28} color={MUTED} />
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>No cities found</Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Try a different search term</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>
+                    {isZipQuery ? 'Zip code not found' : 'No cities found'}
+                  </Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>
+                    {isZipQuery ? 'Only US zip codes are supported' : 'Try a different search term'}
+                  </Text>
                 </View>
               ) : (
                 <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>

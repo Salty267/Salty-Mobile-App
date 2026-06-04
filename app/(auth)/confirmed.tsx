@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StatusBar, Animated, Easing,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { scaleFont } from '@/lib/layout';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
@@ -19,7 +20,14 @@ const FEATURES = [
     tint:  '#FAC775',
     bg:    '#FEF6E4',
     title: 'Scan your tickets',
-    sub:   'Import from email or your camera roll',
+    sub:   'Import from email, camera roll, or calendar',
+  },
+  {
+    icon:  'scan-outline'    as const,
+    tint:  '#A8E6D3',
+    bg:    '#E2F7F0',
+    title: 'Auto Scan',
+    sub:   'Automatically detect tickets from Gmail',
   },
   {
     icon:  'sparkles-outline' as const,
@@ -51,6 +59,9 @@ export default function ConfirmedScreen(): React.JSX.Element {
   const btnOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Request photo library permission proactively during onboarding
+    ImagePicker.requestMediaLibraryPermissionsAsync();
+
     Animated.sequence([
       Animated.delay(120),
       Animated.parallel([

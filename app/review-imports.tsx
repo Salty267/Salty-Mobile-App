@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
-  ActivityIndicator, LayoutAnimation, UIManager, Platform,
+  ActivityIndicator, LayoutAnimation, UIManager, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -127,6 +127,29 @@ export default function ReviewImportsScreen(): React.JSX.Element {
       const dbCat    = CATEGORY_DB[dispCat] ?? 'other';
       const tint     = CATEGORY_TINTS[dispCat] ?? d.tint ?? '#b0b8e0';
 
+      const hasRealDate  = date.trim() !== '' && date.trim().toLowerCase() !== 'tbd';
+      const hasRealVenue = venue.trim() !== '' && venue.trim().toLowerCase() !== 'tbd';
+
+      if (hasRealDate || hasRealVenue) {
+        let dupQuery = supabase
+          .from('tickets')
+          .select('id')
+          .eq('user_id', user.id)
+          .ilike('title', title || 'Untitled');
+
+        if (hasRealDate) {
+          dupQuery = dupQuery.eq('date_str', date);
+        } else {
+          dupQuery = dupQuery.ilike('venue_name', venue);
+        }
+
+        const { data: existing } = await dupQuery.maybeSingle();
+        if (existing) {
+          Alert.alert('Already saved', 'A ticket with this name and date is already in your vault.');
+          return;
+        }
+      }
+
       const { error } = await supabase.from('tickets').insert({
         user_id:    user.id,
         title:      title || 'Untitled',
@@ -142,7 +165,7 @@ export default function ReviewImportsScreen(): React.JSX.Element {
         status:     'active',
         is_past:    false,
       });
-      if (error) { console.warn('approve error:', error.message); return; }
+      if (error) { Alert.alert('Could not approve', error.message); return; }
 
       await supabase.from('pending_imports').update({ status: 'approved' }).eq('id', item.id);
       LA();

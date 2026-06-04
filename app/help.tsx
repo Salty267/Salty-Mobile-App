@@ -101,14 +101,18 @@ export default function HelpScreen(): React.JSX.Element {
         style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
               style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: '#fff', letterSpacing: -0.3 }}>Help & Support</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>FAQ & support</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Help</Text>
+            </View>
+            <View style={{ width: 40 }} />
           </View>
         </SafeAreaView>
       </LinearGradient>

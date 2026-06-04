@@ -66,6 +66,7 @@ type Memory = {
 /* ─── main screen ───────────────────────────────────────────────── */
 export default function MemoriesScreen(): React.JSX.Element {
   const { openSidebar } = useSidebar();
+  const router = useRouter();
   const bottomPad = useBottomPad();
 
   const [loading,         setLoading]         = useState(true);
@@ -286,11 +287,16 @@ export default function MemoriesScreen(): React.JSX.Element {
             <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Ionicons name="heart" size={16} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: '#fff', letterSpacing: -0.2 }}>Memories</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your history</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Memories</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <TouchableOpacity
+              onPress={() => router.push('/ask')}
+              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="sparkles-outline" size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
 
           {/* On This Day banner */}
@@ -340,6 +346,20 @@ export default function MemoriesScreen(): React.JSX.Element {
           <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, textAlign: 'center', marginTop: 8 }}>
             Your past events will show up here after they happen.
           </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/tickets')}
+            activeOpacity={0.85}
+            style={{ marginTop: 20, overflow: 'hidden', borderRadius: 14 }}
+          >
+            <LinearGradient
+              colors={[BRAND_FROM, BRAND_TO]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 22, paddingVertical: 12 }}
+            >
+              <Ionicons name="ticket-outline" size={15} color="#fff" />
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Import your first ticket</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }}>

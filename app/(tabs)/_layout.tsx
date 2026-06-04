@@ -1,114 +1,149 @@
 import React from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { SidebarProvider } from '@/lib/SidebarContext';
 
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+type TabName = 'search' | 'tickets' | 'index' | 'calendar' | 'profile';
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-function GradientTabBar(): React.JSX.Element {
+const TAB_CONFIG: Record<TabName, { title: string; icon: IconName }> = {
+  search:   { title: 'Discover', icon: 'compass-outline' },
+  tickets:  { title: 'Tickets',  icon: 'ticket-outline' },
+  index:    { title: 'Home',     icon: 'home-outline' },
+  calendar: { title: 'Calendar', icon: 'calendar-outline' },
+  profile:  { title: 'Profile',  icon: 'person-outline' },
+};
+
+const VISIBLE_TABS = new Set(['search', 'tickets', 'index', 'calendar', 'profile']);
+
+function CustomTabBar({ state, navigation }: BottomTabBarProps): React.JSX.Element {
+  const { bottom } = useSafeAreaInsets();
+  const visibleRoutes = state.routes.filter(r => VISIBLE_TABS.has(r.name));
+
   return (
-    <LinearGradient
-      colors={['#4f6cf2', '#a25cf2']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={{ flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
-    />
+    // Shadow wrapper — no overflow:hidden so iOS shadow renders correctly.
+    // backgroundColor matches gradient start so the corner areas don't show white.
+    <View style={[styles.shadow, { paddingBottom: bottom }]}>
+      <LinearGradient
+        colors={['#4f6cf2', '#a25cf2']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.gradient}
+      >
+        {visibleRoutes.map(route => {
+          const cfg = TAB_CONFIG[route.name as TabName];
+          const focused = state.routes[state.index]?.name === route.name;
+          const color = focused ? '#fff' : 'rgba(255,255,255,0.52)';
+
+          return (
+            <Pressable
+              key={route.key}
+              style={styles.item}
+              android_ripple={{ color: 'rgba(255,255,255,0.15)', borderless: false }}
+              onPress={() => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
+                if (!focused && !event.defaultPrevented) {
+                  navigation.navigate(route.name);
+                }
+              }}
+              onLongPress={() =>
+                navigation.emit({ type: 'tabLongPress', target: route.key })
+              }
+            >
+              <View style={styles.iconWrap}>
+                <Ionicons name={cfg.icon} size={22} color={color} />
+              </View>
+              <Text
+                style={[styles.label, { color }]}
+                numberOfLines={1}
+                allowFontScaling={false}
+              >
+                {cfg.title}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </LinearGradient>
+    </View>
   );
+}
+
+const styles = StyleSheet.create({
+  shadow: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 88,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#4f6cf2',   // needed for iOS shadow to render
+    shadowColor: '#4f6cf2',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  gradient: {
+    flex: 1,
+    flexDirection: 'row',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',           // clips gradient to the rounded corners
+  },
+  item: {
+    flex: 1,
+    paddingTop: 10,
+    alignItems: 'center',
+    justifyContent: 'flex-start', // icon Y is always paddingTop from top, never shifts
+  },
+  iconWrap: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 10,
+    lineHeight: 14,
+    height: 14,                   // fixed height — font metric changes can't shift the icon
+    marginTop: 2,
+    includeFontPadding: false,
+  },
+});
+
+// Defined outside TabLayout so the reference is stable and React Navigation
+// never remounts the tab bar.
+function renderTabBar(props: BottomTabBarProps): React.JSX.Element {
+  return <CustomTabBar {...props} />;
 }
 
 export default function TabLayout(): React.JSX.Element {
   return (
     <SidebarProvider>
-    <Tabs
-      initialRouteName="index"
-      screenOptions={{
-        headerShown: false,
-        tabBarBackground: GradientTabBar,
-        tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          height: 88,
-          elevation: 16,
-          shadowColor: '#4f6cf2',
-          shadowOffset: { width: 0, height: -6 },
-          shadowOpacity: 0.35,
-          shadowRadius: 20,
-        },
-        tabBarActiveTintColor: '#ffffff',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.52)',
-        tabBarLabelStyle: {
-          fontFamily: 'DMSans_500Medium',
-          fontSize: 10,
-        },
-        tabBarItemStyle: {
-          paddingTop: 10,
-          paddingBottom: 4,
-        },
-      }}
-    >
-      {/* Left: Discover, Tickets — Center: Home — Right: Friends, Profile */}
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Discover',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={(focused ? 'compass' : 'compass-outline') as IoniconsName} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tickets"
-        options={{
-          title: 'Tickets',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={(focused ? 'ticket' : 'ticket-outline') as IoniconsName} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={(focused ? 'home' : 'home-outline') as IoniconsName} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="friends"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={(focused ? 'calendar' : 'calendar-outline') as IoniconsName} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="memories"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={(focused ? 'person' : 'person-outline') as IoniconsName} size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="saved-events"
-        options={{ href: null }}
-      />
-    </Tabs>
+      <Tabs
+        initialRouteName="index"
+        screenOptions={{ headerShown: false }}
+        tabBar={renderTabBar}
+      >
+        <Tabs.Screen name="search"      options={{ title: 'Discover' }} />
+        <Tabs.Screen name="tickets"     options={{ title: 'Tickets' }} />
+        <Tabs.Screen name="index"       options={{ title: 'Home' }} />
+        <Tabs.Screen name="friends"     options={{ href: null }} />
+        <Tabs.Screen name="calendar"    options={{ title: 'Calendar' }} />
+        <Tabs.Screen name="memories"    options={{ href: null }} />
+        <Tabs.Screen name="profile"     options={{ title: 'Profile' }} />
+        <Tabs.Screen name="saved-events" options={{ href: null }} />
+      </Tabs>
     </SidebarProvider>
   );
 }

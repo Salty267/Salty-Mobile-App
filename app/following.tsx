@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSidebar } from '@/lib/SidebarContext';
 import { useFollowedArtists } from '@/lib/useFollowedArtists';
 import { useBottomPad } from '@/lib/useBottomPad';
 
@@ -19,6 +20,7 @@ const BORDER     = '#e6e4f0';
 
 export default function FollowingScreen(): React.JSX.Element {
   const router = useRouter();
+  const { openSidebar } = useSidebar();
   const bottomPad = useBottomPad();
   const { followed, loading, unfollowArtist } = useFollowedArtists();
 
@@ -38,15 +40,18 @@ export default function FollowingScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16, gap: 12 }}>
-            <TouchableOpacity onPress={() => router.back()} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: '#fff', flex: 1 }}>
-              Following
-            </Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Artists & alerts</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Following</Text>
+            </View>
+            <View style={{ width: 40 }} />
           </View>
         </SafeAreaView>
       </LinearGradient>

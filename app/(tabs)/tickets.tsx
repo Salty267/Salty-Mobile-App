@@ -31,7 +31,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase/client';
 import { useSidebar } from '@/lib/SidebarContext';
 import { useSavedEvents } from '@/lib/SavedEventsContext';
-import { isEventPast } from '@/lib/parseEventDate';
+import { isEventPast, parseEventDate } from '@/lib/parseEventDate';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -473,7 +473,17 @@ export default function TicketsScreen(): React.JSX.Element {
     setAddVisible(false);
   };
 
-  const visible = tickets.filter(t => tab === 'upcoming' ? !t.isPast : t.isPast);
+  const visible = React.useMemo(() => {
+    const filtered = tickets.filter(t => tab === 'upcoming' ? !t.isPast : t.isPast);
+    if (tab === 'past') {
+      return [...filtered].sort((a, b) => {
+        const da = parseEventDate(a.date)?.getTime() ?? 0;
+        const db = parseEventDate(b.date)?.getTime() ?? 0;
+        return db - da; // most recent event date first
+      });
+    }
+    return filtered;
+  }, [tickets, tab]);
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
@@ -484,21 +494,14 @@ export default function TicketsScreen(): React.JSX.Element {
         style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your vault</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>My Tickets</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>My Tickets</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                onPress={() => router.push('/scan-ticket')}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Ionicons name="camera-outline" size={20} color="#fff" />
-              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setAddVisible(true)}
                 style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
@@ -508,20 +511,6 @@ export default function TicketsScreen(): React.JSX.Element {
             </View>
           </View>
 
-          <View style={{ flexDirection: 'row', marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 3 }}>
-            {(['upcoming', 'past'] as const).map(t => (
-              <TouchableOpacity
-                key={t}
-                onPress={() => { LA(); setTab(t); }}
-                style={{ flex: 1, paddingVertical: 7, borderRadius: 10, alignItems: 'center', backgroundColor: tab === t ? '#fff' : 'transparent' }}
-                activeOpacity={0.8}
-              >
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: tab === t ? BRAND_FROM : 'rgba(255,255,255,0.8)', textTransform: 'capitalize' }}>
-                  {t}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </SafeAreaView>
       </LinearGradient>
 
@@ -721,9 +710,28 @@ export default function TicketsScreen(): React.JSX.Element {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* ── Upcoming / Past tab ── */}
+        <View style={{ flexDirection: 'row', backgroundColor: `${BRAND_FROM}12`, borderRadius: 12, padding: 3 }}>
+          {(['upcoming', 'past'] as const).map(t => (
+            <TouchableOpacity
+              key={t}
+              onPress={() => { LA(); setTab(t); }}
+              style={{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center', backgroundColor: tab === t ? '#fff' : 'transparent', shadowColor: tab === t ? '#503cb4' : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: tab === t ? 2 : 0 }}
+              activeOpacity={0.8}
+            >
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: tab === t ? BRAND_FROM : MUTED, textTransform: 'capitalize' }}>
+                {t}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* ── Ticket list ── */}
         {ticketsLoading ? (
-          <ActivityIndicator color={BRAND_FROM} style={{ marginTop: 40 }} />
+          <View style={{ alignItems: 'center', marginTop: 40 }}>
+            <ActivityIndicator color={BRAND_FROM} />
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 10 }}>Loading your tickets…</Text>
+          </View>
         ) : (
           <>
             {visible.map(ticket => (
