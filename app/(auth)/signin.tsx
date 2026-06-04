@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
-import { scaleFont } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -70,27 +70,27 @@ export default function SignInScreen(): React.JSX.Element {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: sp(20), paddingBottom: sp(40) }}
         >
           <View style={{ flex: 1, justifyContent: 'center' }}>
 
-            <View style={{ alignItems: 'center', marginBottom: 40 }}>
-              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(40), letterSpacing: 12, color: DEEP, marginBottom: 4 }}>
+            <View style={{ alignItems: 'center', marginBottom: sp(40) }}>
+              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(40), letterSpacing: 12, color: DEEP, marginBottom: sp(4) }}>
                 SALTY
               </Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, fontStyle: 'italic' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, fontStyle: 'italic' }}>
                 Shazam for Your Life.
               </Text>
             </View>
 
             {error && (
-              <View style={{ backgroundColor: '#FDEBD9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: EMBER }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: EMBER }}>{error}</Text>
+              <View style={{ backgroundColor: '#FDEBD9', borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(10), marginBottom: sp(20), borderLeftWidth: 4, borderLeftColor: EMBER }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: EMBER }}>{error}</Text>
               </View>
             )}
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}
+              style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: scale(14), paddingHorizontal: sp(16), paddingVertical: sp(14), marginBottom: sp(14) }}
               placeholder="Email"
               placeholderTextColor={MUTED}
               value={email}
@@ -100,7 +100,7 @@ export default function SignInScreen(): React.JSX.Element {
             />
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 28 }}
+              style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: scale(14), paddingHorizontal: sp(16), paddingVertical: sp(14), marginBottom: sp(28) }}
               placeholder="Password"
               placeholderTextColor={MUTED}
               value={password}
@@ -109,35 +109,35 @@ export default function SignInScreen(): React.JSX.Element {
             />
 
             <TouchableOpacity
-              style={{ backgroundColor: DEEP, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 14, opacity: loading ? 0.6 : 1 }}
+              style={{ backgroundColor: DEEP, borderRadius: scale(14), paddingVertical: sp(16), alignItems: 'center', justifyContent: 'center', marginBottom: sp(14), opacity: loading ? 0.6 : 1 }}
               onPress={handleSignIn}
               disabled={loading}
               activeOpacity={0.85}
             >
               {loading
                 ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>Sign In</Text>
+                : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>Sign In</Text>
               }
             </TouchableOpacity>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: sp(14) }}>
               <View style={{ flex: 1, height: 1, backgroundColor: BORDER }} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginHorizontal: 10 }}>or</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginHorizontal: sp(10) }}>or</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: BORDER }} />
             </View>
 
             <TouchableOpacity
-              style={{ backgroundColor: '#fff', borderRadius: 14, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 24, borderWidth: 1.5, borderColor: BORDER, opacity: loading ? 0.6 : 1, flexDirection: 'row', gap: 10 }}
+              style={{ backgroundColor: '#fff', borderRadius: scale(14), paddingVertical: sp(14), alignItems: 'center', justifyContent: 'center', marginBottom: sp(24), borderWidth: 1.5, borderColor: BORDER, opacity: loading ? 0.6 : 1, flexDirection: 'row', gap: sp(10) }}
               onPress={handleGoogleSignIn}
               disabled={loading}
               activeOpacity={0.85}
             >
-              <Text style={{ fontSize: 16 }}>G</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: DEEP }}>Continue with Google</Text>
+              <Text style={{ fontSize: scaleFont(16) }}>G</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: DEEP }}>Continue with Google</Text>
             </TouchableOpacity>
 
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: `${DEEP}88` }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: `${DEEP}88` }}>
                 Don't have an account?{' '}
                 <Text
                   style={{ fontFamily: 'DMSans_700Bold', color: '#5B2FD4', textDecorationLine: 'underline' }}

@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { useSidebar } from '@/lib/SidebarContext';
 import { supabase } from '@/lib/supabase/client';
 import { parseEventDate, isEventPast } from '@/lib/parseEventDate';
@@ -280,20 +280,20 @@ export default function MemoriesScreen(): React.JSX.Element {
       {/* ── Gradient Header ── */}
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingBottom: 20 }}
+        style={{ borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32), paddingBottom: sp(20) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: sp(16) }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your history</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Memories</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Your history</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Memories</Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push('/ask')}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="sparkles-outline" size={20} color="#fff" />
             </TouchableOpacity>
@@ -301,32 +301,32 @@ export default function MemoriesScreen(): React.JSX.Element {
 
           {/* On This Day banner */}
           {onThisDay ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, padding: 14, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.16)' }}>
-              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), marginHorizontal: sp(20), padding: sp(14), borderRadius: scale(18), backgroundColor: 'rgba(255,255,255,0.16)' }}>
+              <View style={{ width: scale(44), height: scale(44), borderRadius: scale(14), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Ionicons name="sparkles" size={20} color="#fff" />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: 'rgba(255,255,255,0.85)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: 'rgba(255,255,255,0.85)', letterSpacing: 1, textTransform: 'uppercase' }}>
                   On this day · {onThisDay.label}
                 </Text>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff', marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff', marginTop: 2 }} numberOfLines={1}>
                   {onThisDay.ticket.title}
                 </Text>
               </View>
-              <TouchableOpacity style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.95)' }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: FG }}>View</Text>
+              <TouchableOpacity style={{ paddingHorizontal: sp(12), paddingVertical: sp(6), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.95)' }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: FG }}>View</Text>
               </TouchableOpacity>
             </View>
           ) : hasPastEvents ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, padding: 14, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.16)' }}>
-              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), marginHorizontal: sp(20), padding: sp(14), borderRadius: scale(18), backgroundColor: 'rgba(255,255,255,0.16)' }}>
+              <View style={{ width: scale(44), height: scale(44), borderRadius: scale(14), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Ionicons name="heart" size={20} color="#fff" />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: 'rgba(255,255,255,0.85)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: 'rgba(255,255,255,0.85)', letterSpacing: 1, textTransform: 'uppercase' }}>
                   Latest memory
                 </Text>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff', marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff', marginTop: 2 }} numberOfLines={1}>
                   {timeline[0]?.data[0]?.title}
                 </Text>
               </View>
@@ -340,24 +340,24 @@ export default function MemoriesScreen(): React.JSX.Element {
           <ActivityIndicator size="large" color={BRAND_FROM} />
         </View>
       ) : !hasPastEvents ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 }}>
-          <Ionicons name="heart-outline" size={48} color={MUTED} style={{ marginBottom: 16 }} />
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, textAlign: 'center' }}>No memories yet</Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, textAlign: 'center', marginTop: 8 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(40) }}>
+          <Ionicons name="heart-outline" size={48} color={MUTED} style={{ marginBottom: sp(16) }} />
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: FG, textAlign: 'center' }}>No memories yet</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, textAlign: 'center', marginTop: sp(8) }}>
             Your past events will show up here after they happen.
           </Text>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/tickets')}
             activeOpacity={0.85}
-            style={{ marginTop: 20, overflow: 'hidden', borderRadius: 14 }}
+            style={{ marginTop: sp(20), overflow: 'hidden', borderRadius: scale(14) }}
           >
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 22, paddingVertical: 12 }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), paddingHorizontal: sp(22), paddingVertical: sp(12) }}
             >
               <Ionicons name="ticket-outline" size={15} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Import your first ticket</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Import your first ticket</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -366,9 +366,9 @@ export default function MemoriesScreen(): React.JSX.Element {
 
           {/* ── Recap Reels ── */}
           {reelTickets.length > 0 && (
-            <View style={{ marginTop: 24 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2, marginBottom: 14, paddingHorizontal: 20 }}>Recap reels</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}>
+            <View style={{ marginTop: sp(24) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2, marginBottom: sp(14), paddingHorizontal: sp(20) }}>Recap reels</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: sp(20), gap: sp(14) }}>
                 {reelTickets.map((t, i) => {
                   const d = parseEventDate(t.date_str);
                   const sub = d ? `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}` : t.date_str;
@@ -390,11 +390,11 @@ export default function MemoriesScreen(): React.JSX.Element {
 
           {/* ── Featured Moments ── */}
           {mosaicImages.length > 0 && (
-            <View style={{ marginTop: 28, paddingHorizontal: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }}>Featured moments</Text>
+            <View style={{ marginTop: sp(28), paddingHorizontal: sp(20) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(14) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2 }}>Featured moments</Text>
                 <TouchableOpacity>
-                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
+                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>
                     {totalPhotos > 0 ? `${totalPhotos} photo${totalPhotos !== 1 ? 's' : ''}` : 'All events'}
                   </Text>
                 </TouchableOpacity>
@@ -402,16 +402,16 @@ export default function MemoriesScreen(): React.JSX.Element {
 
               <View style={{ flexDirection: 'row', height: MOSAIC_H, gap: 8 }}>
                 {/* Left: tall tile */}
-                <View style={{ flex: 1, borderRadius: 18, overflow: 'hidden' }}>
+                <View style={{ flex: 1, borderRadius: scale(18), overflow: 'hidden' }}>
                   {mosaicImages[0] && <Image source={{ uri: mosaicImages[0] }} style={absoluteFill} resizeMode="cover" />}
                   <LinearGradient colors={['transparent', 'rgba(0,0,0,0.65)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90 }} />
                   {mosaicTickets[0] && (
                     <View style={{ position: 'absolute', bottom: 10, left: 10, right: 10 }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: '#fff' }} numberOfLines={1}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: '#fff' }} numberOfLines={1}>
                         {mosaicTickets[0].title}
                       </Text>
                       {totalPhotos > 0 && (
-                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
                           {(allPhotos.filter(p => p.ticketId === mosaicTickets[0]?.id).length)} photos
                         </Text>
                       )}
@@ -422,22 +422,22 @@ export default function MemoriesScreen(): React.JSX.Element {
                 {/* Right: 2 rows */}
                 <View style={{ flex: 2, gap: 8 }}>
                   <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
-                    <View style={{ flex: 1, borderRadius: 18, overflow: 'hidden', backgroundColor: BG }}>
+                    <View style={{ flex: 1, borderRadius: scale(18), overflow: 'hidden', backgroundColor: BG }}>
                       {mosaicImages[1] && <Image source={{ uri: mosaicImages[1] }} style={absoluteFill} resizeMode="cover" />}
                     </View>
-                    <View style={{ flex: 1, borderRadius: 18, overflow: 'hidden', backgroundColor: BG }}>
+                    <View style={{ flex: 1, borderRadius: scale(18), overflow: 'hidden', backgroundColor: BG }}>
                       {mosaicImages[2] && <Image source={{ uri: mosaicImages[2] }} style={absoluteFill} resizeMode="cover" />}
                     </View>
                   </View>
                   {/* Bottom: count tile */}
-                  <View style={{ flex: 1, borderRadius: 18, overflow: 'hidden', backgroundColor: BG }}>
+                  <View style={{ flex: 1, borderRadius: scale(18), overflow: 'hidden', backgroundColor: BG }}>
                     {mosaicImages[3] && <Image source={{ uri: mosaicImages[3] }} style={absoluteFill} resizeMode="cover" />}
                     <View style={{ ...absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' }} />
                     <View style={{ ...absoluteFill, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', lineHeight: 24 }}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', lineHeight: 24 }}>
                         {totalPhotos > 0 ? `+${totalPhotos}` : `${timeline.reduce((s, g) => s + g.data.length, 0)}`}
                       </Text>
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.9)', marginTop: 3 }}>
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.9)', marginTop: 3 }}>
                         {totalPhotos > 0 ? 'photos' : 'events'}
                       </Text>
                     </View>
@@ -448,12 +448,12 @@ export default function MemoriesScreen(): React.JSX.Element {
           )}
 
           {/* ── Memory Timeline ── */}
-          <View style={{ marginTop: 28, paddingHorizontal: 20 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2, marginBottom: 14 }}>Memory timeline</Text>
+          <View style={{ marginTop: sp(28), paddingHorizontal: sp(20) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2, marginBottom: sp(14) }}>Memory timeline</Text>
 
             {/* Filter chips */}
             {monthChips.length > 1 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 2 }} style={{ marginBottom: 20 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: sp(8), paddingBottom: 2 }} style={{ marginBottom: sp(20) }}>
                 {monthChips.map(chip => (
                   <TouchableOpacity
                     key={chip}
@@ -462,12 +462,12 @@ export default function MemoriesScreen(): React.JSX.Element {
                     style={{ overflow: 'hidden', borderRadius: 999 }}
                   >
                     {chip === activeChip ? (
-                      <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 36, paddingHorizontal: 18, justifyContent: 'center' }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>{chip}</Text>
+                      <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: scale(36), paddingHorizontal: sp(18), justifyContent: 'center' }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#fff' }}>{chip}</Text>
                       </LinearGradient>
                     ) : (
-                      <View style={{ height: 36, paddingHorizontal: 18, justifyContent: 'center', backgroundColor: SURFACE, borderRadius: 999, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG }}>{chip}</Text>
+                      <View style={{ height: scale(36), paddingHorizontal: sp(18), justifyContent: 'center', backgroundColor: SURFACE, borderRadius: 999, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: FG }}>{chip}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -476,15 +476,15 @@ export default function MemoriesScreen(): React.JSX.Element {
             )}
 
             {filteredTimeline.length === 0 ? (
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, textAlign: 'center', paddingVertical: 24 }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, textAlign: 'center', paddingVertical: sp(24) }}>
                 No events in {activeChip}.
               </Text>
             ) : (
               filteredTimeline.map((group, gi) => (
                 <View key={group.month}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginTop: gi > 0 ? 24 : 0 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10), marginBottom: sp(14), marginTop: gi > 0 ? sp(24) : 0 }}>
                     <Ionicons name="calendar-outline" size={13} color={MUTED} />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 1 }}>{group.month}</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 1 }}>{group.month}</Text>
                     <View style={{ flex: 1, height: 1, backgroundColor: BORDER }} />
                   </View>
                   {group.data.map(memory => (
@@ -518,7 +518,7 @@ function ReelItem({ label, sub, image, isYou, onPress }: { label: string; sub: s
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ alignItems: 'center', gap: 6, width: scale(64) }}>
       <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: scale(68), height: scale(68), borderRadius: scale(34), padding: 2.5 }}>
-        <View style={{ flex: 1, borderRadius: 31, overflow: 'hidden', borderWidth: 2, borderColor: SURFACE }}>
+        <View style={{ flex: 1, borderRadius: scale(31), overflow: 'hidden', borderWidth: 2, borderColor: SURFACE }}>
           <Image source={{ uri: image }} style={{ flex: 1 }} resizeMode="cover" />
           <View style={{ ...{ position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 }, backgroundColor: 'rgba(0,0,0,0.22)' }} />
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
@@ -528,11 +528,11 @@ function ReelItem({ label, sub, image, isYou, onPress }: { label: string; sub: s
       </LinearGradient>
       {isYou && (
         <View style={{ position: 'absolute', top: scale(46), right: 0, width: scale(20), height: scale(20), borderRadius: scale(10), backgroundColor: BRAND_FROM, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: BG }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff', lineHeight: 14 }}>+</Text>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#fff', lineHeight: 14 }}>+</Text>
         </View>
       )}
-      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: FG, textAlign: 'center' }} numberOfLines={1}>{label}</Text>
-      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: MUTED, textAlign: 'center', marginTop: -4 }}>{sub}</Text>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: FG, textAlign: 'center' }} numberOfLines={1}>{label}</Text>
+      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: MUTED, textAlign: 'center', marginTop: -4 }}>{sub}</Text>
     </TouchableOpacity>
   );
 }
@@ -593,7 +593,7 @@ function ReelViewer({
         {/* Header */}
         <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
           {/* Progress bars */}
-          <View style={{ flexDirection: 'row', gap: 3, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 3, paddingHorizontal: sp(12), paddingTop: sp(10), paddingBottom: sp(10) }}>
             {images.map((_, i) => (
               <View key={i} style={{ flex: 1, height: 2.5, backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 2, overflow: 'hidden' }}>
                 {i < index && <View style={{ flex: 1, backgroundColor: '#fff' }} />}
@@ -608,17 +608,17 @@ function ReelViewer({
           </View>
 
           {/* Ticket info + close */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 8 }}>
-            <Image source={{ uri: ticket.image_url }} style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: 'rgba(255,255,255,0.75)' }} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={{ color: '#fff', fontFamily: 'DMSans_700Bold', fontSize: 14, letterSpacing: -0.2 }} numberOfLines={1}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(14), paddingBottom: sp(8) }}>
+            <Image source={{ uri: ticket.image_url }} style={{ width: scale(38), height: scale(38), borderRadius: scale(19), borderWidth: 2, borderColor: 'rgba(255,255,255,0.75)' }} />
+            <View style={{ flex: 1, marginLeft: sp(10) }}>
+              <Text style={{ color: '#fff', fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), letterSpacing: -0.2 }} numberOfLines={1}>
                 {ticket.title}
               </Text>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'DMSans_400Regular', fontSize: 11, marginTop: 1 }}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), marginTop: 1 }}>
                 {ticket.date_str}
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={{ width: scale(36), height: scale(36), alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="close" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -629,15 +629,15 @@ function ReelViewer({
         <TouchableOpacity style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '65%' }} onPress={goNext} activeOpacity={1} />
 
         {/* Bottom info */}
-        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 60, paddingBottom: 52, paddingHorizontal: 22 }}>
-          <Text style={{ color: '#fff', fontFamily: 'DMSans_700Bold', fontSize: 22, letterSpacing: -0.4 }} numberOfLines={2}>
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: sp(60), paddingBottom: sp(52), paddingHorizontal: sp(22) }}>
+          <Text style={{ color: '#fff', fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), letterSpacing: -0.4 }} numberOfLines={2}>
             {ticket.title}
           </Text>
-          <Text style={{ color: 'rgba(255,255,255,0.72)', fontFamily: 'DMSans_400Regular', fontSize: 13, marginTop: 5 }}>
+          <Text style={{ color: 'rgba(255,255,255,0.72)', fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), marginTop: 5 }}>
             📍 {ticket.venue_name}
           </Text>
           {images.length > 1 && (
-            <Text style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'DMSans_500Medium', fontSize: 11, marginTop: 8 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'DMSans_500Medium', fontSize: scaleFont(11), marginTop: sp(8) }}>
               {safeIndex + 1} / {images.length}
             </Text>
           )}
@@ -672,43 +672,43 @@ function MemoryCard({ memory, onPhotoUpload, uploading }: {
   };
 
   return (
-    <TouchableOpacity activeOpacity={0.95} onPress={navToDetails} style={{ backgroundColor: SURFACE, borderRadius: 24, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 4, marginBottom: 16 }}>
+    <TouchableOpacity activeOpacity={0.95} onPress={navToDetails} style={{ backgroundColor: SURFACE, borderRadius: scale(24), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 4, marginBottom: sp(16) }}>
 
       {/* Cover */}
       <View style={{ height: MEMORY_CARD_IMG_H }}>
         <Image source={{ uri: memory.image }} style={absoluteFill} resizeMode="cover" />
-        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.68)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 100 }} />
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.68)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: scale(100) }} />
 
         {memory.photos > 0 && (
-          <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.42)' }}>
+          <View style={{ position: 'absolute', top: sp(12), left: sp(12), flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: sp(10), paddingVertical: sp(6), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.42)' }}>
             <Ionicons name="camera-outline" size={12} color="#fff" />
-            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 11, color: '#fff' }}>{memory.photos}</Text>
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(11), color: '#fff' }}>{memory.photos}</Text>
           </View>
         )}
 
-        <View style={{ position: 'absolute', top: 12, right: 12, width: scale(36), height: scale(36), borderRadius: scale(18), backgroundColor: 'rgba(0,0,0,0.42)', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 16 }}>{memory.mood}</Text>
+        <View style={{ position: 'absolute', top: sp(12), right: sp(12), width: scale(36), height: scale(36), borderRadius: scale(18), backgroundColor: 'rgba(0,0,0,0.42)', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: scaleFont(16) }}>{memory.mood}</Text>
         </View>
 
-        <View style={{ position: 'absolute', bottom: 12, left: 12, right: 12 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: '#fff', letterSpacing: -0.2 }} numberOfLines={1}>{memory.title}</Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.88)', marginTop: 3 }}>
+        <View style={{ position: 'absolute', bottom: sp(12), left: sp(12), right: sp(12) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: '#fff', letterSpacing: -0.2 }} numberOfLines={1}>{memory.title}</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.88)', marginTop: 3 }}>
             📍 {memory.venue} · {memory.date}
           </Text>
         </View>
       </View>
 
       {/* Body */}
-      <View style={{ padding: 16 }}>
+      <View style={{ padding: sp(16) }}>
         {memory.caption ? (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG, lineHeight: 20 }}>{memory.caption}</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG, lineHeight: 20 }}>{memory.caption}</Text>
         ) : (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, lineHeight: 20, fontStyle: 'italic' }}>No notes yet — tap to add a memory.</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, lineHeight: 20, fontStyle: 'italic' }}>No notes yet — tap to add a memory.</Text>
         )}
 
         {/* Attendees */}
         {memory.attendeeAvatars.length > 0 && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), marginTop: sp(12) }}>
             <View style={{ flexDirection: 'row' }}>
               {memory.attendeeAvatars.slice(0, 4).map((uri, i) => (
                 <View key={i} style={{ width: scale(26), height: scale(26), borderRadius: scale(13), overflow: 'hidden', borderWidth: 2, borderColor: SURFACE, marginLeft: i === 0 ? 0 : -8, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
@@ -720,35 +720,35 @@ function MemoryCard({ memory, onPhotoUpload, uploading }: {
                 </View>
               ))}
             </View>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }}>
               with {memory.attendeeAvatars.length} friend{memory.attendeeAvatars.length !== 1 ? 's' : ''}
             </Text>
           </View>
         )}
 
         {/* Actions */}
-        <View style={{ flexDirection: 'row', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: BORDER }}>
+        <View style={{ flexDirection: 'row', marginTop: sp(14), paddingTop: sp(12), borderTopWidth: 1, borderTopColor: BORDER }}>
           {([
             { icon: 'musical-notes-outline' as const, label: 'Setlist', onPress: navToDetails },
             { icon: 'pencil-outline' as const,        label: 'Notes',   onPress: navToDetails },
             { icon: 'share-social-outline' as const,  label: 'Share',   onPress: handleShare  },
           ] as const).map(({ icon, label, onPress }) => (
-            <TouchableOpacity key={label} onPress={onPress} activeOpacity={0.7} style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: 6, borderRadius: 10 }}>
+            <TouchableOpacity key={label} onPress={onPress} activeOpacity={0.7} style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: sp(6), borderRadius: 10 }}>
               <Ionicons name={icon} size={16} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: MUTED }}>{label}</Text>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: MUTED }}>{label}</Text>
             </TouchableOpacity>
           ))}
           <TouchableOpacity
             onPress={onPhotoUpload}
             disabled={uploading}
             activeOpacity={0.7}
-            style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: 6, borderRadius: 10 }}
+            style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: sp(6), borderRadius: 10 }}
           >
             {uploading
               ? <ActivityIndicator size="small" color={BRAND_FROM} />
               : <Ionicons name="camera-outline" size={16} color={MUTED} />
             }
-            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: uploading ? BRAND_FROM : MUTED }}>
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: uploading ? BRAND_FROM : MUTED }}>
               {uploading ? 'Uploading…' : 'Photos'}
             </Text>
           </TouchableOpacity>

@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ActivityIndicator,
   KeyboardAvoidingView, Platform, ScrollView, StatusBar,
 } from 'react-native';
-import { scaleFont } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
@@ -115,33 +115,46 @@ export default function SignupScreen(): React.JSX.Element {
 
   const hint = usernameHint();
 
+  const inputStyle = {
+    fontFamily: 'DMSans_400Regular' as const,
+    fontSize: scaleFont(13),
+    color: DEEP,
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: scale(14),
+    paddingHorizontal: sp(16),
+    paddingVertical: sp(14),
+    marginBottom: sp(14),
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: sp(20), paddingBottom: sp(40) }}
         >
           <View style={{ flex: 1, justifyContent: 'center' }}>
 
-            <View style={{ alignItems: 'center', marginBottom: 40 }}>
-              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(40), letterSpacing: 12, color: DEEP, marginBottom: 4 }}>
+            <View style={{ alignItems: 'center', marginBottom: sp(40) }}>
+              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(40), letterSpacing: 12, color: DEEP, marginBottom: sp(4) }}>
                 SALTY
               </Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, fontStyle: 'italic' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, fontStyle: 'italic' }}>
                 Shazam for Your Life.
               </Text>
             </View>
 
             {error && (
-              <View style={{ backgroundColor: '#FDEBD9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: EMBER }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: EMBER }}>{error}</Text>
+              <View style={{ backgroundColor: '#FDEBD9', borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(10), marginBottom: sp(20), borderLeftWidth: 4, borderLeftColor: EMBER }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: EMBER }}>{error}</Text>
               </View>
             )}
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}
+              style={inputStyle}
               placeholder="Full Name"
               placeholderTextColor={MUTED}
               value={fullName}
@@ -149,7 +162,7 @@ export default function SignupScreen(): React.JSX.Element {
             />
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}
+              style={inputStyle}
               placeholder="Email"
               placeholderTextColor={MUTED}
               value={email}
@@ -159,7 +172,7 @@ export default function SignupScreen(): React.JSX.Element {
             />
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}
+              style={inputStyle}
               placeholder="Password"
               placeholderTextColor={MUTED}
               value={password}
@@ -168,7 +181,7 @@ export default function SignupScreen(): React.JSX.Element {
             />
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}
+              style={inputStyle}
               placeholder="Phone Number (10 digits)"
               placeholderTextColor={MUTED}
               value={phone}
@@ -178,7 +191,7 @@ export default function SignupScreen(): React.JSX.Element {
             />
 
             <TextInput
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, backgroundColor: '#fff', borderWidth: 1.5, borderColor: BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 14 }}
+              style={inputStyle}
               placeholder="Zip Code"
               placeholderTextColor={MUTED}
               value={zipcode}
@@ -188,11 +201,11 @@ export default function SignupScreen(): React.JSX.Element {
             />
 
             {/* Username field */}
-            <View style={{ marginBottom: hint ? 6 : 28 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1.5, borderColor: usernameStatus === 'taken' || usernameStatus === 'invalid' ? EMBER : usernameStatus === 'available' ? GREEN : BORDER, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginRight: 2 }}>@</Text>
+            <View style={{ marginBottom: hint ? sp(6) : sp(28) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1.5, borderColor: usernameStatus === 'taken' || usernameStatus === 'invalid' ? EMBER : usernameStatus === 'available' ? GREEN : BORDER, borderRadius: scale(14), paddingHorizontal: sp(16), paddingVertical: sp(14) }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginRight: 2 }}>@</Text>
                 <TextInput
-                  style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 13, color: DEEP, padding: 0 }}
+                  style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: DEEP, padding: 0 }}
                   placeholder="username"
                   placeholderTextColor={MUTED}
                   value={username}
@@ -202,31 +215,31 @@ export default function SignupScreen(): React.JSX.Element {
                   maxLength={30}
                 />
                 {usernameStatus === 'checking' && <ActivityIndicator size="small" color={MUTED} />}
-                {usernameStatus === 'available' && <Text style={{ fontSize: 16 }}>✓</Text>}
+                {usernameStatus === 'available' && <Text style={{ fontSize: scaleFont(16) }}>✓</Text>}
               </View>
               {hint && (
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: hint.color, marginTop: 4, marginLeft: 4, marginBottom: 14 }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: hint.color, marginTop: sp(4), marginLeft: sp(4), marginBottom: sp(14) }}>
                   {hint.text}
                 </Text>
               )}
             </View>
 
             <TouchableOpacity
-              style={{ backgroundColor: DEEP, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 14, opacity: loading ? 0.6 : 1 }}
+              style={{ backgroundColor: DEEP, borderRadius: scale(14), paddingVertical: sp(16), alignItems: 'center', justifyContent: 'center', marginBottom: sp(14), opacity: loading ? 0.6 : 1 }}
               onPress={handleSubmit}
               disabled={loading}
               activeOpacity={0.85}
             >
               {loading
                 ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>
+                : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>
                     Create Account
                   </Text>
               }
             </TouchableOpacity>
 
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: `${DEEP}88` }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: `${DEEP}88` }}>
                 Already have an account?{' '}
                 <Text
                   style={{ fontFamily: 'DMSans_700Bold', color: '#5B2FD4', textDecorationLine: 'underline' }}

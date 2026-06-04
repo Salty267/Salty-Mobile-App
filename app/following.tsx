@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { useSidebar } from '@/lib/SidebarContext';
 import { useFollowedArtists } from '@/lib/useFollowedArtists';
 import { useBottomPad } from '@/lib/useBottomPad';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -40,31 +41,31 @@ export default function FollowingScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Artists & alerts</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Following</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Artists & alerts</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Following</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
       {loading ? (
-        <ActivityIndicator size="large" color={BRAND_FROM} style={{ marginTop: 60 }} />
+        <ActivityIndicator size="large" color={BRAND_FROM} style={{ marginTop: sp(60) }} />
       ) : followed.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 }}>
-          <Ionicons name="notifications-off-outline" size={48} color={MUTED} style={{ marginBottom: 16 }} />
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, textAlign: 'center', marginBottom: 8 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(40) }}>
+          <Ionicons name="notifications-off-outline" size={48} color={MUTED} style={{ marginBottom: sp(16) }} />
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: FG, textAlign: 'center', marginBottom: sp(8) }}>
             No artists followed yet
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, textAlign: 'center', lineHeight: 20 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, textAlign: 'center', lineHeight: 20 }}>
             Tap the bell icon on your Most Seen artists or on any event to follow them and get alerts.
           </Text>
         </View>
@@ -72,18 +73,18 @@ export default function FollowingScreen(): React.JSX.Element {
         <FlatList
           data={followed}
           keyExtractor={item => item.id}
-          contentContainerStyle={{ padding: 20, paddingBottom: bottomPad, gap: 10 }}
+          contentContainerStyle={{ padding: sp(20), paddingBottom: bottomPad, gap: sp(10) }}
           renderItem={({ item }) => (
             <View style={{
-              flexDirection: 'row', alignItems: 'center', gap: 14,
-              backgroundColor: SURFACE, borderRadius: 16, padding: 14,
+              flexDirection: 'row', alignItems: 'center', gap: sp(14),
+              backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(14),
               shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.07, shadowRadius: 10, elevation: 2,
             }}>
               <LinearGradient
                 colors={[BRAND_FROM, BRAND_TO]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(44), height: scale(44), borderRadius: scale(22), alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons
                   name={item.type === 'team' ? 'football-outline' : 'musical-notes-outline'}
@@ -92,23 +93,23 @@ export default function FollowingScreen(): React.JSX.Element {
                 />
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }} numberOfLines={1}>
                   {item.artist_name}
                 </Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2, textTransform: 'capitalize' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2, textTransform: 'capitalize' }}>
                   {item.type} · alerts on
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => handleUnfollow(item.artist_name)}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, borderWidth: 1.5, borderColor: BORDER }}
+                style={{ paddingHorizontal: sp(14), paddingVertical: sp(8), borderRadius: 99, borderWidth: 1.5, borderColor: BORDER }}
               >
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED }}>Unfollow</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED }}>Unfollow</Text>
               </TouchableOpacity>
             </View>
           )}
           ListHeaderComponent={
-            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: MUTED, marginBottom: 4 }}>
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: MUTED, marginBottom: sp(4) }}>
               {followed.length} {followed.length === 1 ? 'artist' : 'artists'} followed
             </Text>
           }

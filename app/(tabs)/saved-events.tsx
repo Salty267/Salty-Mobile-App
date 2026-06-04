@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { SCREEN_W } from '@/lib/layout';
+import { SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 
 const SE_IMG_W = Math.round(SCREEN_W * 0.23); // ~90dp on 390dp screen
 const SE_IMG_H = Math.round(SE_IMG_W * 1.42); // maintain ~90×128 aspect ratio
@@ -60,20 +60,20 @@ export default function SavedEventsScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 20 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: sp(20) }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
 
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Events</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Saved</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Events</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Saved</Text>
             </View>
 
-            <TouchableOpacity style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="filter-outline" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -84,7 +84,7 @@ export default function SavedEventsScreen(): React.JSX.Element {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}
+        contentContainerStyle={{ gap: sp(8), paddingHorizontal: sp(20), paddingTop: sp(16), paddingBottom: sp(16) }}
       >
         {filterChips.map((chip: string) => {
           const isActive = chip === activeFilter;
@@ -94,8 +94,8 @@ export default function SavedEventsScreen(): React.JSX.Element {
               onPress={() => { LA(); setActiveFilter(chip); }}
               activeOpacity={0.8}
               style={{
-                height: 36,
-                paddingHorizontal: 18,
+                height: scale(36),
+                paddingHorizontal: sp(18),
                 borderRadius: 999,
                 overflow: 'hidden',
                 justifyContent: 'center',
@@ -112,7 +112,7 @@ export default function SavedEventsScreen(): React.JSX.Element {
                   style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                 />
               )}
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: isActive ? '#fff' : FG }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: isActive ? '#fff' : FG }}>
                 {chip}
               </Text>
             </TouchableOpacity>
@@ -123,7 +123,7 @@ export default function SavedEventsScreen(): React.JSX.Element {
       {/* ── Event list ── */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: bottomPad, gap: 14 }}
+        contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(14), paddingBottom: bottomPad, gap: sp(14) }}
       >
         {isEmpty
           ? <EmptyState filtered={isFiltered} />
@@ -139,7 +139,7 @@ export default function SavedEventsScreen(): React.JSX.Element {
 // ── Saved Event Card ───────────────────────────────────────────────────────────
 function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id: string) => void }): React.JSX.Element {
   return (
-    <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+    <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
       <View style={{ flexDirection: 'row' }}>
 
         {/* Left: image — explicit height matches TicketRow pattern */}
@@ -147,17 +147,17 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
           <Image source={{ uri: event.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.18)']}
-            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40 }}
+            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: scale(40) }}
           />
         </View>
 
         {/* Right: details — gap-based, no space-between */}
-        <View style={{ flex: 1, paddingHorizontal: 14, paddingVertical: 12, gap: 6 }}>
+        <View style={{ flex: 1, paddingHorizontal: sp(14), paddingVertical: sp(12), gap: sp(6) }}>
 
           {/* Category badge + unsave button */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ backgroundColor: `${event.tint ?? '#b0b8e0'}55`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <View style={{ backgroundColor: `${event.tint ?? '#b0b8e0'}55`, borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 3 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {event.category}
               </Text>
             </View>
@@ -168,10 +168,10 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
 
           {/* Title + subtitle */}
           <View>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
               {event.title}
             </Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }} numberOfLines={1}>
               {event.subtitle}
             </Text>
           </View>
@@ -180,18 +180,18 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
           <View style={{ gap: 3 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="location-outline" size={10} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }} numberOfLines={1}>{event.venue}</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }} numberOfLines={1}>{event.venue}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="calendar-outline" size={10} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }}>{event.date} · {event.time}</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }}>{event.date} · {event.time}</Text>
             </View>
           </View>
 
           {/* Days-away chip */}
           {event.daysAway !== undefined && (
-            <View style={{ alignSelf: 'flex-start', backgroundColor: `${BRAND_FROM}14`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: BRAND_FROM }}>
+            <View style={{ alignSelf: 'flex-start', backgroundColor: `${BRAND_FROM}14`, borderRadius: 99, paddingHorizontal: sp(10), paddingVertical: 3 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: BRAND_FROM }}>
                 {event.daysAway === 0 ? 'Today' : `${event.daysAway}d away`}
               </Text>
             </View>
@@ -206,12 +206,12 @@ function SavedEventCard({ event, onUnsave }: { event: SavedEvent; onUnsave: (id:
 function EmptyState({ filtered }: { filtered: boolean }): React.JSX.Element {
   const router = useRouter();
   return (
-    <View style={{ alignItems: 'center', paddingTop: 60 }}>
+    <View style={{ alignItems: 'center', paddingTop: sp(60) }}>
       <Ionicons name="heart-outline" size={52} color={MUTED} />
-      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginTop: 18 }}>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, marginTop: sp(18) }}>
         {filtered ? 'No events in this category' : 'No saved events yet'}
       </Text>
-      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 8, textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 }}>
+      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(8), textAlign: 'center', paddingHorizontal: sp(40), lineHeight: 20 }}>
         {filtered
           ? 'Try a different filter or save more events.'
           : 'Heart events to save them here for quick access.'}
@@ -220,15 +220,15 @@ function EmptyState({ filtered }: { filtered: boolean }): React.JSX.Element {
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/search')}
           activeOpacity={0.85}
-          style={{ marginTop: 20, overflow: 'hidden', borderRadius: 14 }}
+          style={{ marginTop: sp(20), overflow: 'hidden', borderRadius: scale(14) }}
         >
           <LinearGradient
             colors={[BRAND_FROM, BRAND_TO]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 22, paddingVertical: 12 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), paddingHorizontal: sp(22), paddingVertical: sp(12) }}
           >
             <Ionicons name="compass-outline" size={15} color="#fff" />
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Discover events</Text>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Discover events</Text>
           </LinearGradient>
         </TouchableOpacity>
       )}

@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase/client';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -121,10 +122,10 @@ export default function ScanTicketScreen(): React.JSX.Element {
               style={styles.backBtn}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Ionicons name="close" size={20} color="#fff" />
+              <Ionicons name="close" size={scale(20)} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Scan Ticket</Text>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -147,7 +148,7 @@ export default function ScanTicketScreen(): React.JSX.Element {
               colors={[`${BRAND_FROM}18`, `${BRAND_TO}18`]}
               style={styles.iconCircle}
             >
-              <Ionicons name="camera" size={52} color={BRAND_TO} />
+              <Ionicons name="camera" size={scale(52)} color={BRAND_TO} />
             </LinearGradient>
 
             <Text style={styles.idleTitle}>Scan Your Ticket</Text>
@@ -167,7 +168,7 @@ export default function ScanTicketScreen(): React.JSX.Element {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.primaryBtnGradient}
               >
-                <Ionicons name="camera-outline" size={20} color="#fff" />
+                <Ionicons name="camera-outline" size={scale(20)} color="#fff" />
                 <Text style={styles.primaryBtnLabel}>Take Photo</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -178,12 +179,12 @@ export default function ScanTicketScreen(): React.JSX.Element {
               activeOpacity={0.85}
               style={styles.secondaryBtn}
             >
-              <Ionicons name="images-outline" size={20} color={BRAND_FROM} />
+              <Ionicons name="images-outline" size={scale(20)} color={BRAND_FROM} />
               <Text style={styles.secondaryBtnLabel}>Choose from Library</Text>
             </TouchableOpacity>
 
             <Text style={styles.hint}>
-              <Ionicons name="shield-checkmark-outline" size={12} color={MUTED} />
+              <Ionicons name="shield-checkmark-outline" size={scale(12)} color={MUTED} />
               {' '}Your photo is only used for ticket extraction and is not stored.
             </Text>
           </View>
@@ -199,37 +200,37 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
   },
   header: {
-    paddingBottom: 16,
+    paddingBottom: sp(16),
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingHorizontal: sp(20),
+    paddingTop: sp(8),
+    paddingBottom: sp(4),
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
+    width: scale(40), height: scale(40), borderRadius: scale(20),
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
   },
   headerTitle: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 18, color: '#fff', letterSpacing: -0.2,
+    fontSize: scaleFont(18), color: '#fff', letterSpacing: -0.2,
   },
   body: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: sp(28),
   },
   /* Analyzing */
   analyzingContainer: {
-    alignItems: 'center', gap: 16,
+    alignItems: 'center', gap: sp(16),
   },
   spinnerRing: {
-    width: 88, height: 88, borderRadius: 44,
+    width: scale(88), height: scale(88), borderRadius: scale(44),
     backgroundColor: SURFACE,
     alignItems: 'center', justifyContent: 'center',
     shadowColor: BRAND_FROM,
@@ -238,58 +239,58 @@ const styles = StyleSheet.create({
   },
   analyzingTitle: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 20, color: FG, letterSpacing: -0.3, textAlign: 'center',
+    fontSize: scaleFont(20), color: FG, letterSpacing: -0.3, textAlign: 'center',
   },
   analyzingSubtitle: {
     fontFamily: 'DMSans_400Regular',
-    fontSize: 14, color: MUTED, textAlign: 'center',
+    fontSize: scaleFont(14), color: MUTED, textAlign: 'center',
   },
   /* Idle */
   idleContainer: {
     alignItems: 'center', gap: 0, width: '100%',
   },
   iconCircle: {
-    width: 112, height: 112, borderRadius: 56,
+    width: scale(112), height: scale(112), borderRadius: scale(56),
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 28,
+    marginBottom: sp(28),
   },
   idleTitle: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 26, color: FG, letterSpacing: -0.4,
-    textAlign: 'center', marginBottom: 12,
+    fontSize: scaleFont(26), color: FG, letterSpacing: -0.4,
+    textAlign: 'center', marginBottom: sp(12),
   },
   idleSubtitle: {
     fontFamily: 'DMSans_400Regular',
-    fontSize: 14, color: MUTED, textAlign: 'center', lineHeight: 21,
-    marginBottom: 36,
+    fontSize: scaleFont(14), color: MUTED, textAlign: 'center', lineHeight: 21,
+    marginBottom: sp(36),
   },
   primaryBtn: {
-    width: '100%', borderRadius: 16, overflow: 'hidden', marginBottom: 12,
+    width: '100%', borderRadius: scale(16), overflow: 'hidden', marginBottom: sp(12),
   },
   primaryBtnGradient: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, paddingVertical: 17,
+    gap: sp(10), paddingVertical: sp(17),
   },
   primaryBtnLabel: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 15, color: '#fff', letterSpacing: 0.2,
+    fontSize: scaleFont(15), color: '#fff', letterSpacing: 0.2,
   },
   secondaryBtn: {
     width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, paddingVertical: 17, borderRadius: 16,
+    gap: sp(10), paddingVertical: sp(17), borderRadius: scale(16),
     backgroundColor: SURFACE,
     borderWidth: 1.5, borderColor: `${BRAND_FROM}30`,
     shadowColor: BRAND_FROM,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 12, elevation: 2,
-    marginBottom: 28,
+    marginBottom: sp(28),
   },
   secondaryBtnLabel: {
     fontFamily: 'DMSans_700Bold',
-    fontSize: 15, color: BRAND_FROM, letterSpacing: 0.2,
+    fontSize: scaleFont(15), color: BRAND_FROM, letterSpacing: 0.2,
   },
   hint: {
     fontFamily: 'DMSans_400Regular',
-    fontSize: 11, color: MUTED, textAlign: 'center', lineHeight: 17,
+    fontSize: scaleFont(11), color: MUTED, textAlign: 'center', lineHeight: 17,
   },
 });

@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -42,60 +43,60 @@ export default function PrivacyScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your data</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Privacy</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Your data</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Privacy</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: bottom + 32, gap: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(24), paddingBottom: bottom + 32, gap: sp(16) }}>
 
         {SECTIONS.map(section => (
-          <View key={section.title} style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 20, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+          <View key={section.title} style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(20), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>
               {section.title}
             </Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG, lineHeight: 22 }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG, lineHeight: 22 }}>
               {section.body}
             </Text>
           </View>
         ))}
 
         {/* Contact */}
-        <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 20, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+        <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(20), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>
             Contact
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG, lineHeight: 22, marginBottom: 14 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG, lineHeight: 22, marginBottom: sp(14) }}>
             Questions about how your data is handled? Reach out and we'll respond within 48 hours.
           </Text>
           <TouchableOpacity
             onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Privacy%20Inquiry`)}
             activeOpacity={0.8}
-            style={{ overflow: 'hidden', borderRadius: 12, alignSelf: 'flex-start' }}
+            style={{ overflow: 'hidden', borderRadius: scale(12), alignSelf: 'flex-start' }}
           >
             <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 11 }}>
+              style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), paddingHorizontal: sp(18), paddingVertical: sp(11) }}>
               <Ionicons name="mail-outline" size={16} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>{SUPPORT_EMAIL}</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>{SUPPORT_EMAIL}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
 
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 4 }}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, textAlign: 'center', marginTop: sp(4) }}>
           Last updated May 2025
         </Text>
 

@@ -20,7 +20,7 @@ const LA = () => LayoutAnimation.configureNext({
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { SCREEN_W, scale } from '@/lib/layout';
+import { SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 import { useRouter } from 'expo-router';
 
 const TKT_IMG_W = Math.round(SCREEN_W * 0.23);
@@ -491,20 +491,20 @@ export default function TicketsScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>My Tickets</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>My Tickets</Text>
             </View>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: sp(8) }}>
               <TouchableOpacity
                 onPress={() => setAddVisible(true)}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="add" size={22} color="#fff" />
               </TouchableOpacity>
@@ -514,21 +514,21 @@ export default function TicketsScreen(): React.JSX.Element {
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: bottomPad, gap: 14 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(20), paddingBottom: bottomPad, gap: sp(14) }}>
 
         {/* ── Gmail Card ── */}
         {!gmailConnected ? (
           <LinearGradient
             colors={['#f8f7ff', '#eef0fb']}
-            style={{ borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: `${BRAND_FROM}22` }}
+            style={{ borderRadius: scale(18), padding: sp(14), borderWidth: 1.5, borderColor: `${BRAND_FROM}22` }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10), marginBottom: sp(10) }}>
               <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 }}>
                 <Ionicons name="mail" size={18} color={BRAND_FROM} />
               </View>
               <View>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Connect Gmail</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 1 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>Connect Gmail</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 1 }}>
                   Auto-import tickets from your inbox
                 </Text>
               </View>
@@ -537,46 +537,46 @@ export default function TicketsScreen(): React.JSX.Element {
               onPress={handleConnectGmail}
               disabled={connecting}
               activeOpacity={0.85}
-              style={{ overflow: 'hidden', borderRadius: 12 }}
+              style={{ overflow: 'hidden', borderRadius: scale(12) }}
             >
               <LinearGradient
                 colors={[BRAND_FROM, BRAND_TO]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 11 }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(8), paddingVertical: sp(11) }}
               >
                 {connecting
                   ? <ActivityIndicator color="#fff" size="small" />
                   : <>
                       <Ionicons name="logo-google" size={15} color="#fff" />
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>Connect Gmail Account</Text>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>Connect Gmail Account</Text>
                     </>
                 }
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
         ) : (
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: `${FG}08` }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(14), paddingVertical: sp(12), borderBottomWidth: 1, borderBottomColor: `${FG}08` }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10) }}>
                 <View style={{ width: scale(34), height: scale(34), borderRadius: 9, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="mail" size={16} color="#E8581A" />
                 </View>
                 <View>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{gmailEmail}</Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG }} numberOfLines={1}>{gmailEmail}</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }}>
                     Last scanned: {formatLastScanned(lastSyncedAt)}
                   </Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: sp(9), paddingVertical: 4 }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Connected</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: GREEN }}>Connected</Text>
               </View>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(14), paddingVertical: sp(11) }}>
               <View>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Scan Gmail</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG }}>Scan Gmail</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 2 }}>
                   Find new tickets in your inbox
                 </Text>
               </View>
@@ -584,18 +584,18 @@ export default function TicketsScreen(): React.JSX.Element {
                 onPress={handleScanGmail}
                 disabled={scanning}
                 activeOpacity={0.85}
-                style={{ overflow: 'hidden', borderRadius: 12 }}
+                style={{ overflow: 'hidden', borderRadius: scale(12) }}
               >
                 <LinearGradient
                   colors={[BRAND_FROM, BRAND_TO]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), paddingHorizontal: sp(14), paddingVertical: sp(10) }}
                 >
                   {scanning
                     ? <ActivityIndicator color="#fff" size="small" style={{ width: 16, height: 16 }} />
                     : <Ionicons name="refresh-outline" size={15} color="#fff" />
                   }
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>
                     {scanning ? 'Scanning…' : 'Scan Now'}
                   </Text>
                 </LinearGradient>
@@ -608,15 +608,15 @@ export default function TicketsScreen(): React.JSX.Element {
         {!imapConnected ? (
           <LinearGradient
             colors={['#f8f7ff', '#eef0fb']}
-            style={{ borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: `${BRAND_FROM}22` }}
+            style={{ borderRadius: scale(18), padding: sp(14), borderWidth: 1.5, borderColor: `${BRAND_FROM}22` }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10), marginBottom: sp(10) }}>
               <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 }}>
                 <Ionicons name="mail-open-outline" size={18} color={BRAND_FROM} />
               </View>
               <View>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Connect Other Email</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 1 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>Connect Other Email</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 1 }}>
                   Outlook, Yahoo, iCloud & more
                 </Text>
               </View>
@@ -624,41 +624,41 @@ export default function TicketsScreen(): React.JSX.Element {
             <TouchableOpacity
               onPress={() => { setImapError(null); setShowImapModal(true); }}
               activeOpacity={0.85}
-              style={{ overflow: 'hidden', borderRadius: 12 }}
+              style={{ overflow: 'hidden', borderRadius: scale(12) }}
             >
               <LinearGradient
                 colors={[BRAND_FROM, BRAND_TO]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 11 }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(8), paddingVertical: sp(11) }}
               >
                 <Ionicons name="mail-open-outline" size={15} color="#fff" />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>Connect Email Account</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>Connect Email Account</Text>
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
         ) : (
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: `${FG}08` }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(14), paddingVertical: sp(12), borderBottomWidth: 1, borderBottomColor: `${FG}08` }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10) }}>
                 <View style={{ width: scale(34), height: scale(34), borderRadius: 9, backgroundColor: '#f0f4ff', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="mail-open-outline" size={16} color={BRAND_FROM} />
                 </View>
                 <View>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{imapEmail}</Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG }} numberOfLines={1}>{imapEmail}</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }}>
                     Last scanned: {formatLastScanned(imapLastSyncedAt)}
                   </Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: sp(9), paddingVertical: 4 }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Connected</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: GREEN }}>Connected</Text>
               </View>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 11 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(14), paddingVertical: sp(11) }}>
               <View>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Scan Inbox</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG }}>Scan Inbox</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 2 }}>
                   Find new tickets in your inbox
                 </Text>
               </View>
@@ -666,18 +666,18 @@ export default function TicketsScreen(): React.JSX.Element {
                 onPress={handleScanImap}
                 disabled={imapScanning}
                 activeOpacity={0.85}
-                style={{ overflow: 'hidden', borderRadius: 12 }}
+                style={{ overflow: 'hidden', borderRadius: scale(12) }}
               >
                 <LinearGradient
                   colors={[BRAND_FROM, BRAND_TO]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), paddingHorizontal: sp(14), paddingVertical: sp(10) }}
                 >
                   {imapScanning
                     ? <ActivityIndicator color="#fff" size="small" style={{ width: 16, height: 16 }} />
                     : <Ionicons name="refresh-outline" size={15} color="#fff" />
                   }
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>
                     {imapScanning ? 'Scanning…' : 'Scan Now'}
                   </Text>
                 </LinearGradient>
@@ -690,19 +690,19 @@ export default function TicketsScreen(): React.JSX.Element {
         <TouchableOpacity
           onPress={() => router.push('/scan-ticket')}
           activeOpacity={0.85}
-          style={{ backgroundColor: SURFACE, borderRadius: 18, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}
+          style={{ backgroundColor: SURFACE, borderRadius: scale(18), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}
         >
           <LinearGradient
             colors={[`${BRAND_TO}12`, `${BRAND_FROM}08`]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1.5, borderColor: `${BRAND_TO}22`, borderRadius: 18 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), padding: sp(14), borderWidth: 1.5, borderColor: `${BRAND_TO}22`, borderRadius: scale(18) }}
           >
             <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: `${BRAND_TO}18`, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="camera-outline" size={18} color={BRAND_TO} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>Scan a Photo</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>Scan a Photo</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 1 }}>
                 Import a ticket from a photo or QR code
               </Text>
             </View>
@@ -711,15 +711,15 @@ export default function TicketsScreen(): React.JSX.Element {
         </TouchableOpacity>
 
         {/* ── Upcoming / Past tab ── */}
-        <View style={{ flexDirection: 'row', backgroundColor: `${BRAND_FROM}12`, borderRadius: 12, padding: 3 }}>
+        <View style={{ flexDirection: 'row', backgroundColor: `${BRAND_FROM}12`, borderRadius: scale(12), padding: 3 }}>
           {(['upcoming', 'past'] as const).map(t => (
             <TouchableOpacity
               key={t}
               onPress={() => { LA(); setTab(t); }}
-              style={{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center', backgroundColor: tab === t ? '#fff' : 'transparent', shadowColor: tab === t ? '#503cb4' : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: tab === t ? 2 : 0 }}
+              style={{ flex: 1, paddingVertical: sp(8), borderRadius: 10, alignItems: 'center', backgroundColor: tab === t ? '#fff' : 'transparent', shadowColor: tab === t ? '#503cb4' : 'transparent', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: tab === t ? 2 : 0 }}
               activeOpacity={0.8}
             >
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: tab === t ? BRAND_FROM : MUTED, textTransform: 'capitalize' }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: tab === t ? BRAND_FROM : MUTED, textTransform: 'capitalize' }}>
                 {t}
               </Text>
             </TouchableOpacity>
@@ -728,9 +728,9 @@ export default function TicketsScreen(): React.JSX.Element {
 
         {/* ── Ticket list ── */}
         {ticketsLoading ? (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
+          <View style={{ alignItems: 'center', marginTop: sp(40) }}>
             <ActivityIndicator color={BRAND_FROM} />
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 10 }}>Loading your tickets…</Text>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(10) }}>Loading your tickets…</Text>
           </View>
         ) : (
           <>
@@ -757,10 +757,10 @@ export default function TicketsScreen(): React.JSX.Element {
             ))}
 
             {visible.length === 0 && (
-              <View style={{ alignItems: 'center', paddingTop: 40 }}>
+              <View style={{ alignItems: 'center', paddingTop: sp(40) }}>
                 <Ionicons name="ticket-outline" size={48} color={MUTED} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16 }}>No tickets yet</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6, textAlign: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginTop: sp(16) }}>No tickets yet</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(6), textAlign: 'center' }}>
                   Your {tab} tickets will appear here.
                 </Text>
               </View>
@@ -776,31 +776,31 @@ export default function TicketsScreen(): React.JSX.Element {
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+              style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
             >
               <SafeAreaView edges={['top']}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
                   <TouchableOpacity
                     onPress={() => setAddVisible(false)}
-                    style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Ionicons name="close" size={20} color="#fff" />
                   </TouchableOpacity>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }}>Add Ticket</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: '#fff', letterSpacing: -0.3 }}>Add Ticket</Text>
                   <TouchableOpacity
                     onPress={handleAddTicket}
-                    style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.22)' }}
+                    style={{ paddingHorizontal: sp(16), paddingVertical: sp(8), borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.22)' }}
                   >
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>Save</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>Save</Text>
                   </TouchableOpacity>
                 </View>
               </SafeAreaView>
             </LinearGradient>
 
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40, gap: 14 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(24), paddingBottom: sp(40), gap: sp(14) }}>
               <FormField label="Event name *" value={form.title} onChangeText={t => setForm(f => ({ ...f, title: t }))} placeholder="e.g. Taylor Swift — Eras Tour" />
               <FormField label="Venue" value={form.venue} onChangeText={t => setForm(f => ({ ...f, venue: t }))} placeholder="e.g. Madison Square Garden" />
-              <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flexDirection: 'row', gap: sp(12) }}>
                 <View style={{ flex: 1 }}>
                   <FormField label="Date" value={form.date} onChangeText={t => setForm(f => ({ ...f, date: t }))} placeholder="e.g. Aug 15, 2026" />
                 </View>
@@ -811,31 +811,31 @@ export default function TicketsScreen(): React.JSX.Element {
               <FormField label="Seat / Section" value={form.seat} onChangeText={t => setForm(f => ({ ...f, seat: t }))} placeholder="e.g. Sec 114 · Row C · Seat 22" />
 
               <View>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG, marginBottom: 10 }}>Category</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG, marginBottom: sp(10) }}>Category</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: sp(8) }}>
                   {CATEGORIES.map(cat => (
                     <TouchableOpacity
                       key={cat}
                       onPress={() => setForm(f => ({ ...f, category: cat }))}
                       style={{
-                        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99,
+                        paddingHorizontal: sp(14), paddingVertical: sp(8), borderRadius: 99,
                         backgroundColor: form.category === cat ? BRAND_FROM : SURFACE,
                         shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
                       }}
                     >
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: form.category === cat ? '#fff' : FG }}>{cat}</Text>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: form.category === cat ? '#fff' : FG }}>{cat}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
 
-              <TouchableOpacity onPress={handleAddTicket} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 16, marginTop: 8 }}>
+              <TouchableOpacity onPress={handleAddTicket} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: scale(16), marginTop: sp(8) }}>
                 <LinearGradient
                   colors={[BRAND_FROM, BRAND_TO]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: 52, alignItems: 'center', justifyContent: 'center' }}
+                  style={{ height: scale(52), alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>Add Ticket</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>Add Ticket</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
@@ -845,26 +845,26 @@ export default function TicketsScreen(): React.JSX.Element {
 
       {/* ── Gemini AI Consent Modal ── */}
       <Modal visible={showConsentModal} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 24, padding: 24, width: '100%' }}>
-            <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f3f0ff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(24) }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(24), padding: sp(24), width: '100%' }}>
+            <View style={{ width: scale(48), height: scale(48), borderRadius: scale(12), backgroundColor: '#f3f0ff', alignItems: 'center', justifyContent: 'center', marginBottom: sp(16) }}>
               <Ionicons name="shield-checkmark-outline" size={26} color={BRAND_FROM} />
             </View>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, marginBottom: 10 }}>Before we scan</Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, lineHeight: 21, marginBottom: 20 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: FG, marginBottom: sp(10) }}>Before we scan</Text>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, lineHeight: 21, marginBottom: sp(20) }}>
               To detect tickets in your emails, Salty sends the subject and content of matching emails to Claude AI for parsing. No email data is stored — only the ticket details extracted from it.
             </Text>
-            <TouchableOpacity onPress={handleConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 14, marginBottom: 10 }}>
+            <TouchableOpacity onPress={handleConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: scale(14), marginBottom: sp(10) }}>
               <LinearGradient
                 colors={[BRAND_FROM, BRAND_TO]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ height: 50, alignItems: 'center', justifyContent: 'center' }}
+                style={{ height: scale(50), alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>I Understand, Continue</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>I Understand, Continue</Text>
               </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowConsentModal(false)} style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED }}>Cancel</Text>
+            <TouchableOpacity onPress={() => setShowConsentModal(false)} style={{ height: scale(44), alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -876,35 +876,35 @@ export default function TicketsScreen(): React.JSX.Element {
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+              style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
             >
               <SafeAreaView edges={['top']}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
                   <TouchableOpacity
                     onPress={() => setShowImapModal(false)}
-                    style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Ionicons name="close" size={20} color="#fff" />
                   </TouchableOpacity>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }}>Connect Email</Text>
-                  <View style={{ width: 40 }} />
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: '#fff', letterSpacing: -0.3 }}>Connect Email</Text>
+                  <View style={{ width: scale(40) }} />
                 </View>
               </SafeAreaView>
             </LinearGradient>
 
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40, gap: 16 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(24), paddingBottom: sp(40), gap: sp(16) }}>
               {imapError && (
-                <View style={{ backgroundColor: '#FDEBD9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderLeftWidth: 4, borderLeftColor: '#E8581A' }}>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: '#E8581A' }}>{imapError}</Text>
+                <View style={{ backgroundColor: '#FDEBD9', borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(10), borderLeftWidth: 4, borderLeftColor: '#E8581A' }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: '#E8581A' }}>{imapError}</Text>
                 </View>
               )}
 
               {(() => {
                 const provider = detectImapProvider(imapForm.email);
                 return provider ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: `${BRAND_FROM}12`, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), backgroundColor: `${BRAND_FROM}12`, borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(10) }}>
                     <Ionicons name="checkmark-circle" size={16} color={BRAND_FROM} />
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: FG, flex: 1 }}>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: FG, flex: 1 }}>
                       <Text style={{ fontFamily: 'DMSans_700Bold' }}>{provider.label}</Text> detected. {provider.hint}
                     </Text>
                   </View>
@@ -925,23 +925,23 @@ export default function TicketsScreen(): React.JSX.Element {
                 secureTextEntry
               />
 
-              <View style={{ backgroundColor: `${FG}08`, borderRadius: 12, padding: 14, gap: 6 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG }}>Supported providers</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, lineHeight: 18 }}>
+              <View style={{ backgroundColor: `${FG}08`, borderRadius: scale(12), padding: sp(14), gap: 6 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: FG }}>Supported providers</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, lineHeight: 18 }}>
                   Outlook · Hotmail · Live · Yahoo Mail · iCloud Mail · AOL{'\n'}
                   Most providers require an app-specific password when 2FA is enabled.
                 </Text>
               </View>
 
-              <TouchableOpacity onPress={handleConnectImap} disabled={imapConnecting} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 16, marginTop: 4 }}>
+              <TouchableOpacity onPress={handleConnectImap} disabled={imapConnecting} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: scale(16), marginTop: sp(4) }}>
                 <LinearGradient
                   colors={[BRAND_FROM, BRAND_TO]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: 52, alignItems: 'center', justifyContent: 'center' }}
+                  style={{ height: scale(52), alignItems: 'center', justifyContent: 'center' }}
                 >
                   {imapConnecting
                     ? <ActivityIndicator color="#fff" size="small" />
-                    : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>Connect Account</Text>
+                    : <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>Connect Account</Text>
                   }
                 </LinearGradient>
               </TouchableOpacity>
@@ -952,26 +952,26 @@ export default function TicketsScreen(): React.JSX.Element {
 
       {/* ── IMAP AI Consent Modal ── */}
       <Modal visible={showImapConsent} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 24, padding: 24, width: '100%' }}>
-            <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f3f0ff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(24) }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(24), padding: sp(24), width: '100%' }}>
+            <View style={{ width: scale(48), height: scale(48), borderRadius: scale(12), backgroundColor: '#f3f0ff', alignItems: 'center', justifyContent: 'center', marginBottom: sp(16) }}>
               <Ionicons name="shield-checkmark-outline" size={26} color={BRAND_FROM} />
             </View>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, marginBottom: 10 }}>Before we scan</Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, lineHeight: 21, marginBottom: 20 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: FG, marginBottom: sp(10) }}>Before we scan</Text>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, lineHeight: 21, marginBottom: sp(20) }}>
               To detect tickets in your emails, Salty sends the subject and content of matching emails to Claude AI for parsing. No email data is stored — only the ticket details extracted from it.
             </Text>
-            <TouchableOpacity onPress={handleImapConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 14, marginBottom: 10 }}>
+            <TouchableOpacity onPress={handleImapConsentAccept} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: scale(14), marginBottom: sp(10) }}>
               <LinearGradient
                 colors={[BRAND_FROM, BRAND_TO]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ height: 50, alignItems: 'center', justifyContent: 'center' }}
+                style={{ height: scale(50), alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>I Understand, Continue</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>I Understand, Continue</Text>
               </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowImapConsent(false)} style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED }}>Cancel</Text>
+            <TouchableOpacity onPress={() => setShowImapConsent(false)} style={{ height: scale(44), alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -986,7 +986,7 @@ function FormField({ label, value, onChangeText, placeholder, secureTextEntry }:
 }): React.JSX.Element {
   return (
     <View>
-      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#1a1530', marginBottom: 8 }}>{label}</Text>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#1a1530', marginBottom: sp(8) }}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -995,8 +995,8 @@ function FormField({ label, value, onChangeText, placeholder, secureTextEntry }:
         secureTextEntry={secureTextEntry}
         autoCapitalize="none"
         style={{
-          backgroundColor: '#ffffff', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 13,
-          fontFamily: 'DMSans_400Regular', fontSize: 14, color: '#1a1530',
+          backgroundColor: '#ffffff', borderRadius: scale(14), paddingHorizontal: sp(16), paddingVertical: sp(13),
+          fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: '#1a1530',
           shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2,
         }}
       />
@@ -1020,7 +1020,7 @@ function TicketRow({ ticket, isPast, onPress }: { ticket: Ticket; isPast: boolea
     }
   };
   return (
-    <TouchableOpacity activeOpacity={0.88} onPress={onPress} style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4, opacity: isPast ? 0.88 : 1 }}>
+    <TouchableOpacity activeOpacity={0.88} onPress={onPress} style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4, opacity: isPast ? 0.88 : 1 }}>
       <View style={{ flexDirection: 'row' }}>
         <View style={{ width: 6, backgroundColor: ticket.tint }} />
         <View style={{ width: TKT_IMG_W, height: TKT_IMG_H }}>
@@ -1028,40 +1028,40 @@ function TicketRow({ ticket, isPast, onPress }: { ticket: Ticket; isPast: boolea
           {isPast && <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)' }} />}
           {isPast && (
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{ backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: '#fff', letterSpacing: 1 }}>ATTENDED</Text>
+              <View style={{ backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 3 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: '#fff', letterSpacing: 1 }}>ATTENDED</Text>
               </View>
             </View>
           )}
         </View>
-        <View style={{ flex: 1, padding: 14, justifyContent: 'space-between' }}>
+        <View style={{ flex: 1, padding: sp(14), justifyContent: 'space-between' }}>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ backgroundColor: `${ticket.tint}55`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{ticket.category}</Text>
+              <View style={{ backgroundColor: `${ticket.tint}55`, borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 3 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{ticket.category}</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8) }}>
                 <TouchableOpacity onPress={toggleSave} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Ionicons name={saved ? 'heart' : 'heart-outline'} size={16} color={saved ? '#ff6b8a' : MUTED} />
                 </TouchableOpacity>
                 <Ionicons name="chevron-forward" size={14} color={MUTED} />
               </View>
             </View>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, marginTop: 8, letterSpacing: -0.2 }} numberOfLines={1}>{ticket.title}</Text>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG, marginTop: sp(8), letterSpacing: -0.2 }} numberOfLines={1}>{ticket.title}</Text>
           </View>
           <View style={{ gap: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Ionicons name="calendar-outline" size={11} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }}>{ticket.date} · {ticket.time}</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }}>{ticket.date} · {ticket.time}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Ionicons name="location-outline" size={11} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }} numberOfLines={1}>{ticket.venue}</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }} numberOfLines={1}>{ticket.venue}</Text>
             </View>
             {ticket.seat && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                 <Ionicons name="ticket-outline" size={11} color={BRAND_FROM} />
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 11, color: BRAND_FROM }} numberOfLines={1}>{ticket.seat}</Text>
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(11), color: BRAND_FROM }} numberOfLines={1}>{ticket.seat}</Text>
               </View>
             )}
           </View>
@@ -1072,13 +1072,13 @@ function TicketRow({ ticket, isPast, onPress }: { ticket: Ticket; isPast: boolea
           <View key={i} style={{ flex: 1, height: 1, backgroundColor: i % 2 === 0 ? `${FG}18` : 'transparent' }} />
         ))}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(14), paddingVertical: sp(10) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1.5 }}>
           {[4,8,5,11,4,7,5,10,4,8,5,11,4,7,5,10,4,8,5].map((h, k) => (
             <View key={k} style={{ width: 1.8, height: (h / 11) * 18, backgroundColor: FG, opacity: 0.22, borderRadius: 1 }} />
           ))}
         </View>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 9, color: `${FG}44`, letterSpacing: 1 }}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(9), color: `${FG}44`, letterSpacing: 1 }}>
           ADMIT ONE · #{(ticket.id.charCodeAt(0) * 3741) % 9000 + 1000}
         </Text>
       </View>

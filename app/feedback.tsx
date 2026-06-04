@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -63,13 +63,13 @@ export default function FeedbackScreen(): React.JSX.Element {
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 24, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+          style={{ paddingBottom: sp(24), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
         >
           <SafeAreaView edges={['top']}>
-            <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 }}>
+            <View style={{ paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: sp(8) }}>
               <TouchableOpacity
                 onPress={() => router.back()}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="chevron-back" size={22} color="#fff" />
               </TouchableOpacity>
@@ -77,27 +77,27 @@ export default function FeedbackScreen(): React.JSX.Element {
           </SafeAreaView>
         </LinearGradient>
 
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-          <View style={{ width: scale(80), height: scale(80), borderRadius: scale(40), backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(32) }}>
+          <View style={{ width: scale(80), height: scale(80), borderRadius: scale(40), backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center', marginBottom: sp(20) }}>
             <Ionicons name="checkmark-circle" size={48} color={BRAND_FROM} />
           </View>
-          <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 32, color: FG, textAlign: 'center', marginBottom: 10 }}>
+          <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(32), color: FG, textAlign: 'center', marginBottom: sp(10) }}>
             Thanks for your feedback!
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 15, color: MUTED, textAlign: 'center', lineHeight: 22, marginBottom: 36 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(15), color: MUTED, textAlign: 'center', lineHeight: 22, marginBottom: sp(36) }}>
             We read every submission and use it to make Salty better.
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.85}
-            style={{ overflow: 'hidden', borderRadius: 14, width: '100%' }}
+            style={{ overflow: 'hidden', borderRadius: scale(14), width: '100%' }}
           >
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={{ height: scale(52), alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>Back to app</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>Back to app</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -113,27 +113,27 @@ export default function FeedbackScreen(): React.JSX.Element {
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 28, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+          style={{ paddingBottom: sp(28), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
         >
           <SafeAreaView edges={['top']}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
               <TouchableOpacity
                 onPress={() => router.back()}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="chevron-back" size={22} color="#fff" />
               </TouchableOpacity>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Tell us what you think</Text>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Feedback</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Tell us what you think</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Feedback</Text>
               </View>
-              <View style={{ width: 40 }} />
+              <View style={{ width: scale(40) }} />
             </View>
-            <View style={{ paddingHorizontal: 20 }}>
-              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 30, color: '#fff', letterSpacing: 0.5 }}>
+            <View style={{ paddingHorizontal: sp(20) }}>
+              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(30), color: '#fff', letterSpacing: 0.5 }}>
                 How can we improve?
               </Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: 'rgba(255,255,255,0.75)', marginTop: sp(4) }}>
                 Your input shapes every update we ship.
               </Text>
             </View>
@@ -143,15 +143,15 @@ export default function FeedbackScreen(): React.JSX.Element {
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 28, paddingBottom: bottom + 32, gap: 16 }}
+          contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(28), paddingBottom: bottom + 32, gap: sp(16) }}
         >
 
           {/* ── Category ── */}
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 14, elevation: 3 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 14, elevation: 3 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: sp(12) }}>
               Category
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: sp(8) }}>
               {CATEGORIES.map(cat => {
                 const active = cat === category;
                 return (
@@ -160,15 +160,15 @@ export default function FeedbackScreen(): React.JSX.Element {
                     onPress={() => setCategory(cat)}
                     activeOpacity={0.75}
                     style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
-                      borderRadius: 12,
+                      paddingHorizontal: sp(14),
+                      paddingVertical: sp(8),
+                      borderRadius: scale(12),
                       backgroundColor: active ? BRAND_FROM : SECONDARY,
                       borderWidth: active ? 0 : 1,
                       borderColor: BORDER,
                     }}
                   >
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: active ? '#fff' : FG }}>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: active ? '#fff' : FG }}>
                       {cat}
                     </Text>
                   </TouchableOpacity>
@@ -178,14 +178,14 @@ export default function FeedbackScreen(): React.JSX.Element {
           </View>
 
           {/* ── Star Rating ── */}
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 14, elevation: 3 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 14, elevation: 3 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: sp(4) }}>
               Overall experience
             </Text>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginBottom: 14 }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginBottom: sp(14) }}>
               {rating === 0 ? 'Tap to rate' : ['', 'Terrible', 'Poor', 'Okay', 'Good', 'Amazing!'][rating]}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flexDirection: 'row', gap: sp(10) }}>
               {[1, 2, 3, 4, 5].map(star => (
                 <TouchableOpacity key={star} onPress={() => setRating(star)} activeOpacity={0.7}>
                   <Ionicons
@@ -199,8 +199,8 @@ export default function FeedbackScreen(): React.JSX.Element {
           </View>
 
           {/* ── Message ── */}
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 14, elevation: 3 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 14, elevation: 3 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: sp(10) }}>
               Your message
             </Text>
             <TextInput
@@ -213,14 +213,14 @@ export default function FeedbackScreen(): React.JSX.Element {
               textAlignVertical="top"
               style={{
                 fontFamily: 'DMSans_400Regular',
-                fontSize: 15,
+                fontSize: scaleFont(15),
                 color: FG,
                 minHeight: scale(120),
                 lineHeight: 22,
               }}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: message.length > 0 ? MUTED : BORDER }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: sp(8) }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: message.length > 0 ? MUTED : BORDER }}>
                 {message.length} chars
               </Text>
             </View>
@@ -231,18 +231,18 @@ export default function FeedbackScreen(): React.JSX.Element {
             onPress={handleSubmit}
             disabled={submitting}
             activeOpacity={0.85}
-            style={{ marginTop: 8, overflow: 'hidden', borderRadius: 16, opacity: submitting ? 0.7 : 1 }}
+            style={{ marginTop: sp(8), overflow: 'hidden', borderRadius: scale(16), opacity: submitting ? 0.7 : 1 }}
           >
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ height: scale(54), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+              style={{ height: scale(54), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: sp(8) }}
             >
               {submitting
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <>
                     <Ionicons name="send" size={17} color="#fff" />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>
                       Submit feedback
                     </Text>
                   </>
@@ -250,7 +250,7 @@ export default function FeedbackScreen(): React.JSX.Element {
             </LinearGradient>
           </TouchableOpacity>
 
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, textAlign: 'center', paddingHorizontal: 8 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, textAlign: 'center', paddingHorizontal: sp(8) }}>
             Feedback is reviewed by the Salty team. We may follow up at your registered email.
           </Text>
 

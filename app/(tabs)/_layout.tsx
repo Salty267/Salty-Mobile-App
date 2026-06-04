@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { SidebarProvider } from '@/lib/SidebarContext';
+import { TAB_BAR_H, scale, scaleFont } from '@/lib/layout';
 
 type TabName = 'search' | 'tickets' | 'index' | 'calendar' | 'profile';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -59,7 +60,7 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps): React.JSX.Eleme
               }
             >
               <View style={styles.iconWrap}>
-                <Ionicons name={cfg.icon} size={22} color={color} />
+                <Ionicons name={cfg.icon} size={scale(22)} color={color} />
               </View>
               <Text
                 style={[styles.label, { color }]}
@@ -82,10 +83,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 88,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: '#4f6cf2',   // needed for iOS shadow to render
+    height: TAB_BAR_H,
+    borderTopLeftRadius: scale(24),
+    borderTopRightRadius: scale(24),
+    backgroundColor: '#4f6cf2',
     shadowColor: '#4f6cf2',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.35,
@@ -95,27 +96,27 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     flexDirection: 'row',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',           // clips gradient to the rounded corners
+    borderTopLeftRadius: scale(24),
+    borderTopRightRadius: scale(24),
+    overflow: 'hidden',
   },
   item: {
     flex: 1,
-    paddingTop: 10,
+    paddingTop: scale(10),
     alignItems: 'center',
-    justifyContent: 'flex-start', // icon Y is always paddingTop from top, never shifts
+    justifyContent: 'flex-start',
   },
   iconWrap: {
-    width: 24,
-    height: 24,
+    width: scale(24),
+    height: scale(24),
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
     fontFamily: 'DMSans_500Medium',
-    fontSize: 10,
+    fontSize: scaleFont(10),
     lineHeight: 14,
-    height: 14,                   // fixed height — font metric changes can't shift the icon
+    height: 14,
     marginTop: 2,
     includeFontPadding: false,
   },

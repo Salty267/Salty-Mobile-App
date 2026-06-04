@@ -4,7 +4,7 @@ import {
   ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SCREEN_W, scale } from '@/lib/layout';
+import { SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ import { useSidebar } from '@/lib/SidebarContext';
 import { useAvatar } from '@/lib/useAvatar';
 import { supabase } from '@/lib/supabase/client';
 import { useFriends } from '@/lib/useFriends';
-import { isEventPast } from '@/lib/parseEventDate';
+import { isEventPast, parseEventDate } from '@/lib/parseEventDate';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -29,14 +29,15 @@ const BG         = '#eef0fb';
 const BORDER     = '#e6e4f0';
 
 const ICON_BTN = {
-  width: 40, height: 40, borderRadius: 999,
+  width: scale(40), height: scale(40), borderRadius: 999,
   backgroundColor: 'rgba(255,255,255,0.18)',
   alignItems: 'center' as const, justifyContent: 'center' as const,
 };
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D'];
 const BAR_MAX_H = 78;
-const BADGE_W = (SCREEN_W - 40 - 12) / 2;
+// Two-column grid: account for scaled horizontal padding (sp(20)×2) and scaled gap (sp(12))
+const BADGE_W = Math.floor((SCREEN_W - sp(20) * 2 - sp(12)) / 2);
 
 type BadgeData = {
   totalShows: number;
@@ -289,8 +290,15 @@ export default function ProfileScreen(): React.JSX.Element {
           }))
       );
 
-      // Next upcoming event
-      const upcoming = tickets.filter(t => !t.is_past);
+      // Next upcoming event — use live date check (is_past is a static flag set at import,
+      // it doesn't update as time passes), then sort soonest first
+      const upcoming = tickets
+        .filter(t => !isEventPast(t.date_str))
+        .sort((a, b) => {
+          const da = parseEventDate(a.date_str)?.getTime() ?? Infinity;
+          const db = parseEventDate(b.date_str)?.getTime() ?? Infinity;
+          return da - db;
+        });
       if (upcoming.length > 0) {
         const next = upcoming[0];
         setNextEvent({
@@ -348,17 +356,17 @@ export default function ProfileScreen(): React.JSX.Element {
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 56, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}
+          style={{ paddingBottom: sp(56), borderBottomLeftRadius: scale(40), borderBottomRightRadius: scale(40) }}
         >
           <SafeAreaView edges={['top']}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
               <TouchableOpacity onPress={openSidebar} style={ICON_BTN}>
                 <Ionicons name="menu" size={20} color="#fff" />
               </TouchableOpacity>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: 'rgba(255,255,255,0.85)', letterSpacing: 2, textTransform: 'uppercase' }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.85)', letterSpacing: 2, textTransform: 'uppercase' }}>
                 Salty · Passport
               </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: sp(8) }}>
                 <TouchableOpacity style={ICON_BTN}>
                   <Ionicons name="share-social-outline" size={18} color="#fff" />
                 </TouchableOpacity>
@@ -369,55 +377,55 @@ export default function ProfileScreen(): React.JSX.Element {
             </View>
 
             {/* Avatar + level pill */}
-            <View style={{ alignItems: 'center', paddingHorizontal: 20 }}>
+            <View style={{ alignItems: 'center', paddingHorizontal: sp(20) }}>
               <View style={{ width: scale(96), height: scale(96), borderRadius: scale(48), padding: 3, backgroundColor: 'rgba(255,255,255,0.45)' }}>
                 <View style={{ flex: 1, borderRadius: scale(45), overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                   {avatarUrl
                     ? <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                    : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 32, color: '#fff' }}>{initials}</Text>
+                    : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(32), color: '#fff' }}>{initials}</Text>
                   }
                 </View>
               </View>
 
-              <View style={{ backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4, marginTop: -10, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG, letterSpacing: 0.3 }}>
+              <View style={{ backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: sp(10), paddingVertical: 4, marginTop: -10, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: FG, letterSpacing: 0.3 }}>
                   LVL {levelInfo.lvlNum} · {levelInfo.label}
                 </Text>
               </View>
 
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.4, marginTop: 14 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', letterSpacing: -0.4, marginTop: sp(14) }}>
                 {nameDisplay}
               </Text>
               {username && (
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
                   @{username}
                 </Text>
               )}
               {zipCode && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: sp(4) }}>
                   <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.9)" />
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.9)' }}>
                     {zipCode}
                   </Text>
                 </View>
               )}
               {locationLine && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: zipCode ? 2 : 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: zipCode ? 2 : sp(4) }}>
                   <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.9)" />
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.9)' }}>
                     {locationLine}
                   </Text>
                 </View>
               )}
 
               {/* Progress bar */}
-              <View style={{ width: '100%', maxWidth: 280, marginTop: 20 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 11, color: 'rgba(255,255,255,0.9)' }}>
+              <View style={{ width: '100%', maxWidth: scale(280), marginTop: sp(20) }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: sp(6) }}>
+                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.9)' }}>
                     {totalShows} event{totalShows !== 1 ? 's' : ''}
                   </Text>
                   {levelInfo.toNext > 0 && (
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 11, color: 'rgba(255,255,255,0.9)' }}>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.9)' }}>
                       {levelInfo.toNext} to {levelInfo.nextLabel}
                     </Text>
                   )}
@@ -432,9 +440,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
         {/* ── Stats Strip ── */}
         <View style={{
-          marginTop: -40, marginHorizontal: 20,
-          backgroundColor: SURFACE, borderRadius: 24,
-          flexDirection: 'row', paddingVertical: 16,
+          marginTop: -40, marginHorizontal: sp(20),
+          backgroundColor: SURFACE, borderRadius: scale(24),
+          flexDirection: 'row', paddingVertical: sp(16),
           shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.13, shadowRadius: 20, elevation: 6,
         }}>
           {([
@@ -444,26 +452,26 @@ export default function ProfileScreen(): React.JSX.Element {
             [String(friends.length) || '–', 'Friends'],
           ] as [string, string][]).map(([val, label], i) => (
             <View key={label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: BORDER }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: FG }}>{val}</Text>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginTop: 4 }}>{label}</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(20), color: FG }}>{val}</Text>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginTop: sp(4) }}>{label}</Text>
             </View>
           ))}
         </View>
 
         {/* ── Year in Live ── */}
-        <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
+        <View style={{ paddingHorizontal: sp(20), marginTop: sp(28) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: sp(12) }}>
             <View>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: MUTED, letterSpacing: 1, textTransform: 'uppercase' }}>{new Date().getFullYear()} Year in Live</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginTop: 2 }}>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: MUTED, letterSpacing: 1, textTransform: 'uppercase' }}>{new Date().getFullYear()} Year in Live</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3, marginTop: 2 }}>
                 {yearShows} show{yearShows !== 1 ? 's' : ''} this year
               </Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/(tabs)/memories')}>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Recap →</Text>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>Recap →</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 24, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(24), padding: sp(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: BAR_MAX_H + 20, gap: 4 }}>
               {monthlyBars.map((v, i) => {
                 const barH = v === 0 ? 3 : Math.max(8, (v / maxBar) * BAR_MAX_H);
@@ -474,7 +482,7 @@ export default function ProfileScreen(): React.JSX.Element {
                       start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
                       style={{ width: '100%', height: barH, borderRadius: 4, opacity: v === 0 ? 0.25 : 0.92 }}
                     />
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 9, color: MUTED }}>{MONTHS[i]}</Text>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(9), color: MUTED }}>{MONTHS[i]}</Text>
                   </View>
                 );
               })}
@@ -484,23 +492,23 @@ export default function ProfileScreen(): React.JSX.Element {
 
         {/* ── Taste DNA ── */}
         {dnaSegments.length > 0 && (
-          <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+          <View style={{ paddingHorizontal: sp(20), marginTop: sp(28) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), marginBottom: sp(12) }}>
               <Ionicons name="sparkles" size={16} color={BRAND_FROM} />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3 }}>Your taste DNA</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3 }}>Your taste DNA</Text>
             </View>
-            <View style={{ backgroundColor: SURFACE, borderRadius: 24, padding: 20, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 }}>
-              <View style={{ flexDirection: 'row', height: 12, borderRadius: 99, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: SURFACE, borderRadius: scale(24), padding: sp(20), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 }}>
+              <View style={{ flexDirection: 'row', height: scale(12), borderRadius: 99, overflow: 'hidden' }}>
                 {dnaSegments.map(seg => (
                   <View key={seg.label} style={{ flex: seg.pct, backgroundColor: seg.color }} />
                 ))}
               </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 16, rowGap: 10, columnGap: 16 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: sp(16), rowGap: sp(10), columnGap: sp(16) }}>
                 {dnaSegments.map(seg => (
-                  <View key={seg.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, width: '45%' }}>
+                  <View key={seg.label} style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), width: '45%' }}>
                     <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: seg.color }} />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG, flex: 1 }}>{seg.label}</Text>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>{seg.pct}%</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: FG, flex: 1 }}>{seg.label}</Text>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>{seg.pct}%</Text>
                   </View>
                 ))}
               </View>
@@ -510,26 +518,26 @@ export default function ProfileScreen(): React.JSX.Element {
 
         {/* ── Most Seen ── */}
         {mostSeen.length > 0 && (
-          <View style={{ marginTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3 }}>Most seen</Text>
+          <View style={{ marginTop: sp(28) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), marginBottom: sp(12) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3 }}>Most seen</Text>
               <TouchableOpacity>
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>All</Text>
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>All</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: sp(20), gap: sp(12) }}>
               {mostSeen.map((item, i) => {
                 const following = isFollowing(item.name);
                 return (
-                  <View key={item.name} style={{ width: 120, height: 120, borderRadius: 18, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 4 }}>
+                  <View key={item.name} style={{ width: scale(120), height: scale(120), borderRadius: scale(18), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 14, elevation: 4 }}>
                     <LinearGradient
                       colors={[item.from, item.to]}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={{ flex: 1, padding: 10, justifyContent: 'space-between' }}
+                      style={{ flex: 1, padding: sp(10), justifyContent: 'space-between' }}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG }}>{i + 1}</Text>
+                        <View style={{ width: scale(24), height: scale(24), borderRadius: scale(12), backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: FG }}>{i + 1}</Text>
                         </View>
                         <TouchableOpacity
                           onPress={() => following ? unfollowArtist(item.name) : followArtist(item.name)}
@@ -543,8 +551,8 @@ export default function ProfileScreen(): React.JSX.Element {
                         </TouchableOpacity>
                       </View>
                       <View>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }} numberOfLines={1}>{item.name}</Text>
-                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.9)', marginTop: 2 }}>seen {item.times}×</Text>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#fff' }} numberOfLines={1}>{item.name}</Text>
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: 'rgba(255,255,255,0.9)', marginTop: 2 }}>seen {item.times}×</Text>
                       </View>
                     </LinearGradient>
                   </View>
@@ -555,45 +563,45 @@ export default function ProfileScreen(): React.JSX.Element {
         )}
 
         {/* ── Badges ── */}
-        <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3 }}>Badges</Text>
-              <View style={{ backgroundColor: earnedCount > 0 ? BRAND_FROM : BORDER, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: earnedCount > 0 ? '#fff' : MUTED }}>
+        <View style={{ paddingHorizontal: sp(20), marginTop: sp(28) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(12) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3 }}>Badges</Text>
+              <View style={{ backgroundColor: earnedCount > 0 ? BRAND_FROM : BORDER, borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 2 }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: earnedCount > 0 ? '#fff' : MUTED }}>
                   {earnedCount} / {BADGE_DEFS.length}
                 </Text>
               </View>
             </View>
             <TouchableOpacity onPress={() => setShowAllBadges(v => !v)}>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>
                 {showAllBadges ? 'Show less' : 'See all'}
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: sp(12) }}>
             {displayedBadges.map(b => (
-              <View key={b.id} style={{ width: BADGE_W, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: SURFACE, borderRadius: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: b.earned ? 0.08 : 0.04, shadowRadius: 10, elevation: b.earned ? 2 : 1, opacity: b.earned ? 1 : 0.6 }}>
+              <View key={b.id} style={{ width: BADGE_W, flexDirection: 'row', alignItems: 'center', gap: sp(12), padding: sp(12), backgroundColor: SURFACE, borderRadius: scale(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: b.earned ? 0.08 : 0.04, shadowRadius: 10, elevation: b.earned ? 2 : 1, opacity: b.earned ? 1 : 0.6 }}>
                 <View style={{ position: 'relative' }}>
                   {b.earned
                     ? <LinearGradient
                         colors={[b.from, b.to]}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                        style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                        style={{ width: scale(40), height: scale(40), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Ionicons name={b.icon} size={20} color="#fff" />
                       </LinearGradient>
-                    : <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#e5e3f0', alignItems: 'center', justifyContent: 'center' }}>
+                    : <View style={{ width: scale(40), height: scale(40), borderRadius: scale(12), backgroundColor: '#e5e3f0', alignItems: 'center', justifyContent: 'center' }}>
                         <Ionicons name={b.icon} size={20} color="#b0aec8" />
-                        <View style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: BORDER }}>
+                        <View style={{ position: 'absolute', top: -4, right: -4, width: scale(16), height: scale(16), borderRadius: scale(8), backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: BORDER }}>
                           <Ionicons name="lock-closed" size={8} color={MUTED} />
                         </View>
                       </View>
                   }
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: b.earned ? FG : MUTED, lineHeight: 16 }} numberOfLines={1}>{b.label}</Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: MUTED, marginTop: 2, lineHeight: 13 }} numberOfLines={1}>{b.tagline}</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: b.earned ? FG : MUTED, lineHeight: 16 }} numberOfLines={1}>{b.label}</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: MUTED, marginTop: 2, lineHeight: 13 }} numberOfLines={1}>{b.tagline}</Text>
                 </View>
               </View>
             ))}
@@ -601,20 +609,20 @@ export default function ProfileScreen(): React.JSX.Element {
         </View>
 
         {/* ── Share Wrapped ── */}
-        <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
+        <View style={{ paddingHorizontal: sp(20), marginTop: sp(20) }}>
           <TouchableOpacity
             onPress={handleShareWrapped}
             disabled={sharingWrapped}
             activeOpacity={0.85}
-            style={{ borderRadius: 16, overflow: 'hidden' }}
+            style={{ borderRadius: scale(16), overflow: 'hidden' }}
           >
             <LinearGradient
               colors={['#0d0822', '#4f1d8f']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16 }}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(8), paddingVertical: sp(16) }}
             >
               <Ionicons name="share-social-outline" size={18} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>
                 {sharingWrapped ? 'Preparing…' : 'Share Your Wrapped'}
               </Text>
             </LinearGradient>
@@ -623,35 +631,35 @@ export default function ProfileScreen(): React.JSX.Element {
 
         {/* ── Your Crew ── */}
         {crewData.length > 0 && (
-          <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3 }}>Your crew</Text>
+          <View style={{ paddingHorizontal: sp(20), marginTop: sp(28) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(12) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3 }}>Your crew</Text>
               <TouchableOpacity onPress={() => router.push('/(tabs)/friends')}>
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>See all</Text>
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>See all</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ backgroundColor: SURFACE, borderRadius: 24, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 }}>
+            <View style={{ backgroundColor: SURFACE, borderRadius: scale(24), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.09, shadowRadius: 16, elevation: 3 }}>
               {crewData.map((c, i) => (
                 <View key={c.id}>
-                  {i > 0 && <View style={{ height: 1, backgroundColor: BORDER, marginLeft: 70 }} />}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, width: 14, textAlign: 'center' }}>{i + 1}</Text>
-                    <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: BORDER }}>
+                  {i > 0 && <View style={{ height: 1, backgroundColor: BORDER, marginLeft: scale(70) }} />}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), padding: sp(14) }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, width: scale(14), textAlign: 'center' }}>{i + 1}</Text>
+                    <View style={{ width: scale(40), height: scale(40), borderRadius: scale(20), overflow: 'hidden', backgroundColor: BORDER }}>
                       {c.avatarUrl
-                        ? <Image source={{ uri: c.avatarUrl }} style={{ width: 40, height: 40 }} resizeMode="cover" />
-                        : <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-                            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>{c.name[0].toUpperCase()}</Text>
+                        ? <Image source={{ uri: c.avatarUrl }} style={{ width: scale(40), height: scale(40) }} resizeMode="cover" />
+                        : <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: scale(40), height: scale(40), alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>{c.name[0].toUpperCase()}</Text>
                           </LinearGradient>
                       }
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>{c.name}</Text>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>{c.name}</Text>
                       {c.shows > 0 && (
-                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }}>{c.shows} show{c.shows !== 1 ? 's' : ''} together</Text>
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }}>{c.shows} show{c.shows !== 1 ? 's' : ''} together</Text>
                       )}
                     </View>
-                    <TouchableOpacity style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99, backgroundColor: '#f0eef9' }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: FG }}>Invite</Text>
+                    <TouchableOpacity style={{ paddingHorizontal: sp(12), paddingVertical: sp(7), borderRadius: 99, backgroundColor: '#f0eef9' }}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: FG }}>Invite</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -662,9 +670,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
         {/* ── Currently Chasing ── */}
         {nextEvent && (
-          <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 12 }}>Currently chasing</Text>
-            <View style={{ height: 160, borderRadius: 24, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 5 }}>
+          <View style={{ paddingHorizontal: sp(20), marginTop: sp(28) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3, marginBottom: sp(12) }}>Currently chasing</Text>
+            <View style={{ height: scale(160), borderRadius: scale(24), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 5 }}>
               {nextEvent.imageUrl
                 ? <Image source={{ uri: nextEvent.imageUrl }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} resizeMode="cover" />
                 : <LinearGradient colors={['#3b1f6e', '#a04ec5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }} />
@@ -673,15 +681,15 @@ export default function ProfileScreen(): React.JSX.Element {
                 colors={['transparent', 'rgba(0,0,0,0.72)']}
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
               />
-              <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.95)' }}>
+              <View style={{ position: 'absolute', top: sp(12), left: sp(12), flexDirection: 'row', alignItems: 'center', gap: sp(6), paddingHorizontal: sp(10), paddingVertical: sp(5), borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.95)' }}>
                 <Ionicons name="flash" size={11} color={BRAND_FROM} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG, letterSpacing: 0.5, textTransform: 'uppercase' }}>Next up</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: FG, letterSpacing: 0.5, textTransform: 'uppercase' }}>Next up</Text>
               </View>
-              <View style={{ position: 'absolute', bottom: 14, left: 14, right: 14 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }} numberOfLines={1}>{nextEvent.title}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+              <View style={{ position: 'absolute', bottom: sp(14), left: sp(14), right: sp(14) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: '#fff', letterSpacing: -0.3 }} numberOfLines={1}>{nextEvent.title}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), marginTop: sp(4) }}>
                   <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.9)" />
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.9)' }} numberOfLines={1}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.9)' }} numberOfLines={1}>
                     {[nextEvent.venueName, nextEvent.dateStr].filter(Boolean).join(' · ')}
                   </Text>
                 </View>

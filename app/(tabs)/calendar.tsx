@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import * as ExpoCalendar from 'expo-calendar';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -251,17 +251,17 @@ export default function CalendarScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4 }}>Calendar</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4 }}>Calendar</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -269,19 +269,19 @@ export default function CalendarScreen(): React.JSX.Element {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }}>
 
         {/* ── Year label ── */}
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 16, marginHorizontal: 20 }}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(16), marginHorizontal: sp(20) }}>
           All your events for {year}
         </Text>
 
         {/* ── Search bar ── */}
-        <View style={{ marginHorizontal: 20, marginTop: 16, marginBottom: 4, flexDirection: 'row', alignItems: 'center', backgroundColor: SURFACE, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
-          <Ionicons name="search-outline" size={16} color={MUTED} style={{ marginRight: 8 }} />
+        <View style={{ marginHorizontal: sp(20), marginTop: sp(16), marginBottom: 4, flexDirection: 'row', alignItems: 'center', backgroundColor: SURFACE, borderRadius: scale(14), paddingHorizontal: sp(14), paddingVertical: sp(10), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
+          <Ionicons name="search-outline" size={16} color={MUTED} style={{ marginRight: sp(8) }} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search events…"
             placeholderTextColor={MUTED}
-            style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG }}
+            style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG }}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -291,25 +291,25 @@ export default function CalendarScreen(): React.JSX.Element {
         </View>
 
         {/* ── Calendar card ── */}
-        <View style={{ margin: 20, marginTop: 12, backgroundColor: SURFACE, borderRadius: 24, padding: 20, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 5 }}>
+        <View style={{ margin: sp(20), marginTop: sp(12), backgroundColor: SURFACE, borderRadius: scale(24), padding: sp(20), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 5 }}>
 
           {/* Month nav */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <TouchableOpacity onPress={prevMonth} style={{ width: scale(36), height: scale(36), borderRadius: 12, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(18) }}>
+            <TouchableOpacity onPress={prevMonth} style={{ width: scale(36), height: scale(36), borderRadius: scale(12), backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="chevron-back" size={18} color={FG} />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, letterSpacing: -0.3 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, letterSpacing: -0.3 }}>
               {MONTHS[month]} {year}
             </Text>
-            <TouchableOpacity onPress={nextMonth} style={{ width: scale(36), height: scale(36), borderRadius: 12, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={nextMonth} style={{ width: scale(36), height: scale(36), borderRadius: scale(12), backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="chevron-forward" size={18} color={FG} />
             </TouchableOpacity>
           </View>
 
           {/* Day headers */}
-          <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', marginBottom: sp(8) }}>
             {DAYS.map(d => (
-              <Text key={d} style={{ flex: 1, textAlign: 'center', fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.5 }}>
+              <Text key={d} style={{ flex: 1, textAlign: 'center', fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.5 }}>
                 {d}
               </Text>
             ))}
@@ -332,13 +332,13 @@ export default function CalendarScreen(): React.JSX.Element {
                   {isSelected && day ? (
                     <LinearGradient
                       colors={[BRAND_FROM, BRAND_TO]}
-                      style={{ width: scale(36), height: scale(36), borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                      style={{ width: scale(36), height: scale(36), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>{day}</Text>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>{day}</Text>
                     </LinearGradient>
                   ) : (
-                    <View style={{ width: scale(36), height: scale(36), borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? `${BRAND_FROM}14` : 'transparent' }}>
-                      <Text style={{ fontFamily: isToday ? 'DMSans_700Bold' : 'DMSans_400Regular', fontSize: 14, color: day ? (isToday ? BRAND_FROM : FG) : 'transparent' }}>
+                    <View style={{ width: scale(36), height: scale(36), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? `${BRAND_FROM}14` : 'transparent' }}>
+                      <Text style={{ fontFamily: isToday ? 'DMSans_700Bold' : 'DMSans_400Regular', fontSize: scaleFont(14), color: day ? (isToday ? BRAND_FROM : FG) : 'transparent' }}>
                         {day ?? ''}
                       </Text>
                       {hasEvent && !isSelected && (
@@ -356,43 +356,43 @@ export default function CalendarScreen(): React.JSX.Element {
         </View>
 
         {/* ── Events for selected day ── */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 14 }}>
+        <View style={{ paddingHorizontal: sp(20) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3, marginBottom: sp(14) }}>
             {selectedDay} {MONTHS[month]}
           </Text>
 
           {loading ? (
-            <ActivityIndicator color={BRAND_FROM} style={{ marginTop: 24 }} />
+            <ActivityIndicator color={BRAND_FROM} style={{ marginTop: sp(24) }} />
           ) : dayTickets.length === 0 && dayDeviceEvents.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+            <View style={{ alignItems: 'center', paddingVertical: sp(32) }}>
               <Ionicons name="calendar-outline" size={40} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 12, textAlign: 'center' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(12), textAlign: 'center' }}>
                 No events on this day
               </Text>
             </View>
           ) : (
-            <View style={{ gap: 12 }}>
+            <View style={{ gap: sp(12) }}>
               {/* Imported tickets */}
               {dayTickets.map(ticket => (
                 <View
                   key={ticket.id}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: SURFACE, borderRadius: 18, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.09, shadowRadius: 12, elevation: 3 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), backgroundColor: SURFACE, borderRadius: scale(18), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.09, shadowRadius: 12, elevation: 3 }}
                 >
-                  <View style={{ width: scale(46), height: scale(46), borderRadius: 14, backgroundColor: `${ticket.tint ?? '#b0b8e0'}44`, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: scale(46), height: scale(46), borderRadius: scale(14), backgroundColor: `${ticket.tint ?? '#b0b8e0'}44`, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="ticket-outline" size={22} color={FG} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
                       {ticket.title ?? 'Untitled'}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <View style={{ backgroundColor: `${ticket.tint ?? '#b0b8e0'}55`, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{ticket.category}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), marginTop: sp(4) }}>
+                      <View style={{ backgroundColor: `${ticket.tint ?? '#b0b8e0'}55`, borderRadius: 99, paddingHorizontal: sp(7), paddingVertical: 2 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: FG, textTransform: 'uppercase', letterSpacing: 1 }}>{ticket.category}</Text>
                       </View>
                       {ticket.time_str ? (
                         <>
                           <Ionicons name="time-outline" size={11} color={MUTED} />
-                          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>{ticket.time_str}</Text>
+                          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>{ticket.time_str}</Text>
                         </>
                       ) : null}
                     </View>
@@ -405,23 +405,23 @@ export default function CalendarScreen(): React.JSX.Element {
               {dayDeviceEvents.map(evt => (
                 <View
                   key={evt.id}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: SURFACE, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: `${BRAND_FROM}22`, opacity: 0.92 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), backgroundColor: SURFACE, borderRadius: scale(18), padding: sp(14), borderWidth: 1, borderColor: `${BRAND_FROM}22`, opacity: 0.92 }}
                 >
-                  <View style={{ width: scale(46), height: scale(46), borderRadius: 14, backgroundColor: `${BRAND_FROM}18`, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: scale(46), height: scale(46), borderRadius: scale(14), backgroundColor: `${BRAND_FROM}18`, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="calendar-outline" size={20} color={BRAND_FROM} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG, letterSpacing: -0.2 }} numberOfLines={1}>
                       {evt.title}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <View style={{ backgroundColor: `${BRAND_FROM}22`, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: BRAND_FROM, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), marginTop: sp(4) }}>
+                      <View style={{ backgroundColor: `${BRAND_FROM}22`, borderRadius: 99, paddingHorizontal: sp(7), paddingVertical: 2 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: BRAND_FROM, textTransform: 'uppercase', letterSpacing: 1 }}>
                           {evt.calendarTitle ?? 'Calendar'}
                         </Text>
                       </View>
                       <Ionicons name="time-outline" size={11} color={MUTED} />
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>
                         {evt.startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                       </Text>
                     </View>

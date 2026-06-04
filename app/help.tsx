@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -68,8 +69,8 @@ function FAQItem({ q, a }: { q: string; a: string }): React.JSX.Element {
   return (
     <View>
       <TouchableOpacity onPress={toggle} activeOpacity={0.7}
-        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 12 }}>
-        <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: 14, color: FG }}>
+        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(16), paddingVertical: sp(16), gap: sp(12) }}>
+        <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: scaleFont(14), color: FG }}>
           {q}
         </Text>
         <Ionicons
@@ -79,8 +80,8 @@ function FAQItem({ q, a }: { q: string; a: string }): React.JSX.Element {
         />
       </TouchableOpacity>
       {open && (
-        <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, lineHeight: 20 }}>
+        <View style={{ paddingHorizontal: sp(16), paddingBottom: sp(16) }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, lineHeight: 20 }}>
             {a}
           </Text>
         </View>
@@ -98,59 +99,59 @@ export default function HelpScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>FAQ & support</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Help</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>FAQ & support</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Help</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: bottom + 32, gap: 16 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(24), paddingBottom: bottom + 32, gap: sp(16) }}>
 
         {/* FAQ */}
-        <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
+        <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', paddingHorizontal: sp(16), paddingTop: sp(16), paddingBottom: sp(4) }}>
             Frequently Asked
           </Text>
           {FAQ.map((item, i) => (
             <View key={item.q}>
               <FAQItem q={item.q} a={item.a} />
               {i < FAQ.length - 1 && (
-                <View style={{ height: 1, backgroundColor: '#f1eefb', marginHorizontal: 16 }} />
+                <View style={{ height: 1, backgroundColor: '#f1eefb', marginHorizontal: sp(16) }} />
               )}
             </View>
           ))}
         </View>
 
         {/* Still need help */}
-        <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 20, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+        <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(20), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 3 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>
             Still Need Help?
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG, lineHeight: 22, marginBottom: 14 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG, lineHeight: 22, marginBottom: sp(14) }}>
             Can't find what you're looking for? Send us a message and we'll get back to you within 24 hours.
           </Text>
           <TouchableOpacity
             onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Help%20Request`)}
             activeOpacity={0.8}
-            style={{ overflow: 'hidden', borderRadius: 12, alignSelf: 'flex-start' }}
+            style={{ overflow: 'hidden', borderRadius: scale(12), alignSelf: 'flex-start' }}
           >
             <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 11 }}>
+              style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), paddingHorizontal: sp(18), paddingVertical: sp(11) }}>
               <Ionicons name="mail-outline" size={16} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Contact Support</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Contact Support</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

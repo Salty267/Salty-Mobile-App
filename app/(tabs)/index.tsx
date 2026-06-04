@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { TAB_BAR_H, SCREEN_W } from '@/lib/layout';
+import { TAB_BAR_H, SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 import { useRouter } from 'expo-router';
 
 // Upcoming event card — sized as ~43% of screen width so two fit with a peek
@@ -189,22 +189,22 @@ export default function HomeScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Ionicons name="star" size={16} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4 }}>Salty</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4 }}>Salty</Text>
             </View>
 
             <TouchableOpacity
               onPress={() => { setHasUnread(false); router.push('/notifications'); }}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="notifications-outline" size={20} color="#fff" />
               {hasUnread && (
@@ -218,21 +218,21 @@ export default function HomeScreen(): React.JSX.Element {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }}>
 
         {/* ── Welcome note ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16 }}>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(24), paddingBottom: sp(16) }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>
             {greeting()},
           </Text>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 26, color: FG, letterSpacing: -0.5, marginTop: 2 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(26), color: FG, letterSpacing: -0.5, marginTop: 2 }}>
             {firstName ? `${firstName} 👋` : '👋'}
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 4 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(4) }}>
             Here's what's happening with your events.
           </Text>
         </View>
 
         {/* ── Next Event Countdown ── */}
         {nextEvent && (
-          <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ paddingHorizontal: sp(20) }}>
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => router.push({
@@ -247,7 +247,7 @@ export default function HomeScreen(): React.JSX.Element {
                   image: nextEvent.image,
                 },
               })}
-              style={{ borderRadius: 24, overflow: 'hidden', height: 156 }}
+              style={{ borderRadius: scale(24), overflow: 'hidden', height: scale(156) }}
             >
               <Image
                 source={{ uri: nextEvent.image }}
@@ -257,28 +257,28 @@ export default function HomeScreen(): React.JSX.Element {
               <LinearGradient
                 colors={['rgba(26,21,48,0.12)', 'rgba(26,21,48,0.84)']}
                 start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-                style={{ flex: 1, padding: 18, justifyContent: 'space-between' }}
+                style={{ flex: 1, padding: sp(18), justifyContent: 'space-between' }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 99, paddingHorizontal: sp(10), paddingVertical: 4 }}>
                   <Ionicons name="time-outline" size={11} color="#fff" />
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: '#fff', letterSpacing: 0.5 }}>NEXT UP</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: '#fff', letterSpacing: 0.5 }}>NEXT UP</Text>
                 </View>
 
                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                  <View style={{ flex: 1, marginRight: 12 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }} numberOfLines={1}>{nextEvent.title}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                  <View style={{ flex: 1, marginRight: sp(12) }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: '#fff', letterSpacing: -0.3 }} numberOfLines={1}>{nextEvent.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: sp(4) }}>
                       <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.75)" />
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.75)' }} numberOfLines={1}>{nextEvent.venue}</Text>
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.75)' }} numberOfLines={1}>{nextEvent.venue}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
                       <Ionicons name="calendar-outline" size={11} color="rgba(255,255,255,0.75)" />
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{nextEvent.date} · {nextEvent.time}</Text>
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.75)' }}>{nextEvent.date} · {nextEvent.time}</Text>
                     </View>
                   </View>
                   <View style={{ alignItems: 'center' }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 44, color: '#fff', lineHeight: 46 }}>{nextEvent.daysAway}</Text>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.8)' }}>days away</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(44), color: '#fff' }}>{nextEvent.daysAway}</Text>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: 'rgba(255,255,255,0.8)' }}>days away</Text>
                   </View>
                 </View>
               </LinearGradient>
@@ -287,34 +287,34 @@ export default function HomeScreen(): React.JSX.Element {
         )}
 
         {/* ── Upcoming Events ── */}
-        <View style={{ paddingTop: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 14 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: FG, letterSpacing: -0.3 }}>Upcoming Events</Text>
+        <View style={{ paddingTop: sp(28) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), marginBottom: sp(14) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: FG, letterSpacing: -0.3 }}>Upcoming Events</Text>
             <TouchableOpacity>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: BRAND_FROM }}>See all</Text>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: BRAND_FROM }}>See all</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 20, paddingRight: 8, gap: 14 }}
+            contentContainerStyle={{ paddingLeft: sp(20), paddingRight: sp(8), gap: sp(14) }}
           >
             {upcoming.length <= 1 ? (
-              <View style={{ paddingHorizontal: 8, justifyContent: 'center', gap: 10 }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>No upcoming tickets yet.</Text>
+              <View style={{ paddingHorizontal: sp(8), justifyContent: 'center', gap: sp(10) }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>No upcoming tickets yet.</Text>
                 <TouchableOpacity
                   onPress={() => router.push('/scan-ticket')}
                   activeOpacity={0.85}
-                  style={{ overflow: 'hidden', borderRadius: 12, alignSelf: 'flex-start' }}
+                  style={{ overflow: 'hidden', borderRadius: scale(12), alignSelf: 'flex-start' }}
                 >
                   <LinearGradient
                     colors={[BRAND_FROM, BRAND_TO]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: sp(14), paddingVertical: sp(9) }}
                   >
                     <Ionicons name="camera-outline" size={14} color="#fff" />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>Scan your first ticket</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#fff' }}>Scan your first ticket</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -340,11 +340,11 @@ export default function HomeScreen(): React.JSX.Element {
         </View>
 
         {/* ── Stats strip ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 28 }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(28) }}>
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={() => router.push('/(tabs)/memories')}
-            style={{ backgroundColor: SURFACE, borderRadius: 20, paddingVertical: 20, paddingHorizontal: 8, flexDirection: 'row', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}
+            style={{ backgroundColor: SURFACE, borderRadius: scale(20), paddingVertical: sp(20), paddingHorizontal: sp(8), flexDirection: 'row', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 }}
           >
             {[
               { value: stats.shows,   label: 'SHOWS'    },
@@ -352,8 +352,8 @@ export default function HomeScreen(): React.JSX.Element {
               { value: stats.upcoming,label: 'UPCOMING' },
             ].map((s, i) => (
               <View key={s.label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: '#eee' }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 30, color: FG, letterSpacing: -1 }}>{s.value}</Text>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: MUTED, letterSpacing: 1.5, marginTop: 3 }}>{s.label}</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(30), color: FG, letterSpacing: -1 }}>{s.value}</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: MUTED, letterSpacing: 1.5, marginTop: 3 }}>{s.label}</Text>
               </View>
             ))}
           </TouchableOpacity>
@@ -361,8 +361,8 @@ export default function HomeScreen(): React.JSX.Element {
 
         {/* ── On This Day ── */}
         {onThisDay && (
-          <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.3, marginBottom: 14 }}>On this day</Text>
+          <View style={{ paddingHorizontal: sp(20), paddingTop: sp(24) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.3, marginBottom: sp(14) }}>On this day</Text>
             <TouchableOpacity
               activeOpacity={0.88}
               onPress={() => router.push({
@@ -376,7 +376,7 @@ export default function HomeScreen(): React.JSX.Element {
               })}
             >
               <View style={{
-                backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', flexDirection: 'row',
+                backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', flexDirection: 'row',
                 shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4,
               }}>
                 <LinearGradient
@@ -384,21 +384,21 @@ export default function HomeScreen(): React.JSX.Element {
                   start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
                   style={{ width: 5 }}
                 />
-                <View style={{ width: 80, height: 88 }}>
+                <View style={{ width: scale(80), height: scale(88) }}>
                   <Image source={{ uri: onThisDay.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                   <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.18)' }} />
                 </View>
-                <View style={{ flex: 1, padding: 14, justifyContent: 'center' }}>
+                <View style={{ flex: 1, padding: sp(14), justifyContent: 'center' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 }}>
                     <Ionicons name="sparkles" size={12} color={BRAND_FROM} />
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: BRAND_FROM, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: BRAND_FROM, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                       {onThisDay.yearsAgo} {onThisDay.yearsAgo === 1 ? 'year' : 'years'} ago today
                     </Text>
                   </View>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, letterSpacing: -0.2 }} numberOfLines={1}>{onThisDay.title}</Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }} numberOfLines={1}>📍 {onThisDay.venue}</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG, letterSpacing: -0.2 }} numberOfLines={1}>{onThisDay.title}</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 2 }} numberOfLines={1}>📍 {onThisDay.venue}</Text>
                 </View>
-                <View style={{ justifyContent: 'center', paddingRight: 14 }}>
+                <View style={{ justifyContent: 'center', paddingRight: sp(14) }}>
                   <Ionicons name="chevron-forward" size={16} color={MUTED} />
                 </View>
               </View>
@@ -407,27 +407,27 @@ export default function HomeScreen(): React.JSX.Element {
         )}
 
         {/* ── Detection banner ── */}
-        {pendingCount > 0 && <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+        {pendingCount > 0 && <View style={{ paddingHorizontal: sp(20), paddingTop: sp(24) }}>
           <LinearGradient
             colors={[BRAND_FROM, BRAND_TO]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ padding: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}
+            style={{ padding: sp(16), borderRadius: scale(20), flexDirection: 'row', alignItems: 'flex-start', gap: sp(12) }}
           >
-            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: scale(40), height: scale(40), borderRadius: scale(12), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="sparkles-outline" size={20} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff', marginBottom: 4 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff', marginBottom: sp(4) }}>
                 {pendingCount} ticket{pendingCount === 1 ? '' : 's'} waiting for review
               </Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 18 }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.8)', lineHeight: 18 }}>
                 Found in your Gmail — approve to add to your vault.
               </Text>
               <TouchableOpacity
                 onPress={() => router.push('/review-imports')}
-                style={{ marginTop: 12, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.96)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ marginTop: sp(12), height: scale(38), borderRadius: scale(12), backgroundColor: 'rgba(255,255,255,0.96)', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }}>Review now</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG }}>Review now</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -438,11 +438,11 @@ export default function HomeScreen(): React.JSX.Element {
 
 
       {/* Ask AI FAB */}
-      <View style={{ position: 'absolute', bottom: TAB_BAR_H + bottomInset + 8, right: 20 }}>
+      <View style={{ position: 'absolute', bottom: TAB_BAR_H + bottomInset + 8, right: sp(20) }}>
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ width: 56, height: 56, borderRadius: 999, shadowColor: BRAND_FROM, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.38, shadowRadius: 14, elevation: 8 }}
+          style={{ width: scale(56), height: scale(56), borderRadius: 999, shadowColor: BRAND_FROM, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.38, shadowRadius: 14, elevation: 8 }}
         >
           <TouchableOpacity
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
@@ -479,7 +479,7 @@ function UpcomingCard({ event, onPress }: { event: UpcomingEvent; onPress?: () =
       activeOpacity={0.88}
       onPress={onPress}
       style={{
-        width: EVENT_CARD_W, backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden',
+        width: EVENT_CARD_W, backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden',
         shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 4,
       }}
     >
@@ -488,39 +488,39 @@ function UpcomingCard({ event, onPress }: { event: UpcomingEvent; onPress?: () =
         <Image source={{ uri: event.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.5)']}
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 }}
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: scale(60) }}
         />
         {/* Days away badge */}
-        <View style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: '#fff' }}>
+        <View style={{ position: 'absolute', top: sp(10), right: sp(10), backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 4 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: '#fff' }}>
             {event.daysAway === 0 ? 'Today' : `${event.daysAway}d away`}
           </Text>
         </View>
         {/* Heart / save */}
         <TouchableOpacity
           onPress={toggleSave}
-          style={{ position: 'absolute', bottom: 10, right: 10, width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'absolute', bottom: sp(10), right: sp(10), width: scale(30), height: scale(30), borderRadius: scale(15), backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons name={saved ? 'heart' : 'heart-outline'} size={15} color={saved ? '#ff6b8a' : '#fff'} />
         </TouchableOpacity>
         {/* Category */}
-        <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>{event.category}</Text>
+        <View style={{ position: 'absolute', top: sp(10), left: sp(10), backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 3 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>{event.category}</Text>
         </View>
       </View>
 
       {/* Details */}
-      <View style={{ padding: 12 }}>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG, letterSpacing: -0.1 }} numberOfLines={1}>{event.title}</Text>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>{event.subtitle}</Text>
+      <View style={{ padding: sp(12) }}>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG, letterSpacing: -0.1 }} numberOfLines={1}>{event.title}</Text>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }} numberOfLines={1}>{event.subtitle}</Text>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: sp(8) }}>
           <Ionicons name="calendar-outline" size={11} color={MUTED} />
-          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 11, color: MUTED }}>{event.date} · {event.time}</Text>
+          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(11), color: MUTED }}>{event.date} · {event.time}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: sp(4) }}>
           <Ionicons name="location-outline" size={11} color={MUTED} />
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }} numberOfLines={1}>{event.venue}</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }} numberOfLines={1}>{event.venue}</Text>
         </View>
       </View>
     </TouchableOpacity>

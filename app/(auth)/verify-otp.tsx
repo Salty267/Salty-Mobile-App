@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
-import { scaleFont } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 const BG     = '#FBF8F1';
 const DEEP   = '#1A0848';
@@ -103,33 +103,33 @@ export default function VerifyOtpScreen(): React.JSX.Element {
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: sp(24) }}>
 
-          <Text style={{ fontSize: 56, marginBottom: 24 }}>📬</Text>
+          <Text style={{ fontSize: scaleFont(56), marginBottom: sp(24) }}>📬</Text>
 
-          <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(40), letterSpacing: 8, color: DEEP, textAlign: 'center', marginBottom: 10 }}>
+          <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(40), letterSpacing: 8, color: DEEP, textAlign: 'center', marginBottom: sp(10) }}>
             CHECK YOUR{'\n'}EMAIL
           </Text>
 
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center', lineHeight: 20, marginBottom: 36 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, textAlign: 'center', lineHeight: 20, marginBottom: sp(36) }}>
             We sent a {OTP_LENGTH}-digit code to{'\n'}
             <Text style={{ fontFamily: 'DMSans_700Bold', color: DEEP }}>{email}</Text>
           </Text>
 
           {/* OTP digit boxes */}
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 28 }}>
+          <View style={{ flexDirection: 'row', gap: sp(10), marginBottom: sp(28) }}>
             {digits.map((d, i) => (
               <TextInput
                 key={i}
                 ref={ref => { inputs.current[i] = ref; }}
                 style={{
-                  width: 46, height: 56,
+                  width: scale(46), height: scale(56),
                   borderWidth: 1.5,
                   borderColor: d ? PURPLE : BORDER,
-                  borderRadius: 14,
+                  borderRadius: scale(14),
                   backgroundColor: '#fff',
                   textAlign: 'center',
-                  fontSize: 22,
+                  fontSize: scaleFont(22),
                   fontFamily: 'DMSans_700Bold',
                   color: DEEP,
                 }}
@@ -144,21 +144,21 @@ export default function VerifyOtpScreen(): React.JSX.Element {
           </View>
 
           {error && (
-            <View style={{ backgroundColor: '#FDEBD9', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: EMBER, width: '100%' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: EMBER }}>{error}</Text>
+            <View style={{ backgroundColor: '#FDEBD9', borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(10), marginBottom: sp(20), borderLeftWidth: 4, borderLeftColor: EMBER, width: '100%' }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: EMBER }}>{error}</Text>
             </View>
           )}
 
           {resent && (
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: PURPLE, marginBottom: 16 }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: PURPLE, marginBottom: sp(16) }}>
               Code resent — check your inbox.
             </Text>
           )}
 
-          {loading && <ActivityIndicator color={DEEP} style={{ marginBottom: 20 }} />}
+          {loading && <ActivityIndicator color={DEEP} style={{ marginBottom: sp(20) }} />}
 
           <TouchableOpacity onPress={handleResend} disabled={loading} activeOpacity={0.7}>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>
               Didn't get a code?{' '}
               <Text style={{ fontFamily: 'DMSans_700Bold', color: PURPLE, textDecorationLine: 'underline' }}>
                 Resend
@@ -168,10 +168,10 @@ export default function VerifyOtpScreen(): React.JSX.Element {
 
           <TouchableOpacity
             onPress={() => router.back()}
-            style={{ marginTop: 24 }}
+            style={{ marginTop: sp(24) }}
             activeOpacity={0.7}
           >
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>
               ← Back to sign up
             </Text>
           </TouchableOpacity>

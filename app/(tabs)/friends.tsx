@@ -6,7 +6,7 @@ import {
 import { useFriendActivity, type ActivityItem } from '@/lib/useFriendActivity';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -74,23 +74,23 @@ export default function FriendsScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={openSidebar}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your crew</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Friends</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Your crew</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Friends</Text>
             </View>
             <TouchableOpacity
               onPress={() => setSearchVisible(true)}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="person-add-outline" size={18} color="#fff" />
             </TouchableOpacity>
@@ -104,19 +104,19 @@ export default function FriendsScreen(): React.JSX.Element {
           <ActivityIndicator size="large" color={BRAND_FROM} />
         </View>
       ) : error ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(32) }}>
           <Ionicons name="alert-circle-outline" size={48} color={MUTED} />
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16, textAlign: 'center' }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginTop: sp(16), textAlign: 'center' }}>
             Something went wrong
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 8, textAlign: 'center' }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(8), textAlign: 'center' }}>
             {error}
           </Text>
           <TouchableOpacity
             onPress={refresh}
-            style={{ marginTop: 20, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: BRAND_FROM, borderRadius: 99 }}
+            style={{ marginTop: sp(20), paddingHorizontal: sp(24), paddingVertical: sp(10), backgroundColor: BRAND_FROM, borderRadius: 99 }}
           >
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>Try again</Text>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>Try again</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -124,16 +124,16 @@ export default function FriendsScreen(): React.JSX.Element {
 
           {/* ── Pending Requests ── */}
           {pendingRequests.length > 0 && (
-            <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }}>
+            <View style={{ paddingHorizontal: sp(20), paddingTop: sp(24) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), marginBottom: sp(14) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2 }}>
                   Friend Requests
                 </Text>
-                <View style={{ backgroundColor: BRAND_FROM, borderRadius: 99, minWidth: 22, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }}>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: '#fff' }}>{pendingRequests.length}</Text>
+                <View style={{ backgroundColor: BRAND_FROM, borderRadius: 99, minWidth: scale(22), height: scale(20), alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(6) }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: '#fff' }}>{pendingRequests.length}</Text>
                 </View>
               </View>
-              <View style={{ gap: 10 }}>
+              <View style={{ gap: sp(10) }}>
                 {pendingRequests.map(req => (
                   <PendingRequestCard
                     key={req.friendship_id}
@@ -152,12 +152,12 @@ export default function FriendsScreen(): React.JSX.Element {
           )}
 
           {/* ── Friends list ── */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }}>
+          <View style={{ paddingHorizontal: sp(20), paddingTop: sp(28) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: sp(14) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2 }}>
                 Your Friends
               </Text>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: MUTED }}>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: MUTED }}>
                 {friends.length} {friends.length === 1 ? 'friend' : 'friends'}
               </Text>
             </View>
@@ -165,7 +165,7 @@ export default function FriendsScreen(): React.JSX.Element {
             {friends.length === 0 ? (
               <EmptyFriends onAddPress={() => setSearchVisible(true)} />
             ) : (
-              <View style={{ gap: 12 }}>
+              <View style={{ gap: sp(12) }}>
                 {friends.map(friend => (
                   <FriendCard key={friend.friendship_id} friend={friend} />
                 ))}
@@ -205,31 +205,31 @@ function PendingRequestCard({
   const name = request.requester.display_name;
   const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
       <AvatarOrInitials uri={request.requester.avatar_url} initials={initials} size={46} />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }} numberOfLines={1}>
           {name ?? 'Someone'}
         </Text>
         {request.requester.username ? (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }} numberOfLines={1}>
             @{request.requester.username}
           </Text>
         ) : (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 2 }}>
             Wants to be friends
           </Text>
         )}
       </View>
       <TouchableOpacity
         onPress={onDecline}
-        style={{ width: 36, height: 36, borderRadius: 999, backgroundColor: '#fdecea', alignItems: 'center', justifyContent: 'center', marginRight: 6 }}
+        style={{ width: scale(36), height: scale(36), borderRadius: 999, backgroundColor: '#fdecea', alignItems: 'center', justifyContent: 'center', marginRight: sp(6) }}
       >
         <Ionicons name="close" size={18} color="#e55" />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={onAccept}
-        style={{ width: 36, height: 36, borderRadius: 999, backgroundColor: '#d1fae5', alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: scale(36), height: scale(36), borderRadius: 999, backgroundColor: '#d1fae5', alignItems: 'center', justifyContent: 'center' }}
       >
         <Ionicons name="checkmark" size={18} color="#059669" />
       </TouchableOpacity>
@@ -244,25 +244,25 @@ function FriendCard({ friend }: { friend: AcceptedFriend }): React.JSX.Element {
   const name = friend.display_name;
   const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: SURFACE, borderRadius: 18, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), backgroundColor: SURFACE, borderRadius: scale(18), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
       <AvatarOrInitials uri={friend.avatar_url} initials={initials} size={52} />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }} numberOfLines={1}>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }} numberOfLines={1}>
           {name ?? 'Friend'}
         </Text>
         {friend.username ? (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }} numberOfLines={1}>
             @{friend.username}
           </Text>
         ) : (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2 }}>
             {friend.mutual_events > 0
               ? `${friend.mutual_events} mutual event${friend.mutual_events === 1 ? '' : 's'}`
               : 'Connected via Salty'}
           </Text>
         )}
         {friend.username && friend.mutual_events > 0 && (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }}>
             {`${friend.mutual_events} mutual event${friend.mutual_events === 1 ? '' : 's'}`}
           </Text>
         )}
@@ -276,9 +276,9 @@ function FriendCard({ friend }: { friend: AcceptedFriend }): React.JSX.Element {
             mutualEvents: String(friend.mutual_events),
           },
         })}
-        style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: SECONDARY }}
+        style={{ paddingHorizontal: sp(14), paddingVertical: sp(8), borderRadius: 999, backgroundColor: SECONDARY }}
       >
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG }}>View</Text>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: FG }}>View</Text>
       </TouchableOpacity>
     </View>
   );
@@ -288,20 +288,20 @@ function FriendCard({ friend }: { friend: AcceptedFriend }): React.JSX.Element {
 
 function EmptyFriends({ onAddPress }: { onAddPress: () => void }): React.JSX.Element {
   return (
-    <View style={{ alignItems: 'center', paddingTop: 32, paddingBottom: 16 }}>
+    <View style={{ alignItems: 'center', paddingTop: sp(32), paddingBottom: sp(16) }}>
       <Ionicons name="people-outline" size={52} color={MUTED} />
-      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginTop: 18 }}>No friends yet</Text>
-      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 8, textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 }}>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, marginTop: sp(18) }}>No friends yet</Text>
+      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(8), textAlign: 'center', paddingHorizontal: sp(40), lineHeight: 20 }}>
         Search for people to add as friends and share events together.
       </Text>
-      <TouchableOpacity onPress={onAddPress} activeOpacity={0.85} style={{ marginTop: 20, overflow: 'hidden', borderRadius: 99 }}>
+      <TouchableOpacity onPress={onAddPress} activeOpacity={0.85} style={{ marginTop: sp(20), overflow: 'hidden', borderRadius: 99 }}>
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 12 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), paddingHorizontal: sp(24), paddingVertical: sp(12) }}
         >
           <Ionicons name="person-add-outline" size={16} color="#fff" />
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Find Friends</Text>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Find Friends</Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -335,19 +335,19 @@ function SearchModal({
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+          style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
         >
           <SafeAreaView edges={['top']}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 }}>
-              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 28, letterSpacing: 6, color: '#fff' }}>ADD FRIENDS</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: sp(8) }}>
+              <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(28), letterSpacing: 6, color: '#fff' }}>ADD FRIENDS</Text>
               <TouchableOpacity
                 onPress={onClose}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="close" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
-            <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10, height: scale(48), paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.96)' }}>
+            <View style={{ marginHorizontal: sp(20), flexDirection: 'row', alignItems: 'center', gap: sp(10), height: scale(48), paddingHorizontal: sp(16), borderRadius: scale(16), backgroundColor: 'rgba(255,255,255,0.96)' }}>
               <Ionicons name="search-outline" size={16} color={MUTED} />
               <TextInput
                 value={query}
@@ -357,7 +357,7 @@ function SearchModal({
                 autoFocus
                 autoCapitalize="none"
                 autoCorrect={false}
-                style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG }}
+                style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(15), color: FG }}
               />
               {searching && <ActivityIndicator size="small" color={BRAND_FROM} />}
               {query.length > 0 && !searching && (
@@ -372,7 +372,7 @@ function SearchModal({
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 10 }}
+          contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(20), paddingBottom: sp(40), gap: sp(10) }}
         >
           {/* ── Contacts section (shown when search bar is empty) ── */}
           {showContacts && (
@@ -381,35 +381,35 @@ function SearchModal({
                 onPress={onLoadContacts}
                 disabled={contactLoading}
                 activeOpacity={0.85}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: SURFACE, borderRadius: 16, paddingVertical: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(10), backgroundColor: SURFACE, borderRadius: scale(16), paddingVertical: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
               >
                 {contactLoading
                   ? <ActivityIndicator size="small" color={BRAND_FROM} />
                   : <Ionicons name="people-outline" size={20} color={BRAND_FROM} />
                 }
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: BRAND_FROM }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: BRAND_FROM }}>
                   {contactLoading ? 'Scanning contacts…' : 'Find from Contacts'}
                 </Text>
               </TouchableOpacity>
 
               {permissionDenied && (
-                <View style={{ alignItems: 'center', paddingVertical: 12, gap: 4 }}>
+                <View style={{ alignItems: 'center', paddingVertical: sp(12), gap: 4 }}>
                   <Ionicons name="lock-closed-outline" size={24} color={MUTED} />
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, textAlign: 'center' }}>
                     Contacts access was denied. Enable it in your phone settings to find friends.
                   </Text>
                 </View>
               )}
 
               {contactError && !permissionDenied && (
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: '#e55', textAlign: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: '#e55', textAlign: 'center' }}>
                   {contactError}
                 </Text>
               )}
 
               {!contactLoading && !permissionDenied && contactResults.length > 0 && (
                 <>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 4 }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: MUTED, letterSpacing: 0.6, textTransform: 'uppercase', marginTop: sp(4) }}>
                     People you know
                   </Text>
                   {contactResults.map(result => (
@@ -426,7 +426,7 @@ function SearchModal({
               {!contactLoading && !permissionDenied && contactResults.length === 0 && contactError === null && (
                 <View style={{ alignItems: 'center', paddingTop: 32 }}>
                   <Ionicons name="search-outline" size={48} color={MUTED} />
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12, textAlign: 'center' }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, marginTop: sp(12), textAlign: 'center' }}>
                     Search by @username or display name
                   </Text>
                 </View>
@@ -438,8 +438,8 @@ function SearchModal({
           {!showContacts && query.trim().length >= 2 && !searching && results.length === 0 && (
             <View style={{ alignItems: 'center', paddingTop: 48 }}>
               <Ionicons name="person-outline" size={48} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 12 }}>No users found</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6 }}>Try a different username or name.</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginTop: sp(12) }}>No users found</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(6) }}>Try a different username or name.</Text>
             </View>
           )}
           {!showContacts && results.map(result => (
@@ -467,20 +467,20 @@ function SearchResultRow({
     switch (result.status) {
       case 'friends':
         return (
-          <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: '#d1fae5' }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#059669' }}>Friends</Text>
+          <View style={{ paddingHorizontal: sp(14), paddingVertical: sp(8), borderRadius: 999, backgroundColor: '#d1fae5' }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#059669' }}>Friends</Text>
           </View>
         );
       case 'pending_sent':
         return (
-          <TouchableOpacity onPress={onWithdraw} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: SECONDARY }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED }}>Pending</Text>
+          <TouchableOpacity onPress={onWithdraw} style={{ paddingHorizontal: sp(14), paddingVertical: sp(8), borderRadius: 999, backgroundColor: SECONDARY }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED }}>Pending</Text>
           </TouchableOpacity>
         );
       case 'pending_received':
         return (
-          <View style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: `${BRAND_FROM}22` }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: BRAND_FROM }}>Requested you</Text>
+          <View style={{ paddingHorizontal: sp(12), paddingVertical: sp(8), borderRadius: 999, backgroundColor: `${BRAND_FROM}22` }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: BRAND_FROM }}>Requested you</Text>
           </View>
         );
       default:
@@ -489,10 +489,10 @@ function SearchResultRow({
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8 }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: sp(14), paddingVertical: sp(8) }}
             >
               <Ionicons name="person-add-outline" size={13} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>Add</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#fff' }}>Add</Text>
             </LinearGradient>
           </TouchableOpacity>
         );
@@ -500,22 +500,22 @@ function SearchResultRow({
   };
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
       <AvatarOrInitials uri={result.avatar_url} initials={initials} size={46} />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }} numberOfLines={1}>
           {name ?? 'Unknown User'}
         </Text>
         {result.username && (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }} numberOfLines={1}>
             @{result.username}
           </Text>
         )}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8) }}>
         <TouchableOpacity
           onPress={() => router.push({ pathname: '/user-profile', params: { userId: result.id } })}
-          style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: scale(34), height: scale(34), borderRadius: 999, backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons name="person-outline" size={16} color={BRAND_FROM} />
         </TouchableOpacity>
@@ -541,21 +541,21 @@ const timeAgo = (iso: string): string => {
 
 function ActivityFeed({ items, loading }: { items: ActivityItem[]; loading: boolean }): React.JSX.Element {
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
-      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginBottom: 14, letterSpacing: -0.2 }}>
+    <View style={{ paddingHorizontal: sp(20), paddingTop: sp(24) }}>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginBottom: sp(14), letterSpacing: -0.2 }}>
         Recent Activity
       </Text>
       {loading ? (
-        <ActivityIndicator size="small" color={BRAND_FROM} style={{ marginTop: 8 }} />
+        <ActivityIndicator size="small" color={BRAND_FROM} style={{ marginTop: sp(8) }} />
       ) : items.length === 0 ? (
-        <View style={{ backgroundColor: SURFACE, borderRadius: 16, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2, alignItems: 'center', gap: 8 }}>
+        <View style={{ backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2, alignItems: 'center', gap: sp(8) }}>
           <Ionicons name="sparkles-outline" size={24} color={MUTED} />
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, textAlign: 'center' }}>
             No recent activity yet.
           </Text>
         </View>
       ) : (
-        <View style={{ gap: 10 }}>
+        <View style={{ gap: sp(10) }}>
           {items.map((item, i) => <ActivityCard key={i} item={item} />)}
         </View>
       )}
@@ -579,25 +579,25 @@ function ActivityCard({ item }: { item: ActivityItem }): React.JSX.Element {
   const sub   = isTicket ? [item.venue, item.date].filter(Boolean).join(' · ') : null;
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}>
       <AvatarOrInitials uri={item.friendAvatar} initials={initials} size={44} />
       <View style={{ flex: 1, gap: 1 }}>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }} numberOfLines={1}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }} numberOfLines={1}>
           {label}
         </Text>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }} numberOfLines={1}>
           {title}
         </Text>
         {sub ? (
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 1 }} numberOfLines={1}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 1 }} numberOfLines={1}>
             {sub}
           </Text>
         ) : null}
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 3 }}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 3 }}>
           {timeAgo(item.createdAt)}
         </Text>
       </View>
-      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: scale(36), height: scale(36), borderRadius: scale(18), backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={iconName as any} size={16} color={iconColor} />
       </View>
     </View>

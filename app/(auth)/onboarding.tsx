@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase/client';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -203,21 +204,21 @@ export default function OnboardingScreen(): React.JSX.Element {
       <View style={{ flex: 1, backgroundColor: '#FBF8F1' }}>
 
         {/* ── SALTY WORDMARK ── */}
-        <View style={{ alignItems: 'center', paddingTop: 16, paddingBottom: 16 }}>
-          <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 32, letterSpacing: 10, color: DEEP, opacity: 0.85 }}>
+        <View style={{ alignItems: 'center', paddingTop: sp(16), paddingBottom: sp(16) }}>
+          <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(32), letterSpacing: 10, color: DEEP, opacity: 0.85 }}>
             SALTY
           </Text>
         </View>
 
         {/* ── HEADLINE ── */}
-        <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,47,212,0.09)', borderRadius: 99, paddingHorizontal: 11, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 16 }}>
-            <Ionicons name="star" size={11} color="#5B2FD4" />
-            <Text style={{ fontSize: 10.5, fontFamily: 'DMSans_700Bold', letterSpacing: 1.4, color: DEEP, textTransform: 'uppercase' }}>
+        <View style={{ paddingHorizontal: sp(24), paddingBottom: sp(20) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,47,212,0.09)', borderRadius: 99, paddingHorizontal: sp(11), paddingVertical: sp(6), alignSelf: 'flex-start', marginBottom: sp(16) }}>
+            <Ionicons name="star" size={scale(11)} color="#5B2FD4" />
+            <Text style={{ fontSize: scaleFont(10.5), fontFamily: 'DMSans_700Bold', letterSpacing: 1.4, color: DEEP, textTransform: 'uppercase' }}>
               Your year, replayed
             </Text>
           </View>
-          <Text style={{ fontSize: 36, fontFamily: 'DMSans_700Bold', color: DEEP, letterSpacing: -0.6, lineHeight: 38 }}>
+          <Text style={{ fontSize: scaleFont(36), fontFamily: 'DMSans_700Bold', color: DEEP, letterSpacing: -0.6, lineHeight: 38 }}>
             Don't just go.{'\n'}
             <Text style={{ fontStyle: 'italic', color: '#E8581A' }}>Remember it.</Text>
           </Text>
@@ -225,19 +226,19 @@ export default function OnboardingScreen(): React.JSX.Element {
 
         {/* ── CARDS STAGE (swipeable) ── */}
         <View
-          style={{ marginHorizontal: 20, borderRadius: 28, backgroundColor: '#5B2FD4', overflow: 'hidden', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}
+          style={{ marginHorizontal: sp(20), borderRadius: scale(28), backgroundColor: '#5B2FD4', overflow: 'hidden', paddingHorizontal: sp(16), paddingTop: sp(16), paddingBottom: sp(24) }}
           {...pan.panHandlers}
         >
           <View pointerEvents="none" style={{ position: 'absolute', top: -80, left: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: '#FAC775', opacity: 0.22 }} />
           <View pointerEvents="none" style={{ position: 'absolute', bottom: -100, right: -80, width: 340, height: 340, borderRadius: 170, backgroundColor: '#E8581A', opacity: 0.28 }} />
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, zIndex: 10 }}>
-            <Text style={{ fontSize: 10, fontFamily: 'DMSans_700Bold', letterSpacing: 3, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(16), zIndex: 10 }}>
+            <Text style={{ fontSize: scaleFont(10), fontFamily: 'DMSans_700Bold', letterSpacing: 3, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
               {String(page + 1).padStart(2, '0')} / {String(PAGES.length).padStart(2, '0')}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 99, paddingHorizontal: 11, paddingVertical: 5 }}>
-              <Ionicons name="sparkles-outline" size={10} color="#FAC775" />
-              <Text style={{ fontSize: 10, fontFamily: 'DMSans_700Bold', letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 99, paddingHorizontal: sp(11), paddingVertical: sp(5) }}>
+              <Ionicons name="sparkles-outline" size={scale(10)} color="#FAC775" />
+              <Text style={{ fontSize: scaleFont(10), fontFamily: 'DMSans_700Bold', letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>
                 {current.title}
               </Text>
             </View>
@@ -268,7 +269,7 @@ export default function OnboardingScreen(): React.JSX.Element {
         </View>
 
         {/* ── PAGE DOTS ── */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 16, paddingBottom: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: sp(16), paddingBottom: sp(4) }}>
           {PAGES.map((_, i) => (
             <TouchableOpacity
               key={i}
@@ -276,8 +277,8 @@ export default function OnboardingScreen(): React.JSX.Element {
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <View style={{
-                height: 7,
-                width: i === page ? 26 : 7,
+                height: scale(7),
+                width: i === page ? scale(26) : scale(7),
                 borderRadius: 4,
                 backgroundColor: i === page ? '#5B2FD4' : 'rgba(91,47,212,0.2)',
               }} />
@@ -286,19 +287,19 @@ export default function OnboardingScreen(): React.JSX.Element {
         </View>
 
         {/* ── CTA ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(16) }}>
           <TouchableOpacity
-            style={{ backgroundColor: DEEP, borderRadius: 18, paddingVertical: 18, alignItems: 'center', justifyContent: 'center' }}
+            style={{ backgroundColor: DEEP, borderRadius: scale(18), paddingVertical: sp(18), alignItems: 'center', justifyContent: 'center' }}
             onPress={() => router.push('/(auth)/signin' as any)}
             activeOpacity={0.85}
           >
-            <Text style={{ fontSize: 14, fontFamily: 'DMSans_700Bold', color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: scaleFont(14), fontFamily: 'DMSans_700Bold', color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase' }}>
               Log In
             </Text>
           </TouchableOpacity>
 
-          <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: Math.max(12, insets.bottom) }}>
-            <Text style={{ fontSize: 12.5, fontFamily: 'DMSans_400Regular', color: `${DEEP}88` }}>
+          <View style={{ alignItems: 'center', paddingTop: sp(14), paddingBottom: Math.max(12, insets.bottom) }}>
+            <Text style={{ fontSize: scaleFont(12.5), fontFamily: 'DMSans_400Regular', color: `${DEEP}88` }}>
               Don't have an account?{' '}
               <Text
                 style={{ fontFamily: 'DMSans_700Bold', color: '#5B2FD4', textDecorationLine: 'underline' }}
@@ -331,7 +332,7 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
   return (
     <View style={{
       flex: 1,
-      borderRadius: 20,
+      borderRadius: scale(20),
       overflow: 'hidden',
       backgroundColor: bg,
       shadowColor: '#14083C',
@@ -366,21 +367,21 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
           alignItems: 'flex-start',
         }}>
           <View style={{
-            width: isFront ? 36 : 26, height: isFront ? 36 : 26,
-            borderRadius: isFront ? 10 : 7,
+            width: isFront ? scale(36) : scale(26), height: isFront ? scale(36) : scale(26),
+            borderRadius: isFront ? scale(10) : scale(7),
             backgroundColor: tint,
             alignItems: 'center', justifyContent: 'center',
             shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 5,
           }}>
-            <Ionicons name={iconName} size={isFront ? 17 : 12} color="#fff" />
+            <Ionicons name={iconName} size={isFront ? scale(17) : scale(12)} color="#fff" />
           </View>
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            <View style={{ backgroundColor: tint, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Text style={{ fontSize: 7, fontFamily: 'DMSans_700Bold', letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>
+            <View style={{ backgroundColor: tint, borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: sp(3) }}>
+              <Text style={{ fontSize: scaleFont(7), fontFamily: 'DMSans_700Bold', letterSpacing: 1.5, color: '#fff', textTransform: 'uppercase' }}>
                 {category}
               </Text>
             </View>
-            <Text style={{ fontSize: 8, fontFamily: 'DMSans_700Bold', color: 'rgba(255,255,255,0.88)' }}>
+            <Text style={{ fontSize: scaleFont(8), fontFamily: 'DMSans_700Bold', color: 'rgba(255,255,255,0.88)' }}>
               {meta}
             </Text>
           </View>
@@ -395,7 +396,7 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
         }}>
           <Text
             style={{
-              fontSize: isFront ? 20 : 13,
+              fontSize: isFront ? scaleFont(20) : scaleFont(13),
               fontFamily: 'DMSans_700Bold',
               color: '#fff',
               lineHeight: isFront ? 22 : 15,
@@ -408,8 +409,8 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
             {label}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            <Ionicons name="location-sharp" size={9} color="rgba(255,255,255,0.7)" />
-            <Text style={{ fontSize: 8.5, fontFamily: 'DMSans_500Medium', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: 0.4 }} numberOfLines={1}>
+            <Ionicons name="location-sharp" size={scale(9)} color="rgba(255,255,255,0.7)" />
+            <Text style={{ fontSize: scaleFont(8.5), fontFamily: 'DMSans_500Medium', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: 0.4 }} numberOfLines={1}>
               {sub}
             </Text>
           </View>
@@ -422,7 +423,7 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
         ))}
       </View>
 
-      <View style={{ height: STUB_H, paddingLeft: isFront ? 20 : 15, paddingRight: isFront ? 14 : 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={{ height: STUB_H, paddingLeft: isFront ? sp(20) : sp(15), paddingRight: isFront ? sp(14) : sp(11), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: isFront ? 2 : 1.5 }}>
           {BARCODE_FULL.map((h, k) => (
             <View key={k} style={{ width: isFront ? 2 : 1.5, height: (h / 12) * (isFront ? 22 : 17), backgroundColor: DEEP, opacity: 0.3, borderRadius: 1 }} />
@@ -430,10 +431,10 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
         </View>
         {isFront && (
           <View style={{ alignItems: 'flex-end', gap: 2 }}>
-            <Text style={{ fontSize: 7, fontFamily: 'DMSans_700Bold', letterSpacing: 1.8, color: `${DEEP}55`, textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: scaleFont(7), fontFamily: 'DMSans_700Bold', letterSpacing: 1.8, color: `${DEEP}55`, textTransform: 'uppercase' }}>
               ADMIT ONE
             </Text>
-            <Text style={{ fontSize: 7.5, fontFamily: 'DMSans_400Regular', color: `${DEEP}40`, letterSpacing: 0.8 }}>
+            <Text style={{ fontSize: scaleFont(7.5), fontFamily: 'DMSans_400Regular', color: `${DEEP}40`, letterSpacing: 0.8 }}>
               #{ticketNum}
             </Text>
           </View>

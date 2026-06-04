@@ -5,7 +5,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -266,24 +266,24 @@ export default function EditProfileScreen(): React.JSX.Element {
         <LinearGradient
           colors={[BRAND_FROM, BRAND_TO]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+          style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
         >
           <SafeAreaView edges={['top']}>
             {/* Nav row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
               <TouchableOpacity
                 onPress={() => router.back()}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="chevron-back" size={22} color="#fff" />
               </TouchableOpacity>
 
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Your account</Text>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Edit Profile</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Your account</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Edit Profile</Text>
               </View>
 
-              <View style={{ width: 40 }} />
+              <View style={{ width: scale(40) }} />
             </View>
 
             {/* Avatar */}
@@ -292,7 +292,7 @@ export default function EditProfileScreen(): React.JSX.Element {
                 <View style={{ width: scale(88), height: scale(88), borderRadius: scale(44), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)', overflow: 'hidden' }}>
                   {avatarUrl
                     ? <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                    : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 34, color: '#fff' }}>{initials}</Text>
+                    : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(34), color: '#fff' }}>{initials}</Text>
                   }
                 </View>
                 {/* Camera badge */}
@@ -303,24 +303,24 @@ export default function EditProfileScreen(): React.JSX.Element {
                   }
                 </View>
               </TouchableOpacity>
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 10 }}>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.8)', marginTop: sp(10) }}>
                 {photoSaved ? '✓ Photo updated' : 'Tap to change photo'}
               </Text>
             </View>
           </SafeAreaView>
         </LinearGradient>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 28, paddingBottom: bottom + 32 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(28), paddingBottom: bottom + 32 }}>
 
           {/* ── Form fields ── */}
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             {FIELDS.map((field, i) => (
               <View key={field.label}>
-                <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: field.note ? 6 : 12 }}>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>
+                <View style={{ paddingHorizontal: sp(16), paddingTop: sp(14), paddingBottom: field.note ? sp(6) : sp(12) }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: sp(6) }}>
                     {field.label}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10) }}>
                     <TextInput
                       value={field.value}
                       onChangeText={field.onChange}
@@ -333,25 +333,25 @@ export default function EditProfileScreen(): React.JSX.Element {
                       style={{
                         flex: 1,
                         fontFamily: 'DMSans_400Regular',
-                        fontSize: 15,
+                        fontSize: scaleFont(15),
                         color: field.readOnly ? MUTED : FG,
                       }}
                     />
                     {field.readOnly && (
-                      <View style={{ backgroundColor: SECONDARY, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: BRAND_FROM }}>
+                      <View style={{ backgroundColor: SECONDARY, borderRadius: 8, paddingHorizontal: sp(8), paddingVertical: 3 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: BRAND_FROM }}>
                           {field.badgeText ?? 'Locked'}
                         </Text>
                       </View>
                     )}
                   </View>
                   {field.note && (
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: field.label === 'Username' && usernameError ? '#ef4444' : MUTED, marginTop: 4, marginBottom: 6 }}>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: field.label === 'Username' && usernameError ? '#ef4444' : MUTED, marginTop: sp(4), marginBottom: sp(6) }}>
                       {field.label === 'Username' && usernameError ? usernameError : field.note}
                     </Text>
                   )}
                   {field.label === 'Username' && usernameError && !field.note && (
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: '#ef4444', marginTop: 4, marginBottom: 6 }}>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: '#ef4444', marginTop: sp(4), marginBottom: sp(6) }}>
                       {usernameError}
                     </Text>
                   )}
@@ -363,7 +363,7 @@ export default function EditProfileScreen(): React.JSX.Element {
             ))}
           </View>
 
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 12, paddingHorizontal: 4 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: sp(12), paddingHorizontal: 4 }}>
             Email address is managed by your sign-in method and cannot be changed here.
           </Text>
 
@@ -372,18 +372,18 @@ export default function EditProfileScreen(): React.JSX.Element {
             onPress={handleSave}
             disabled={saving}
             activeOpacity={0.85}
-            style={{ marginTop: 28, overflow: 'hidden', borderRadius: 16, opacity: saving ? 0.7 : 1 }}
+            style={{ marginTop: sp(28), overflow: 'hidden', borderRadius: scale(16), opacity: saving ? 0.7 : 1 }}
           >
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ height: scale(54), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+              style={{ height: scale(54), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: sp(8) }}
             >
               {saving
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <>
                     <Ionicons name={saved ? 'checkmark-circle' : 'save-outline'} size={18} color="#fff" />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>
                       {saved ? 'Changes saved!' : 'Save changes'}
                     </Text>
                   </>
@@ -392,17 +392,17 @@ export default function EditProfileScreen(): React.JSX.Element {
           </TouchableOpacity>
 
           {/* ── Change Password ── */}
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3, marginTop: 24 }}>
-            <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Change Password</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3, marginTop: sp(24) }}>
+            <View style={{ paddingHorizontal: sp(16), paddingTop: sp(16), paddingBottom: sp(4) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }}>Change Password</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2 }}>
                 Must be signed in with email to change your password.
               </Text>
             </View>
 
             {pwError ? (
-              <View style={{ marginHorizontal: 16, marginTop: 10, backgroundColor: '#FDEBD9', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderLeftWidth: 3, borderLeftColor: '#E8581A' }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: '#E8581A' }}>{pwError}</Text>
+              <View style={{ marginHorizontal: sp(16), marginTop: sp(10), backgroundColor: '#FDEBD9', borderRadius: 10, paddingHorizontal: sp(12), paddingVertical: sp(8), borderLeftWidth: 3, borderLeftColor: '#E8581A' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: '#E8581A' }}>{pwError}</Text>
               </View>
             ) : null}
 
@@ -412,8 +412,8 @@ export default function EditProfileScreen(): React.JSX.Element {
               { key: 'confirm' as const, label: 'Confirm New Password', placeholder: 'Re-enter new password' },
             ].map(({ key, label, placeholder }, i) => (
               <View key={key}>
-                <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 }}>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 }}>{label}</Text>
+                <View style={{ paddingHorizontal: sp(16), paddingTop: sp(14), paddingBottom: sp(12) }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: sp(6) }}>{label}</Text>
                   <TextInput
                     value={changePwForm[key]}
                     onChangeText={v => setChangePwForm(f => ({ ...f, [key]: v }))}
@@ -422,30 +422,30 @@ export default function EditProfileScreen(): React.JSX.Element {
                     secureTextEntry
                     autoCapitalize="none"
                     autoCorrect={false}
-                    style={{ fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG }}
+                    style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(15), color: FG }}
                   />
                 </View>
-                {i < 2 && <View style={{ height: 1, backgroundColor: BORDER, marginLeft: 16 }} />}
+                {i < 2 && <View style={{ height: 1, backgroundColor: BORDER, marginLeft: sp(16) }} />}
               </View>
             ))}
 
-            <View style={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 8 }}>
+            <View style={{ paddingHorizontal: sp(16), paddingBottom: sp(16), paddingTop: sp(8) }}>
               <TouchableOpacity
                 onPress={handleChangePassword}
                 disabled={changingPw}
                 activeOpacity={0.85}
-                style={{ overflow: 'hidden', borderRadius: 14, opacity: changingPw ? 0.7 : 1 }}
+                style={{ overflow: 'hidden', borderRadius: scale(14), opacity: changingPw ? 0.7 : 1 }}
               >
                 <LinearGradient
                   colors={[BRAND_FROM, BRAND_TO]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+                  style={{ height: scale(48), alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: sp(8) }}
                 >
                   {changingPw
                     ? <ActivityIndicator color="#fff" size="small" />
                     : <>
                         <Ionicons name={pwSaved ? 'checkmark-circle' : 'lock-closed-outline'} size={16} color="#fff" />
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>
                           {pwSaved ? 'Password updated!' : 'Update Password'}
                         </Text>
                       </>
@@ -459,10 +459,10 @@ export default function EditProfileScreen(): React.JSX.Element {
           <TouchableOpacity
             onPress={handleDeleteAccount}
             activeOpacity={0.8}
-            style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 }}
+            style={{ marginTop: sp(16), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(8), paddingVertical: sp(14) }}
           >
             <Ionicons name="trash-outline" size={16} color="#ef4444" />
-            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 14, color: '#ef4444' }}>Delete Account</Text>
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(14), color: '#ef4444' }}>Delete Account</Text>
           </TouchableOpacity>
 
         </ScrollView>

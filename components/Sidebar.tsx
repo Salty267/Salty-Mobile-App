@@ -4,7 +4,7 @@ import {
   Dimensions, Modal, ScrollView, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -152,27 +152,27 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
         }}
       >
         {/* Inner view handles rounding + clip */}
-        <View style={{ flex: 1, backgroundColor: BG, borderTopRightRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden' }}>
+        <View style={{ flex: 1, backgroundColor: BG, borderTopRightRadius: scale(28), borderBottomRightRadius: scale(28), overflow: 'hidden' }}>
 
           {/* ── Header gradient — extends into status bar ── */}
           <LinearGradient
             colors={[BRAND_FROM, BRAND_TO]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 24 }}
+            style={{ paddingTop: insets.top + sp(20), paddingHorizontal: sp(20), paddingBottom: sp(24) }}
           >
             {/* Avatar + name */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14) }}>
               <View style={{ width: scale(56), height: scale(56), borderRadius: scale(28), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', overflow: 'hidden' }}>
                 {avatarUrl
                   ? <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                  : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 22, color: '#fff' }}>{initials}</Text>
+                  : <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(22), color: '#fff' }}>{initials}</Text>
                 }
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 18, color: '#fff', letterSpacing: -0.3 }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: '#fff', letterSpacing: -0.3 }} numberOfLines={1}>
                   {fullName || 'Hey there'} 👋
                 </Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)', marginTop: 2 }} numberOfLines={1}>
                   {email}
                 </Text>
               </View>
@@ -183,7 +183,7 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
           {/* ── Menu items ── */}
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 16, gap: 4 }}
+            contentContainerStyle={{ paddingVertical: sp(16), paddingHorizontal: sp(16), gap: sp(4) }}
           >
             {MENU_BASE.map(item => ({
               ...item,
@@ -200,15 +200,15 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
                   else if (item.label === 'Following') { onClose(); router.push('/following'); }
                   else if (item.label === 'Feedback') { onClose(); router.push('/feedback'); }
                 }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 12, paddingVertical: 13, borderRadius: 16 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), paddingHorizontal: sp(12), paddingVertical: sp(13), borderRadius: scale(16) }}
               >
                 <View style={{ width: scale(42), height: scale(42), borderRadius: scale(21), backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 2 }}>
                   <Ionicons name={item.icon} size={20} color={BRAND_FROM} />
                 </View>
-                <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: 15, color: FG }}>{item.label}</Text>
+                <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: scaleFont(15), color: FG }}>{item.label}</Text>
                 {item.badge !== undefined && (
-                  <View style={{ backgroundColor: BRAND_FROM, borderRadius: 99, minWidth: 26, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: '#fff' }}>{item.badge}</Text>
+                  <View style={{ backgroundColor: BRAND_FROM, borderRadius: 99, minWidth: scale(26), height: scale(22), alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(7) }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: '#fff' }}>{item.badge}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -219,10 +219,10 @@ export default function Sidebar({ visible, onClose }: Props): React.JSX.Element 
           <TouchableOpacity
             onPress={handleSignOut}
             activeOpacity={0.7}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 28, paddingBottom: insets.bottom + 16, paddingTop: 12 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10), paddingHorizontal: sp(28), paddingBottom: insets.bottom + sp(16), paddingTop: sp(12) }}
           >
             <Ionicons name="log-out-outline" size={20} color="#e55" />
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#e55' }}>Log out</Text>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#e55' }}>Log out</Text>
           </TouchableOpacity>
 
         </View>

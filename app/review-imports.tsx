@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
 import { useBottomPad } from '@/lib/useBottomPad';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -194,43 +195,43 @@ export default function ReviewImportsScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Gmail import</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Review Tickets</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Gmail import</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Review Tickets</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
       {loading ? (
-        <ActivityIndicator color={BRAND_FROM} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={BRAND_FROM} style={{ marginTop: sp(60) }} />
       ) : imports.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: sp(40) }}>
           <Ionicons name="checkmark-circle-outline" size={64} color={GREEN} />
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: FG, marginTop: 16, textAlign: 'center' }}>All caught up!</Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 8, textAlign: 'center' }}>No tickets pending review.</Text>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(20), color: FG, marginTop: sp(16), textAlign: 'center' }}>All caught up!</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, marginTop: sp(8), textAlign: 'center' }}>No tickets pending review.</Text>
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.85}
-            style={{ marginTop: 24, overflow: 'hidden', borderRadius: 14 }}
+            style={{ marginTop: sp(24), overflow: 'hidden', borderRadius: scale(14) }}
           >
             <LinearGradient
               colors={[BRAND_FROM, BRAND_TO]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ paddingHorizontal: 28, paddingVertical: 13 }}
+              style={{ paddingHorizontal: sp(28), paddingVertical: sp(13) }}
             >
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Back to Tickets</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Back to Tickets</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -238,9 +239,9 @@ export default function ReviewImportsScreen(): React.JSX.Element {
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: bottomPad + 20, gap: 16 }}
+          contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(20), paddingBottom: bottomPad + sp(20), gap: sp(16) }}
         >
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>
             {imports.length} ticket{imports.length === 1 ? '' : 's'} found — approve to add to your vault or reject to dismiss.
           </Text>
 
@@ -257,29 +258,29 @@ export default function ReviewImportsScreen(): React.JSX.Element {
               <View
                 key={item.id}
                 style={{
-                  backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden',
+                  backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden',
                   shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.1, shadowRadius: 16, elevation: 4,
                 }}
               >
                 <View style={{ height: 5, backgroundColor: tintColor }} />
 
-                <View style={{ padding: 16 }}>
+                <View style={{ padding: sp(16) }}>
                   {/* Subject + confidence badge */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, flex: 1, marginRight: 8 }} numberOfLines={1}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(10) }}>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, flex: 1, marginRight: sp(8) }} numberOfLines={1}>
                       {d.subject}
                     </Text>
-                    <View style={{ backgroundColor: `${confColor}18`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: confColor }}>{confPct}% match</Text>
+                    <View style={{ backgroundColor: `${confColor}18`, borderRadius: 99, paddingHorizontal: sp(8), paddingVertical: 3 }}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: confColor }}>{confPct}% match</Text>
                     </View>
                   </View>
 
                   {isEditing ? (
-                    <View style={{ gap: 10 }}>
+                    <View style={{ gap: sp(10) }}>
                       <ReviewField label="Event name" value={editState.title} onChangeText={t => setEditState(s => ({ ...s, title: t }))} placeholder="Event name" />
                       <ReviewField label="Venue" value={editState.venue} onChangeText={t => setEditState(s => ({ ...s, venue: t }))} placeholder="Venue" />
-                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <View style={{ flexDirection: 'row', gap: sp(10) }}>
                         <View style={{ flex: 1 }}>
                           <ReviewField label="Date" value={editState.date} onChangeText={t => setEditState(s => ({ ...s, date: t }))} placeholder="e.g. Aug 15, 2026" />
                         </View>
@@ -289,47 +290,47 @@ export default function ReviewImportsScreen(): React.JSX.Element {
                       </View>
                       <ReviewField label="Seat / Section" value={editState.seat} onChangeText={t => setEditState(s => ({ ...s, seat: t }))} placeholder="Optional" />
                       <View>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: FG, marginBottom: 6 }}>Category</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: FG, marginBottom: sp(6) }}>Category</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: sp(6) }}>
                           {CATEGORIES.map(cat => (
                             <TouchableOpacity
                               key={cat}
                               onPress={() => setEditState(s => ({ ...s, category: cat }))}
                               style={{
-                                paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99,
+                                paddingHorizontal: sp(12), paddingVertical: sp(6), borderRadius: 99,
                                 backgroundColor: editState.category === cat ? BRAND_FROM : BG,
                               }}
                             >
-                              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: editState.category === cat ? '#fff' : FG }}>{cat}</Text>
+                              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: editState.category === cat ? '#fff' : FG }}>{cat}</Text>
                             </TouchableOpacity>
                           ))}
                         </View>
                       </View>
                     </View>
                   ) : (
-                    <View style={{ gap: 6 }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }} numberOfLines={2}>
+                    <View style={{ gap: sp(6) }}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2 }} numberOfLines={2}>
                         {d.title ?? 'Untitled'}
                       </Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                         <Ionicons name="location-outline" size={12} color={MUTED} />
-                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }} numberOfLines={1}>{d.venue ?? 'TBD'}</Text>
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }} numberOfLines={1}>{d.venue ?? 'TBD'}</Text>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                         <Ionicons name="calendar-outline" size={12} color={MUTED} />
-                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>
+                        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>
                           {d.date ?? 'TBD'} · {d.time ?? 'TBD'}
                         </Text>
                       </View>
                       {d.seat && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                           <Ionicons name="ticket-outline" size={12} color={BRAND_FROM} />
-                          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: BRAND_FROM }}>{d.seat}</Text>
+                          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: BRAND_FROM }}>{d.seat}</Text>
                         </View>
                       )}
                       <View style={{ flexDirection: 'row', marginTop: 2 }}>
-                        <View style={{ backgroundColor: `${tintColor}55`, borderRadius: 99, paddingHorizontal: 9, paddingVertical: 3 }}>
-                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>{dispCat}</Text>
+                        <View style={{ backgroundColor: `${tintColor}55`, borderRadius: 99, paddingHorizontal: sp(9), paddingVertical: 3 }}>
+                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>{dispCat}</Text>
                         </View>
                       </View>
                     </View>
@@ -341,22 +342,22 @@ export default function ReviewImportsScreen(): React.JSX.Element {
                   <TouchableOpacity
                     onPress={() => handleReject(item)}
                     disabled={!!isProcessing}
-                    style={{ flex: 1, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+                    style={{ flex: 1, paddingVertical: sp(14), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
                     activeOpacity={0.7}
                   >
                     <Ionicons name="close-circle-outline" size={17} color={RED} />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: RED }}>Reject</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: RED }}>Reject</Text>
                   </TouchableOpacity>
 
                   <View style={{ width: 1, backgroundColor: `${FG}08` }} />
 
                   <TouchableOpacity
                     onPress={() => isEditing ? cancelEdit() : startEdit(item)}
-                    style={{ flex: 1, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+                    style={{ flex: 1, paddingVertical: sp(14), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
                     activeOpacity={0.7}
                   >
                     <Ionicons name={isEditing ? 'close-outline' : 'create-outline'} size={17} color={MUTED} />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED }}>{isEditing ? 'Cancel' : 'Edit'}</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: MUTED }}>{isEditing ? 'Cancel' : 'Edit'}</Text>
                   </TouchableOpacity>
 
                   <View style={{ width: 1, backgroundColor: `${FG}08` }} />
@@ -364,14 +365,14 @@ export default function ReviewImportsScreen(): React.JSX.Element {
                   <TouchableOpacity
                     onPress={() => handleApprove(item)}
                     disabled={!!isProcessing}
-                    style={{ flex: 1, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+                    style={{ flex: 1, paddingVertical: sp(14), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
                     activeOpacity={0.7}
                   >
                     {isProcessing
                       ? <ActivityIndicator color={GREEN} size="small" />
                       : <>
                           <Ionicons name="checkmark-circle-outline" size={17} color={GREEN} />
-                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: GREEN }}>Approve</Text>
+                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: GREEN }}>Approve</Text>
                         </>
                     }
                   </TouchableOpacity>
@@ -390,15 +391,15 @@ function ReviewField({ label, value, onChangeText, placeholder }: {
 }): React.JSX.Element {
   return (
     <View>
-      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: FG, marginBottom: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: FG, marginBottom: sp(4) }}>{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor="#6b6a85"
         style={{
-          backgroundColor: BG, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
-          fontFamily: 'DMSans_400Regular', fontSize: 13, color: FG,
+          backgroundColor: BG, borderRadius: scale(10), paddingHorizontal: sp(12), paddingVertical: sp(9),
+          fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: FG,
         }}
       />
     </View>

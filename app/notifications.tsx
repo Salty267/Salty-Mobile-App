@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -84,21 +85,21 @@ export default function NotificationsScreen(): React.JSX.Element {
         if (screen) router.push(`/(tabs)/${screen}` as Parameters<typeof router.push>[0]);
       }}
       style={{
-        flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-        paddingHorizontal: 16, paddingVertical: 14,
+        flexDirection: 'row', alignItems: 'flex-start', gap: sp(12),
+        paddingHorizontal: sp(16), paddingVertical: sp(14),
         backgroundColor: item.read ? SURFACE : '#f0eeff',
       }}
     >
       <View style={{
-        width: 36, height: 36, borderRadius: 18,
+        width: scale(36), height: scale(36), borderRadius: scale(18),
         backgroundColor: `${BRAND_FROM}22`, alignItems: 'center', justifyContent: 'center', marginTop: 2,
       }}>
         <Ionicons name="notifications" size={16} color={BRAND_FROM} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>{item.title}</Text>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 2 }}>{item.body}</Text>
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 4 }}>{timeAgo(item.created_at)}</Text>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>{item.title}</Text>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: 2 }}>{item.body}</Text>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: sp(4) }}>{timeAgo(item.created_at)}</Text>
       </View>
       {!item.read && (
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: BRAND_FROM, marginTop: 6 }} />
@@ -111,21 +112,21 @@ export default function NotificationsScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Stay up to date</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Notifications</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Stay up to date</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Notifications</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -140,12 +141,12 @@ export default function NotificationsScreen(): React.JSX.Element {
           keyExtractor={i => i.id}
           renderItem={renderItem}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={BRAND_FROM} />}
-          ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 64 }} />}
-          contentContainerStyle={{ paddingBottom: bottom + 24, flexGrow: 1 }}
+          ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: scale(64) }} />}
+          contentContainerStyle={{ paddingBottom: bottom + sp(24), flexGrow: 1 }}
           ListEmptyComponent={
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 12 }}>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: sp(80), gap: sp(12) }}>
               <Ionicons name="notifications-off-outline" size={48} color={MUTED} />
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 16, color: MUTED }}>No notifications yet</Text>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(16), color: MUTED }}>No notifications yet</Text>
             </View>
           }
         />

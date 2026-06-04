@@ -11,7 +11,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 const LA = () => LayoutAnimation.configureNext({ duration: 220, create: { type: 'easeInEaseOut', property: 'opacity' }, update: { type: 'easeInEaseOut' }, delete: { type: 'easeInEaseOut', property: 'opacity' } });
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scale } from '@/lib/layout';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -59,15 +59,15 @@ function SettingsRow({ icon, label, onPress, last = false }: {
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.7}
-        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: scale(56), gap: 14 }}
+        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(16), height: scale(56), gap: sp(14) }}
       >
         <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: SECONDARY, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name={icon} size={18} color={BRAND_FROM} />
         </View>
-        <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: 15, color: FG }}>{label}</Text>
+        <Text style={{ flex: 1, fontFamily: 'DMSans_500Medium', fontSize: scaleFont(15), color: FG }}>{label}</Text>
         <Ionicons name="chevron-forward" size={16} color={MUTED} />
       </TouchableOpacity>
-      {!last && <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 66 }} />}
+      {!last && <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: scale(66) }} />}
     </View>
   );
 }
@@ -193,51 +193,51 @@ export default function SettingsScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Preferences</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Settings</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Preferences</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Settings</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 24, paddingBottom: bottom + 32 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: sp(24), paddingBottom: bottom + 32 }}>
 
         {/* ── Gmail ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Gmail</Text>
+        <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Gmail</Text>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/tickets')}
             activeOpacity={gmailConnected ? 1 : 0.85}
-            style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}
+            style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(16), paddingVertical: sp(16), gap: sp(14) }}>
               <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="mail" size={18} color="#E8581A" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>
                   {gmailConnected ? 'Gmail connected' : 'Connect Gmail'}
                 </Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2 }} numberOfLines={1}>
                   {gmailConnected ? gmailEmail : 'Manage in My Tickets'}
                 </Text>
               </View>
               {gmailConnected ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: sp(9), paddingVertical: 4 }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: GREEN }}>Active</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: GREEN }}>Active</Text>
                 </View>
               ) : (
                 <Ionicons name="chevron-forward" size={16} color={MUTED} />
@@ -247,15 +247,15 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
 
         {/* ── Notifications ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Notifications</Text>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+        <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Notifications</Text>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             {NOTIF_TOGGLE_ROWS.map((row, i) => (
               <View key={row.key}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(16), paddingVertical: sp(14), gap: sp(14) }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>{row.label}</Text>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>{row.sub}</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>{row.label}</Text>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2 }}>{row.sub}</Text>
                   </View>
                   <Switch
                     value={notifPrefs[row.key]}
@@ -266,7 +266,7 @@ export default function SettingsScreen(): React.JSX.Element {
                   />
                 </View>
                 {i < NOTIF_TOGGLE_ROWS.length - 1 && (
-                  <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 16 }} />
+                  <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: sp(16) }} />
                 )}
               </View>
             ))}
@@ -274,24 +274,24 @@ export default function SettingsScreen(): React.JSX.Element {
         </View>
 
         {/* ── Account ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Account</Text>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+        <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Account</Text>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             <SettingsRow icon="lock-closed-outline" label="Privacy" onPress={() => router.push('/privacy')} />
-            <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: 66 }} />
+            <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: scale(66) }} />
             <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => WebBrowser.openBrowserAsync('https://saltydigital.ai/terms')} last />
           </View>
         </View>
 
         {/* ── Support ── */}
-        <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Support</Text>
-          <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+        <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Support</Text>
+          <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
             <SettingsRow icon="help-circle-outline" label="Help & Support" onPress={() => router.push('/help')} last />
           </View>
         </View>
 
-        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 8, marginBottom: 8 }}>
+        <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, textAlign: 'center', marginTop: sp(8), marginBottom: sp(8) }}>
           Salty v{Constants.expoConfig?.version ?? '1.0.0'}
         </Text>
 

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomPad } from '@/lib/useBottomPad';
-import { scale, SCREEN_W } from '@/lib/layout';
+import { scale, scaleFont, sp, SCREEN_W } from '@/lib/layout';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSidebar } from '@/lib/SidebarContext';
@@ -343,17 +343,17 @@ export default function DiscoverScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>
-            <TouchableOpacity onPress={openSidebar} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: 4 }}>
+            <TouchableOpacity onPress={openSidebar} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="menu" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Discover</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Discover</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -366,8 +366,8 @@ export default function DiscoverScreen(): React.JSX.Element {
       >
 
         {/* ── Search bar ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: scale(48), paddingHorizontal: 16, borderRadius: 16, backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(20) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(10), height: scale(48), paddingHorizontal: sp(16), borderRadius: scale(16), backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
             <Ionicons name="search-outline" size={16} color={MUTED} />
             <TextInput
               placeholder="Search events, artists, venues…"
@@ -375,7 +375,7 @@ export default function DiscoverScreen(): React.JSX.Element {
               value={query}
               onChangeText={setQuery}
               returnKeyType="search"
-              style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG }}
+              style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG }}
             />
             {isSearching && (
               searching
@@ -389,23 +389,23 @@ export default function DiscoverScreen(): React.JSX.Element {
 
         {/* ── Search results (shown when typing) ── */}
         {isSearching ? (
-          <View style={{ paddingHorizontal: 20, paddingTop: 20, gap: 12 }}>
+          <View style={{ paddingHorizontal: sp(20), paddingTop: sp(20), gap: sp(12) }}>
             {searching ? (
-              <View style={{ alignItems: 'center', paddingTop: 48 }}>
+              <View style={{ alignItems: 'center', paddingTop: sp(48) }}>
                 <ActivityIndicator size="large" color={BRAND_FROM} />
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 12 }}>Searching…</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, marginTop: sp(12) }}>Searching…</Text>
               </View>
             ) : searchResults.length === 0 ? (
-              <View style={{ alignItems: 'center', paddingTop: 48 }}>
+              <View style={{ alignItems: 'center', paddingTop: sp(48) }}>
                 <Ionicons name="search-outline" size={48} color={MUTED} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginTop: 16 }}>No results found</Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginTop: 6, textAlign: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginTop: sp(16) }}>No results found</Text>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginTop: sp(6), textAlign: 'center' }}>
                   Try a different search term
                 </Text>
               </View>
             ) : (
               <>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                   {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
                 </Text>
                 {searchResults.map(item => (
@@ -418,11 +418,11 @@ export default function DiscoverScreen(): React.JSX.Element {
           <>
 
           {/* ── Category pills ── */}
-          <View style={{ paddingTop: 20 }}>
+          <View style={{ paddingTop: sp(20) }}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+              contentContainerStyle={{ paddingHorizontal: sp(20), gap: sp(8) }}
             >
               {CATEGORIES.map(cat => {
                 const active = activeCategory === cat.value;
@@ -431,20 +431,20 @@ export default function DiscoverScreen(): React.JSX.Element {
                     key={cat.value}
                     onPress={() => setActiveCategory(cat.value)}
                     activeOpacity={0.8}
-                    style={{ overflow: 'hidden', borderRadius: 14 }}
+                    style={{ overflow: 'hidden', borderRadius: scale(14) }}
                   >
                     {active
                       ? <LinearGradient
                           colors={[BRAND_FROM, BRAND_TO]}
                           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10 }}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), paddingHorizontal: sp(14), paddingVertical: sp(10) }}
                         >
                           <Ionicons name={cat.icon} size={14} color="#fff" />
-                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: '#fff' }}>{cat.label}</Text>
+                          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#fff' }}>{cat.label}</Text>
                         </LinearGradient>
-                      : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 1 }}>
+                      : <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(6), paddingHorizontal: sp(14), paddingVertical: sp(10), backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 1 }}>
                           <Ionicons name={cat.icon} size={14} color={MUTED} />
-                          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: MUTED }}>{cat.label}</Text>
+                          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: MUTED }}>{cat.label}</Text>
                         </View>
                     }
                   </TouchableOpacity>
@@ -454,13 +454,13 @@ export default function DiscoverScreen(): React.JSX.Element {
           </View>
 
           {/* ── Friends are going ── */}
-          <View style={{ paddingTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 14 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }}>Friends are going</Text>
+          <View style={{ paddingTop: sp(28) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), marginBottom: sp(14) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2 }}>Friends are going</Text>
                 {filteredFriendEvents.length > 0 && (
-                  <View style={{ backgroundColor: BRAND_FROM, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 2 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: '#fff' }}>{filteredFriendEvents.length}</Text>
+                  <View style={{ backgroundColor: BRAND_FROM, borderRadius: 99, paddingHorizontal: sp(7), paddingVertical: 2 }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: '#fff' }}>{filteredFriendEvents.length}</Text>
                   </View>
                 )}
               </View>
@@ -471,12 +471,12 @@ export default function DiscoverScreen(): React.JSX.Element {
                 <ActivityIndicator color={BRAND_FROM} />
               </View>
             ) : filteredFriendEvents.length === 0 ? (
-              <View style={{ marginHorizontal: 20, backgroundColor: SURFACE, borderRadius: 20, padding: 24, alignItems: 'center', gap: 10, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 }}>
+              <View style={{ marginHorizontal: sp(20), backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(24), alignItems: 'center', gap: sp(10), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 }}>
                 <Ionicons name="people-outline" size={36} color={MUTED} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>
                   {activeCategory === 'all' ? 'No friend events yet' : `No friend ${activeCategory} events`}
                 </Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, textAlign: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, textAlign: 'center' }}>
                   Add friends to see what events they're attending
                 </Text>
               </View>
@@ -488,23 +488,23 @@ export default function DiscoverScreen(): React.JSX.Element {
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={CARD_W + 14}
                 decelerationRate="fast"
-                contentContainerStyle={{ paddingLeft: 20, paddingRight: 8, gap: 14 }}
+                contentContainerStyle={{ paddingLeft: sp(20), paddingRight: sp(8), gap: sp(14) }}
                 renderItem={({ item }) => <EventTallCard item={item} onPress={() => navigateToEvent(item)} />}
               />
             )}
           </View>
 
           {/* ── Trending Now ── */}
-          <View style={{ paddingTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 14 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, letterSpacing: -0.2 }}>Trending Now</Text>
+          <View style={{ paddingTop: sp(28) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), marginBottom: sp(14) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, letterSpacing: -0.2 }}>Trending Now</Text>
               <TouchableOpacity
                 onPress={() => setPickerVisible(true)}
                 activeOpacity={0.8}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: `${BRAND_FROM}12`, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: `${BRAND_FROM}12`, borderRadius: 99, paddingHorizontal: sp(12), paddingVertical: sp(6) }}
               >
                 <Ionicons name="location" size={12} color={BRAND_FROM} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: BRAND_FROM }} numberOfLines={1}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: BRAND_FROM }} numberOfLines={1}>
                   {customCity ? customCity.city : zipCode ? 'Near You' : 'Set location'}
                 </Text>
                 <Ionicons name="chevron-down" size={11} color={BRAND_FROM} />
@@ -512,13 +512,13 @@ export default function DiscoverScreen(): React.JSX.Element {
             </View>
 
             {/* Tab toggle */}
-            <View style={{ flexDirection: 'row', marginHorizontal: 20, marginBottom: 16, backgroundColor: `${FG}0a`, borderRadius: 14, padding: 3 }}>
+            <View style={{ flexDirection: 'row', marginHorizontal: sp(20), marginBottom: sp(16), backgroundColor: `${FG}0a`, borderRadius: scale(14), padding: 3 }}>
               {(['local', 'world'] as const).map(tab => (
                 <TouchableOpacity
                   key={tab}
                   onPress={() => { setTrendingTab(tab); trendingRef.current?.scrollToOffset({ offset: 0, animated: false }); }}
                   activeOpacity={0.8}
-                  style={{ flex: 1, borderRadius: 11, paddingVertical: 9, alignItems: 'center', overflow: 'hidden' }}
+                  style={{ flex: 1, borderRadius: 11, paddingVertical: sp(9), alignItems: 'center', overflow: 'hidden' }}
                 >
                   {trendingTab === tab && (
                     <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 11 }} />
@@ -529,7 +529,7 @@ export default function DiscoverScreen(): React.JSX.Element {
                       size={12}
                       color={trendingTab === tab ? '#fff' : MUTED}
                     />
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: trendingTab === tab ? '#fff' : MUTED }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: trendingTab === tab ? '#fff' : MUTED }}>
                       {tab === 'local' ? (customCity ? customCity.city : zipCode ? 'Near You' : 'Near Me') : 'Worldwide'}
                     </Text>
                   </View>
@@ -542,9 +542,9 @@ export default function DiscoverScreen(): React.JSX.Element {
                 <ActivityIndicator color={BRAND_FROM} />
               </View>
             ) : trendingData.length === 0 ? (
-              <View style={{ marginHorizontal: 20, backgroundColor: SURFACE, borderRadius: 20, padding: 24, alignItems: 'center', gap: 8 }}>
+              <View style={{ marginHorizontal: sp(20), backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(24), alignItems: 'center', gap: sp(8) }}>
                 <Ionicons name="flame-outline" size={32} color={MUTED} />
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, textAlign: 'center' }}>
                   {trendingTab === 'local' ? 'No local events found' : 'No worldwide data yet'}
                 </Text>
               </View>
@@ -558,7 +558,7 @@ export default function DiscoverScreen(): React.JSX.Element {
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={CARD_W + 14}
                 decelerationRate="fast"
-                contentContainerStyle={{ paddingLeft: 20, paddingRight: 8, gap: 14 }}
+                contentContainerStyle={{ paddingLeft: sp(20), paddingRight: sp(8), gap: sp(14) }}
                 renderItem={({ item }) => <EventTallCard item={item} onPress={() => navigateToEvent(item)} />}
               />
             )}
@@ -643,19 +643,19 @@ function LocationPicker({
           <LinearGradient
             colors={[BRAND_FROM, BRAND_TO]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+            style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
           >
             <SafeAreaView edges={['top']}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 }}>
-                <View style={{ width: 40 }} />
-                <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 28, letterSpacing: 6, color: '#fff' }}>LOCATION</Text>
-                <TouchableOpacity onPress={handleClose} style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: 4, paddingBottom: sp(8) }}>
+                <View style={{ width: scale(40) }} />
+                <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(28), letterSpacing: 6, color: '#fff' }}>LOCATION</Text>
+                <TouchableOpacity onPress={handleClose} style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="close" size={20} color="#fff" />
                 </TouchableOpacity>
               </View>
 
               {/* Search bar inside header */}
-              <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10, height: scale(48), paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.96)' }}>
+              <View style={{ marginHorizontal: sp(20), flexDirection: 'row', alignItems: 'center', gap: sp(10), height: scale(48), paddingHorizontal: sp(16), borderRadius: scale(16), backgroundColor: 'rgba(255,255,255,0.96)' }}>
                 {zipLoading
                   ? <ActivityIndicator size="small" color={MUTED} />
                   : <Ionicons name="search-outline" size={16} color={MUTED} />
@@ -668,7 +668,7 @@ function LocationPicker({
                   autoFocus
                   autoCorrect={false}
                   keyboardType="default"
-                  style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG }}
+                  style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(15), color: FG }}
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -682,28 +682,28 @@ function LocationPicker({
           <ScrollView
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 16 }}
+            contentContainerStyle={{ paddingHorizontal: sp(20), paddingTop: sp(20), paddingBottom: sp(40), gap: sp(16) }}
           >
             {/* Your location (resolved from account zip) */}
             {accountZip && (
               <TouchableOpacity
                 onPress={() => { setSearchQuery(''); onReset(); }}
                 activeOpacity={0.8}
-                style={{ overflow: 'hidden', borderRadius: 16 }}
+                style={{ overflow: 'hidden', borderRadius: scale(16) }}
               >
                 <LinearGradient
                   colors={[BRAND_FROM, BRAND_TO]}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), padding: sp(16) }}
                 >
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: scale(40), height: scale(40), borderRadius: scale(12), backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ fontSize: 20 }}>{accountCity ? accountCity.emoji : '📍'}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>
                       {accountCity ? `${accountCity.city}, ${accountCity.country}` : 'My location'}
                     </Text>
-                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                    <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
                       Zip code {accountZip} · tap to reset
                     </Text>
                   </View>
@@ -717,43 +717,43 @@ function LocationPicker({
 
             {/* City list */}
             <View>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: MUTED, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: sp(10) }}>
                 {isZipQuery ? 'Zip code result' : trimmed.length >= 1 ? 'Search Results' : 'Popular Cities'}
               </Text>
 
               {isZipQuery && zipLoading ? (
-                <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 24, alignItems: 'center', gap: 8 }}>
+                <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(24), alignItems: 'center', gap: sp(8) }}>
                   <ActivityIndicator color={BRAND_FROM} />
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED }}>Looking up zip code…</Text>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>Looking up zip code…</Text>
                 </View>
               ) : filtered.length === 0 ? (
-                <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 24, alignItems: 'center', gap: 8 }}>
+                <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(24), alignItems: 'center', gap: sp(8) }}>
                   <Ionicons name="location-outline" size={28} color={MUTED} />
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>
                     {isZipQuery ? 'Zip code not found' : 'No cities found'}
                   </Text>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>
                     {isZipQuery ? 'Only US zip codes are supported' : 'Try a different search term'}
                   </Text>
                 </View>
               ) : (
-                <View style={{ backgroundColor: SURFACE, borderRadius: 20, overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
+                <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
                   {filtered.map((loc, i) => {
                     const isSelected = currentCity?.city === loc.city && currentCity?.country === loc.country;
                     return (
                       <View key={`${loc.city}-${loc.countryCode}`}>
-                        {i > 0 && <View style={{ height: 1, backgroundColor: `${FG}08`, marginLeft: 64 }} />}
+                        {i > 0 && <View style={{ height: 1, backgroundColor: `${FG}08`, marginLeft: scale(64) }} />}
                         <TouchableOpacity
                           onPress={() => { setSearchQuery(''); onSelect(loc); }}
                           activeOpacity={0.7}
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 }}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), paddingHorizontal: sp(16), paddingVertical: sp(14) }}
                         >
-                          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: isSelected ? `${BRAND_FROM}18` : `${FG}08`, alignItems: 'center', justifyContent: 'center' }}>
+                          <View style={{ width: scale(38), height: scale(38), borderRadius: scale(19), backgroundColor: isSelected ? `${BRAND_FROM}18` : `${FG}08`, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ fontSize: 20 }}>{loc.emoji}</Text>
                           </View>
                           <View style={{ flex: 1 }}>
-                            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>{loc.city}</Text>
-                            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 1 }}>{loc.country}</Text>
+                            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>{loc.city}</Text>
+                            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 1 }}>{loc.country}</Text>
                           </View>
                           {isSelected
                             ? <Ionicons name="checkmark-circle" size={20} color={BRAND_FROM} />
@@ -791,7 +791,7 @@ function EventTallCard({ item, onPress }: { item: EventCard; onPress: () => void
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.88}
-      style={{ width: CARD_W, borderRadius: 20, overflow: 'hidden', backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.13, shadowRadius: 18, elevation: 5 }}
+      style={{ width: CARD_W, borderRadius: scale(20), overflow: 'hidden', backgroundColor: SURFACE, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.13, shadowRadius: 18, elevation: 5 }}
     >
       <View style={{ height: CARD_IMG }}>
         <Image source={{ uri: img }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -799,43 +799,43 @@ function EventTallCard({ item, onPress }: { item: EventCard; onPress: () => void
           colors={['transparent', 'rgba(26,21,48,0.85)']}
           style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: CARD_IMG * 0.65 }}
         />
-        <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <View style={{ position: 'absolute', top: sp(10), left: sp(10), backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: sp(9), paddingVertical: 4 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>
             {item.category}
           </Text>
         </View>
         {(item.goingCount ?? 0) > 0 && (
-          <View style={{ position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ position: 'absolute', top: sp(10), right: sp(10), flexDirection: 'row', alignItems: 'center' }}>
             {(item.goingAvatars ?? []).slice(0, 3).map((uri, i) => (
-              <View key={i} style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#a25cf2', alignItems: 'center', justifyContent: 'center', marginLeft: i > 0 ? -8 : 0, borderWidth: 1.5, borderColor: '#fff', overflow: 'hidden' }}>
+              <View key={i} style={{ width: scale(24), height: scale(24), borderRadius: scale(12), backgroundColor: '#a25cf2', alignItems: 'center', justifyContent: 'center', marginLeft: i > 0 ? -8 : 0, borderWidth: 1.5, borderColor: '#fff', overflow: 'hidden' }}>
                 {uri
                   ? <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                   : <Ionicons name="person" size={12} color="#fff" />
                 }
               </View>
             ))}
-            <View style={{ marginLeft: 5, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 9, color: '#fff' }}>{item.goingCount} going</Text>
+            <View style={{ marginLeft: 5, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 99, paddingHorizontal: sp(6), paddingVertical: 2 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(9), color: '#fff' }}>{item.goingCount} going</Text>
             </View>
           </View>
         )}
-        <View style={{ position: 'absolute', bottom: 10, left: 12, right: 12, gap: 4 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff', letterSpacing: -0.2 }} numberOfLines={2}>
+        <View style={{ position: 'absolute', bottom: sp(10), left: sp(12), right: sp(12), gap: 4 }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff', letterSpacing: -0.2 }} numberOfLines={2}>
             {item.title}
           </Text>
           {(dateLabel || timeLabel) && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="calendar-outline" size={10} color="rgba(255,255,255,0.85)" />
-              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: 'rgba(255,255,255,0.85)' }}>
+              <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: 'rgba(255,255,255,0.85)' }}>
                 {[dateLabel, timeLabel].filter(Boolean).join(' · ')}
               </Text>
             </View>
           )}
         </View>
       </View>
-      <View style={{ paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      <View style={{ paddingHorizontal: sp(12), paddingVertical: sp(10), flexDirection: 'row', alignItems: 'center', gap: 5 }}>
         <Ionicons name="location-outline" size={11} color={MUTED} />
-        <Text style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }} numberOfLines={1}>
+        <Text style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }} numberOfLines={1}>
           {item.venue || '—'}
         </Text>
       </View>
@@ -851,21 +851,21 @@ function SearchResultRow({ item, onPress }: { item: EventCard; onPress: () => vo
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.88}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: SURFACE, borderRadius: 18, padding: 12, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), backgroundColor: SURFACE, borderRadius: scale(18), padding: sp(12), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
     >
-      <View style={{ width: 60, height: 60, borderRadius: 14, overflow: 'hidden', backgroundColor: BORDER }}>
+      <View style={{ width: scale(60), height: scale(60), borderRadius: scale(14), overflow: 'hidden', backgroundColor: BORDER }}>
         <Image source={{ uri: img }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }} numberOfLines={1}>{item.title}</Text>
+        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }} numberOfLines={1}>{item.title}</Text>
         {item.venue ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
             <Ionicons name="location-outline" size={11} color={MUTED} />
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED }} numberOfLines={1}>{item.venue}</Text>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED }} numberOfLines={1}>{item.venue}</Text>
           </View>
         ) : null}
-        <View style={{ marginTop: 5, alignSelf: 'flex-start', backgroundColor: '#f1eefb', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 10, color: BRAND_FROM, textTransform: 'capitalize' }}>{item.category}</Text>
+        <View style={{ marginTop: sp(5), alignSelf: 'flex-start', backgroundColor: '#f1eefb', borderRadius: 6, paddingHorizontal: sp(7), paddingVertical: 2 }}>
+          <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(10), color: BRAND_FROM, textTransform: 'capitalize' }}>{item.category}</Text>
         </View>
       </View>
       <Ionicons name="chevron-forward" size={16} color={MUTED} />

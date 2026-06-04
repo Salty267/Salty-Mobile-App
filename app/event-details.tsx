@@ -15,7 +15,7 @@ import * as Sharing from 'expo-sharing';
 import ViewShot from 'react-native-view-shot';
 import { useSpotifyExport } from '@/lib/useSpotifyExport';
 import { openAppleMusicSearch, openYouTubeMusicSearch } from '@/lib/musicDeepLinks';
-import { SCREEN_W } from '@/lib/layout';
+import { SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 
 WebBrowser.maybeCompleteAuthSession();
 import { useBottomPad } from '@/lib/useBottomPad';
@@ -492,19 +492,19 @@ export default function EventDetailsScreen(): React.JSX.Element {
       {/* ── Header ── */}
       <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 14 }}>
-            <TouchableOpacity onPress={() => router.back()} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="arrow-back" size={24} color="#fff" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sp(16), paddingTop: sp(4), paddingBottom: sp(14) }}>
+            <TouchableOpacity onPress={() => router.back()} style={{ width: scale(36), height: scale(36), alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="arrow-back" size={scale(24)} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: '#fff', letterSpacing: -0.2 }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: '#fff', letterSpacing: -0.2 }}>
               Event Details
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity onPress={toggleSave} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={saved ? 'heart' : 'heart-outline'} size={22} color={saved ? '#ff6b8a' : '#fff'} />
+              <TouchableOpacity onPress={toggleSave} style={{ width: scale(36), height: scale(36), alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={saved ? 'heart' : 'heart-outline'} size={scale(22)} color={saved ? '#ff6b8a' : '#fff'} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleTopEllipsis} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
+              <TouchableOpacity onPress={handleTopEllipsis} style={{ width: scale(36), height: scale(36), alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="ellipsis-vertical" size={scale(20)} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -519,18 +519,18 @@ export default function EventDetailsScreen(): React.JSX.Element {
         </TouchableOpacity>
 
         {/* ── Event Info ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 18 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 22, color: FG, letterSpacing: -0.4 }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(18), paddingBottom: sp(18) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: FG, letterSpacing: -0.4 }}>
             {displayTitle}
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 5 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, marginTop: 5 }}>
             {displayVenue}
           </Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, marginTop: 3 }}>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, marginTop: 3 }}>
             {displayDate} • {displayTime}
           </Text>
           {displaySeat ? (
-            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: BRAND_FROM, marginTop: 5 }}>
+            <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: BRAND_FROM, marginTop: 5 }}>
               {displaySeat}
             </Text>
           ) : null}
@@ -539,48 +539,48 @@ export default function EventDetailsScreen(): React.JSX.Element {
         <Divider />
 
         {/* ── Attendees ── */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG, marginBottom: 14 }}>
+        <View style={{ paddingHorizontal: sp(20), paddingVertical: sp(18) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG, marginBottom: sp(14) }}>
             Attendees{attendees.length > 0 ? ` (${attendees.length})` : ''}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {/* current user always first */}
             {currentUserProfile?.avatar_url ? (
               <TouchableOpacity activeOpacity={0.9} onPress={() => setLightboxUri(currentUserProfile.avatar_url!)}>
-                <Image source={{ uri: currentUserProfile.avatar_url }} style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 2.5, borderColor: SURFACE }} />
+                <Image source={{ uri: currentUserProfile.avatar_url }} style={{ width: scale(38), height: scale(38), borderRadius: scale(19), borderWidth: 2.5, borderColor: SURFACE }} />
               </TouchableOpacity>
             ) : (
-              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: BG, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: SURFACE }}>
-                <Ionicons name="person" size={18} color={MUTED} />
+              <View style={{ width: scale(38), height: scale(38), borderRadius: scale(19), backgroundColor: BG, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: SURFACE }}>
+                <Ionicons name="person" size={scale(18)} color={MUTED} />
               </View>
             )}
             {attendees.map((a, i) => (
               a.avatar_url ? (
                 <TouchableOpacity key={a.id} activeOpacity={0.9} onPress={() => setLightboxUri(a.avatar_url!)} style={{ marginLeft: -10 }}>
-                  <Image source={{ uri: a.avatar_url }} style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 2.5, borderColor: SURFACE }} />
+                  <Image source={{ uri: a.avatar_url }} style={{ width: scale(38), height: scale(38), borderRadius: scale(19), borderWidth: 2.5, borderColor: SURFACE }} />
                 </TouchableOpacity>
               ) : (
-                <View key={a.id} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: BG, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: SURFACE, marginLeft: -10 }}>
-                  <Ionicons name="person" size={18} color={MUTED} />
+                <View key={a.id} style={{ width: scale(38), height: scale(38), borderRadius: scale(19), backgroundColor: BG, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: SURFACE, marginLeft: -10 }}>
+                  <Ionicons name="person" size={scale(18)} color={MUTED} />
                 </View>
               )
             ))}
             <TouchableOpacity
               onPress={() => { loadFriends(); setAttendeeModalVisible(true); }}
-              style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: `${FG}22`, alignItems: 'center', justifyContent: 'center', backgroundColor: BG, marginLeft: -10 }}
+              style={{ width: scale(38), height: scale(38), borderRadius: scale(19), borderWidth: 1.5, borderColor: `${FG}22`, alignItems: 'center', justifyContent: 'center', backgroundColor: BG, marginLeft: -10 }}
             >
-              <Ionicons name="add" size={16} color={MUTED} />
+              <Ionicons name="add" size={scale(16)} color={MUTED} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* ── Action Buttons ── */}
-        <View style={{ paddingHorizontal: 20, paddingBottom: 18, flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity onPress={handleShare} activeOpacity={0.85} style={{ flex: 1, borderRadius: 12, overflow: 'hidden' }}>
+        <View style={{ paddingHorizontal: sp(20), paddingBottom: sp(18), flexDirection: 'row', gap: sp(10) }}>
+          <TouchableOpacity onPress={handleShare} activeOpacity={0.85} style={{ flex: 1, borderRadius: scale(12), overflow: 'hidden' }}>
             <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 15 }}>
-              <Ionicons name="share-social-outline" size={16} color="#fff" />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: '#fff' }}>Share</Text>
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(7), paddingVertical: sp(15) }}>
+              <Ionicons name="share-social-outline" size={scale(16)} color="#fff" />
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Share</Text>
             </LinearGradient>
           </TouchableOpacity>
           {displayTitle ? (() => {
@@ -589,41 +589,41 @@ export default function EventDetailsScreen(): React.JSX.Element {
               <TouchableOpacity
                 onPress={() => following ? unfollowArtist(displayTitle) : followArtist(displayTitle)}
                 activeOpacity={0.85}
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: following ? BRAND_FROM : `${FG}20`, backgroundColor: following ? `${BRAND_FROM}12` : 'transparent' }}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(7), paddingVertical: sp(13), borderRadius: scale(12), borderWidth: 1.5, borderColor: following ? BRAND_FROM : `${FG}20`, backgroundColor: following ? `${BRAND_FROM}12` : 'transparent' }}
               >
-                <Ionicons name={following ? 'notifications' : 'notifications-outline'} size={16} color={following ? BRAND_FROM : FG} />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: following ? BRAND_FROM : FG }}>
+                <Ionicons name={following ? 'notifications' : 'notifications-outline'} size={scale(16)} color={following ? BRAND_FROM : FG} />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: following ? BRAND_FROM : FG }}>
                   {following ? 'Following' : 'Follow'}
                 </Text>
               </TouchableOpacity>
             );
           })() : null}
           <TouchableOpacity onPress={handleDelete} activeOpacity={0.85}
-            style={{ width: 48, alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: `${FG}20` }}>
-            <Ionicons name="trash-outline" size={16} color={FG} />
+            style={{ width: scale(48), alignItems: 'center', justifyContent: 'center', paddingVertical: sp(13), borderRadius: scale(12), borderWidth: 1.5, borderColor: `${FG}20` }}>
+            <Ionicons name="trash-outline" size={scale(16)} color={FG} />
           </TouchableOpacity>
         </View>
 
         <Divider />
 
         {/* ── Tags ── */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG, marginBottom: 14 }}>Tags</Text>
+        <View style={{ paddingHorizontal: sp(20), paddingVertical: sp(18) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG, marginBottom: sp(14) }}>Tags</Text>
           {dataLoading ? <ActivityIndicator size="small" color={BRAND_FROM} /> : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: sp(8) }}>
               {tags.map(tag => (
-                <View key={tag.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: BG, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: `${FG}14` }}>
-                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: FG }}>{tag.text}</Text>
+                <View key={tag.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: BG, borderRadius: 99, paddingHorizontal: sp(12), paddingVertical: sp(7), borderWidth: 1, borderColor: `${FG}14` }}>
+                  <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: FG }}>{tag.text}</Text>
                   <TouchableOpacity onPress={() => removeTag(tag.id)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                    <Ionicons name="close" size={12} color={MUTED} />
+                    <Ionicons name="close" size={scale(12)} color={MUTED} />
                   </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity
                 onPress={() => { setTagInput(''); setTagModalVisible(true); }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1.5, borderColor: `${BRAND_FROM}50` }}>
-                <Ionicons name="add" size={13} color={BRAND_FROM} />
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Add Tag</Text>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 99, paddingHorizontal: sp(12), paddingVertical: sp(7), borderWidth: 1.5, borderColor: `${BRAND_FROM}50` }}>
+                <Ionicons name="add" size={scale(13)} color={BRAND_FROM} />
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>Add Tag</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -632,15 +632,15 @@ export default function EventDetailsScreen(): React.JSX.Element {
         <Divider />
 
         {/* ── Media Gallery ── */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>
+        <View style={{ paddingHorizontal: sp(20), paddingVertical: sp(18) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(14) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }}>
               Media Gallery{' '}
               {!dataLoading && <Text style={{ fontFamily: 'DMSans_400Regular', color: MUTED }}>– {media.length} items</Text>}
             </Text>
             {!dataLoading && media.length > 0 && (
               <TouchableOpacity onPress={() => setMediaEditMode(e => !e)}>
-                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 13, color: mediaEditMode ? BRAND_FROM : MUTED }}>
+                <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(13), color: mediaEditMode ? BRAND_FROM : MUTED }}>
                   {mediaEditMode ? 'Done' : 'Edit'}
                 </Text>
               </TouchableOpacity>
@@ -664,9 +664,9 @@ export default function EventDetailsScreen(): React.JSX.Element {
                     <TouchableOpacity
                       onPress={() => deleteMedia(item)}
                       hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                      style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, borderRadius: 11, backgroundColor: DANGER, alignItems: 'center', justifyContent: 'center' }}
+                      style={{ position: 'absolute', top: 5, right: 5, width: scale(22), height: scale(22), borderRadius: scale(11), backgroundColor: DANGER, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Ionicons name="close" size={13} color="#fff" />
+                      <Ionicons name="close" size={scale(13)} color="#fff" />
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>
@@ -676,8 +676,8 @@ export default function EventDetailsScreen(): React.JSX.Element {
                   style={{ width: MEDIA_CELL, height: MEDIA_CELL, borderRadius: 8, backgroundColor: BG, borderWidth: 1.5, borderColor: `${FG}18`, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                   {uploading ? <ActivityIndicator size="small" color={MUTED} /> : (
                     <>
-                      <Ionicons name="add" size={22} color={MUTED} />
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 10, color: MUTED }}>Add Media</Text>
+                      <Ionicons name="add" size={scale(22)} color={MUTED} />
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: MUTED }}>Add Media</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -691,10 +691,10 @@ export default function EventDetailsScreen(): React.JSX.Element {
             <Divider />
 
             {/* ── Setlist ── */}
-            <View style={{ paddingHorizontal: 20, paddingVertical: 18 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Setlist</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ paddingHorizontal: sp(20), paddingVertical: sp(18) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(14) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }}>Setlist</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12) }}>
                   {setlistSongs.length > 0 && (
                     <>
                       <TouchableOpacity
@@ -702,22 +702,22 @@ export default function EventDetailsScreen(): React.JSX.Element {
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                       >
-                        <Ionicons name="share-social-outline" size={14} color={BRAND_FROM} />
-                        <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Share</Text>
+                        <Ionicons name="share-social-outline" size={scale(14)} color={BRAND_FROM} />
+                        <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>Share</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => setExportModalVisible(true)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                       >
-                        <Ionicons name="musical-notes-outline" size={14} color={BRAND_FROM} />
-                        <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>Export</Text>
+                        <Ionicons name="musical-notes-outline" size={scale(14)} color={BRAND_FROM} />
+                        <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>Export</Text>
                       </TouchableOpacity>
                     </>
                   )}
                   {setlistSongs.length > SETLIST_PREVIEW && (
                     <TouchableOpacity onPress={() => setSetlistExpanded(e => !e)}>
-                      <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: BRAND_FROM }}>
+                      <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: BRAND_FROM }}>
                         {setlistExpanded ? 'Show Less' : `View All (${setlistSongs.length} songs)`}
                       </Text>
                     </TouchableOpacity>
@@ -727,21 +727,21 @@ export default function EventDetailsScreen(): React.JSX.Element {
               {setlistLoading ? (
                 <ActivityIndicator size="small" color={BRAND_FROM} />
               ) : setlistSongs.length === 0 ? (
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, textAlign: 'center', paddingVertical: sp(8) }}>
                   No setlist available yet
                 </Text>
               ) : (
-                <View style={{ gap: 14 }}>
+                <View style={{ gap: sp(14) }}>
                   {visibleSetlist.map((item, index) => (
-                    <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14) }}>
                       <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                        style={{ width: 28, height: 28, borderRadius: 99, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 12, color: '#fff' }}>{index + 1}</Text>
+                        style={{ width: scale(28), height: scale(28), borderRadius: 99, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#fff' }}>{index + 1}</Text>
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 13, color: FG }} numberOfLines={1}>{item.song}</Text>
+                        <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: FG }} numberOfLines={1}>{item.song}</Text>
                         {(item.era || item.time) && (
-                          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 11, color: MUTED, marginTop: 2 }}>
+                          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: MUTED, marginTop: 2 }}>
                             {[item.era, item.time].filter(Boolean).join(' • ')}
                           </Text>
                         )}
@@ -757,32 +757,32 @@ export default function EventDetailsScreen(): React.JSX.Element {
         <Divider />
 
         {/* ── Notes & Reflections ── */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 24 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG, marginBottom: 14 }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(18), paddingBottom: sp(24) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG, marginBottom: sp(14) }}>
             Notes & Reflections
           </Text>
-          {dataLoading ? <ActivityIndicator size="small" color={BRAND_FROM} style={{ marginBottom: 16 }} /> : (
+          {dataLoading ? <ActivityIndicator size="small" color={BRAND_FROM} style={{ marginBottom: sp(16) }} /> : (
             notes.map(note => (
-              <View key={note.id} style={{ marginBottom: 16 }}>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: FG, lineHeight: 21 }}>
+              <View key={note.id} style={{ marginBottom: sp(16) }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: FG, lineHeight: 21 }}>
                   {note.text}
                 </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: sp(12) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8) }}>
                     {note.avatar_url ? (
-                      <Image source={{ uri: note.avatar_url }} style={{ width: 26, height: 26, borderRadius: 13 }} />
+                      <Image source={{ uri: note.avatar_url }} style={{ width: scale(26), height: scale(26), borderRadius: scale(13) }} />
                     ) : (
-                      <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="person" size={13} color={MUTED} />
+                      <View style={{ width: scale(26), height: scale(26), borderRadius: scale(13), backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="person" size={scale(13)} color={MUTED} />
                       </View>
                     )}
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: MUTED }}>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: MUTED }}>
                       {note.user_id === currentUserId ? 'You' : (note.display_name ?? 'Unknown')} • {timeAgo(note.created_at)}
                     </Text>
                   </View>
                   {note.user_id === currentUserId && (
                     <TouchableOpacity onPress={() => handleNoteEllipsis(note)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="ellipsis-horizontal" size={16} color={MUTED} />
+                      <Ionicons name="ellipsis-horizontal" size={scale(16)} color={MUTED} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -790,9 +790,9 @@ export default function EventDetailsScreen(): React.JSX.Element {
             ))
           )}
           <TouchableOpacity onPress={() => openNoteModal()} activeOpacity={0.8}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, borderColor: `${BRAND_FROM}44` }}>
-            <Ionicons name="add" size={16} color={BRAND_FROM} />
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: BRAND_FROM }}>Add Note</Text>
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(6), paddingVertical: sp(14), borderRadius: scale(12), borderWidth: 1.5, borderColor: `${BRAND_FROM}44` }}>
+            <Ionicons name="add" size={scale(16)} color={BRAND_FROM} />
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: BRAND_FROM }}>Add Note</Text>
           </TouchableOpacity>
         </View>
 
@@ -819,8 +819,8 @@ export default function EventDetailsScreen(): React.JSX.Element {
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.93)', alignItems: 'center', justifyContent: 'center' }} onPress={() => setLightboxUri(null)}>
           {lightboxUri && <Image source={{ uri: lightboxUri }} style={{ width: SCREEN_W, height: SCREEN_W }} resizeMode="contain" />}
           <TouchableOpacity onPress={() => setLightboxUri(null)}
-            style={{ position: 'absolute', top: 52, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="close" size={20} color="#fff" />
+            style={{ position: 'absolute', top: sp(52), right: sp(20), width: scale(36), height: scale(36), borderRadius: scale(18), backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="close" size={scale(20)} color="#fff" />
           </TouchableOpacity>
         </Pressable>
       </Modal>
@@ -829,15 +829,15 @@ export default function EventDetailsScreen(): React.JSX.Element {
       <Modal visible={tagModalVisible} transparent animationType="slide" onRequestClose={() => setTagModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setTagModalVisible(false)} />
-          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginBottom: 16 }}>Add Tag</Text>
+          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: scale(24), borderTopRightRadius: scale(24), padding: sp(24), paddingBottom: sp(40) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, marginBottom: sp(16) }}>Add Tag</Text>
             <TextInput autoFocus value={tagInput} onChangeText={setTagInput}
               placeholder="e.g. Front Row, Date Night" placeholderTextColor={MUTED}
               returnKeyType="done" onSubmitEditing={submitTag}
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 15, color: FG, borderWidth: 1.5, borderColor: `${FG}20`, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 16 }} />
-            <TouchableOpacity onPress={submitTag} activeOpacity={0.85} style={{ borderRadius: 12, overflow: 'hidden' }}>
-              <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ alignItems: 'center', paddingVertical: 15 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>Add Tag</Text>
+              style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(15), color: FG, borderWidth: 1.5, borderColor: `${FG}20`, borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(14), marginBottom: sp(16) }} />
+            <TouchableOpacity onPress={submitTag} activeOpacity={0.85} style={{ borderRadius: scale(12), overflow: 'hidden' }}>
+              <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ alignItems: 'center', paddingVertical: sp(15) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>Add Tag</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -848,16 +848,16 @@ export default function EventDetailsScreen(): React.JSX.Element {
       <Modal visible={noteModalVisible} transparent animationType="slide" onRequestClose={() => setNoteModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setNoteModalVisible(false)} />
-          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginBottom: 16 }}>
+          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: scale(24), borderTopRightRadius: scale(24), padding: sp(24), paddingBottom: sp(40) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, marginBottom: sp(16) }}>
               {editingNoteId ? 'Edit Note' : 'Add Note'}
             </Text>
             <TextInput autoFocus multiline numberOfLines={5} value={noteInput} onChangeText={setNoteInput}
               placeholder="Share your memories from this event..." placeholderTextColor={MUTED}
-              style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG, borderWidth: 1.5, borderColor: `${FG}20`, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16, textAlignVertical: 'top', minHeight: 100 }} />
-            <TouchableOpacity onPress={submitNote} activeOpacity={0.85} style={{ borderRadius: 12, overflow: 'hidden' }}>
-              <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ alignItems: 'center', paddingVertical: 15 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>
+              style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG, borderWidth: 1.5, borderColor: `${FG}20`, borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(12), marginBottom: sp(16), textAlignVertical: 'top', minHeight: 100 }} />
+            <TouchableOpacity onPress={submitNote} activeOpacity={0.85} style={{ borderRadius: scale(12), overflow: 'hidden' }}>
+              <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ alignItems: 'center', paddingVertical: sp(15) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>
                   {editingNoteId ? 'Save Changes' : 'Save Note'}
                 </Text>
               </LinearGradient>
@@ -871,17 +871,17 @@ export default function EventDetailsScreen(): React.JSX.Element {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setEditModalVisible(false)} />
           <ScrollView
-            style={{ backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: SCREEN_W * 1.3 }}
+            style={{ backgroundColor: SURFACE, borderTopLeftRadius: scale(24), borderTopRightRadius: scale(24), maxHeight: SCREEN_W * 1.3 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={{ padding: 24, paddingBottom: 48 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginBottom: 20 }}>Edit Event</Text>
+            <View style={{ padding: sp(24), paddingBottom: sp(48) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, marginBottom: sp(20) }}>Edit Event</Text>
               <FieldLabel>Event Name</FieldLabel>
               <TextInput value={editTitle} onChangeText={setEditTitle} style={inputStyle} placeholderTextColor={MUTED} />
               <FieldLabel>Venue</FieldLabel>
               <TextInput value={editVenue} onChangeText={setEditVenue} style={inputStyle} placeholderTextColor={MUTED} />
-              <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flexDirection: 'row', gap: sp(12) }}>
                 <View style={{ flex: 1 }}>
                   <FieldLabel>Date</FieldLabel>
                   <TextInput value={editDate} onChangeText={setEditDate} style={inputStyle} placeholderTextColor={MUTED} />
@@ -893,9 +893,9 @@ export default function EventDetailsScreen(): React.JSX.Element {
               </View>
               <FieldLabel>Seat / Section</FieldLabel>
               <TextInput value={editSeat} onChangeText={setEditSeat} style={inputStyle} placeholder="e.g. Section 203, Row G" placeholderTextColor={MUTED} />
-              <TouchableOpacity onPress={handleEditSave} disabled={saving} activeOpacity={0.85} style={{ borderRadius: 12, overflow: 'hidden', marginTop: 8 }}>
-                <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ alignItems: 'center', paddingVertical: 15 }}>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: '#fff' }}>
+              <TouchableOpacity onPress={handleEditSave} disabled={saving} activeOpacity={0.85} style={{ borderRadius: scale(12), overflow: 'hidden', marginTop: sp(8) }}>
+                <LinearGradient colors={[BRAND_FROM, BRAND_TO]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ alignItems: 'center', paddingVertical: sp(15) }}>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff' }}>
                     {saving ? 'Saving…' : 'Save Changes'}
                   </Text>
                 </LinearGradient>
@@ -909,17 +909,17 @@ export default function EventDetailsScreen(): React.JSX.Element {
       <Modal visible={attendeeModalVisible} transparent animationType="slide" onRequestClose={() => setAttendeeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setAttendeeModalVisible(false)} />
-          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: SCREEN_W * 1.1 }}>
-            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG }}>Tag a Friend</Text>
+          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: scale(24), borderTopRightRadius: scale(24), maxHeight: SCREEN_W * 1.1 }}>
+            <View style={{ paddingHorizontal: sp(24), paddingTop: sp(24), paddingBottom: sp(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG }}>Tag a Friend</Text>
               <TouchableOpacity onPress={() => setAttendeeModalVisible(false)}>
-                <Ionicons name="close" size={22} color={MUTED} />
+                <Ionicons name="close" size={scale(22)} color={MUTED} />
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {friendsLoading && <ActivityIndicator size="small" color={BRAND_FROM} style={{ padding: 24 }} />}
+              {friendsLoading && <ActivityIndicator size="small" color={BRAND_FROM} style={{ padding: sp(24) }} />}
               {!friendsLoading && friends.length === 0 && (
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, padding: 24 }}>
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, padding: sp(24) }}>
                   No friends yet. Add some from the Friends tab.
                 </Text>
               )}
@@ -929,18 +929,18 @@ export default function EventDetailsScreen(): React.JSX.Element {
                   <TouchableOpacity
                     key={friend.id}
                     onPress={() => { if (!alreadyTagged) { handleAddAttendee(friend); setAttendeeModalVisible(false); } }}
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14, gap: 14, opacity: alreadyTagged ? 0.5 : 1 }}>
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(24), paddingVertical: sp(14), gap: sp(14), opacity: alreadyTagged ? 0.5 : 1 }}>
                     {friend.avatar_url ? (
-                      <Image source={{ uri: friend.avatar_url }} style={{ width: 42, height: 42, borderRadius: 21 }} />
+                      <Image source={{ uri: friend.avatar_url }} style={{ width: scale(42), height: scale(42), borderRadius: scale(21) }} />
                     ) : (
-                      <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="person" size={20} color={MUTED} />
+                      <View style={{ width: scale(42), height: scale(42), borderRadius: scale(21), backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="person" size={scale(20)} color={MUTED} />
                       </View>
                     )}
-                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 15, color: FG, flex: 1 }}>
+                    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(15), color: FG, flex: 1 }}>
                       {friend.display_name ?? friend.username ?? 'Unknown'}
                     </Text>
-                    {alreadyTagged && <Ionicons name="checkmark-circle" size={20} color={BRAND_FROM} />}
+                    {alreadyTagged && <Ionicons name="checkmark-circle" size={scale(20)} color={BRAND_FROM} />}
                   </TouchableOpacity>
                 );
               })}
@@ -958,9 +958,9 @@ export default function EventDetailsScreen(): React.JSX.Element {
         onRequestClose={() => setExportModalVisible(false)}
       >
         <Pressable style={{ flex: 1 }} onPress={() => setExportModalVisible(false)} />
-        <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 17, color: FG, marginBottom: 6 }}>Export Setlist</Text>
-          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, marginBottom: 24 }}>
+        <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: scale(24), borderTopRightRadius: scale(24), padding: sp(24), paddingBottom: sp(48) }}>
+          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(17), color: FG, marginBottom: sp(6) }}>Export Setlist</Text>
+          <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, marginBottom: sp(24) }}>
             {setlistSongs.length} songs • {displayTitle}
           </Text>
 
@@ -968,48 +968,48 @@ export default function EventDetailsScreen(): React.JSX.Element {
           <TouchableOpacity
             onPress={async () => { setExportModalVisible(false); await exportToSpotify(setlistSongs, displayTitle); }}
             activeOpacity={0.8}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14, backgroundColor: '#1DB95415', borderWidth: 1, borderColor: '#1DB95430', marginBottom: 10 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), paddingVertical: sp(16), paddingHorizontal: sp(18), borderRadius: scale(14), backgroundColor: '#1DB95415', borderWidth: 1, borderColor: '#1DB95430', marginBottom: sp(10) }}
           >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#1DB954', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="musical-note" size={18} color="#fff" />
+            <View style={{ width: scale(38), height: scale(38), borderRadius: scale(19), backgroundColor: '#1DB954', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="musical-note" size={scale(18)} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Spotify</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Create a playlist with all songs</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }}>Spotify</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>Create a playlist with all songs</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+            <Ionicons name="chevron-forward" size={scale(16)} color={MUTED} />
           </TouchableOpacity>
 
           {/* Apple Music */}
           <TouchableOpacity
             onPress={async () => { setExportModalVisible(false); await openAppleMusicSearch(`${displayTitle} setlist`); }}
             activeOpacity={0.8}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14, backgroundColor: '#fa2d4815', borderWidth: 1, borderColor: '#fa2d4830', marginBottom: 10 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), paddingVertical: sp(16), paddingHorizontal: sp(18), borderRadius: scale(14), backgroundColor: '#fa2d4815', borderWidth: 1, borderColor: '#fa2d4830', marginBottom: sp(10) }}
           >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#fa2d48', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="logo-apple" size={20} color="#fff" />
+            <View style={{ width: scale(38), height: scale(38), borderRadius: scale(19), backgroundColor: '#fa2d48', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="logo-apple" size={scale(20)} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>Apple Music</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Search for songs in Apple Music</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }}>Apple Music</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>Search for songs in Apple Music</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+            <Ionicons name="chevron-forward" size={scale(16)} color={MUTED} />
           </TouchableOpacity>
 
           {/* YouTube Music */}
           <TouchableOpacity
             onPress={async () => { setExportModalVisible(false); await openYouTubeMusicSearch(setlistSongs, displayTitle); }}
             activeOpacity={0.8}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 14, backgroundColor: '#FF000015', borderWidth: 1, borderColor: '#FF000030' }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(14), paddingVertical: sp(16), paddingHorizontal: sp(18), borderRadius: scale(14), backgroundColor: '#FF000015', borderWidth: 1, borderColor: '#FF000030' }}
           >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#FF0000', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="logo-youtube" size={20} color="#fff" />
+            <View style={{ width: scale(38), height: scale(38), borderRadius: scale(19), backgroundColor: '#FF0000', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="logo-youtube" size={scale(20)} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 15, color: FG }}>YouTube Music</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED }}>Browse songs on YouTube Music</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: FG }}>YouTube Music</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED }}>Browse songs on YouTube Music</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={MUTED} />
+            <Ionicons name="chevron-forward" size={scale(16)} color={MUTED} />
           </TouchableOpacity>
         </View>
       </Modal>
@@ -1088,12 +1088,12 @@ function SetlistShareCard({ title, venue, date, songs }: {
 }
 
 function Divider(): React.JSX.Element {
-  return <View style={{ height: 1, backgroundColor: `${FG}10`, marginHorizontal: 20 }} />;
+  return <View style={{ height: 1, backgroundColor: `${FG}10`, marginHorizontal: sp(20) }} />;
 }
 
 function FieldLabel({ children }: { children: string }): React.JSX.Element {
   return (
-    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: 12, color: MUTED, marginBottom: 6, marginTop: 14 }}>
+    <Text style={{ fontFamily: 'DMSans_500Medium', fontSize: scaleFont(12), color: MUTED, marginBottom: sp(6), marginTop: sp(14) }}>
       {children}
     </Text>
   );
@@ -1101,11 +1101,11 @@ function FieldLabel({ children }: { children: string }): React.JSX.Element {
 
 const inputStyle = {
   fontFamily: 'DMSans_400Regular' as const,
-  fontSize: 15,
+  fontSize: scaleFont(15),
   color: FG,
   borderWidth: 1.5,
   borderColor: `${FG}20`,
-  borderRadius: 12,
-  paddingHorizontal: 14,
-  paddingVertical: 14,
+  borderRadius: scale(12),
+  paddingHorizontal: sp(14),
+  paddingVertical: sp(14),
 };

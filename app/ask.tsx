@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
+import { scale, scaleFont, sp } from '@/lib/layout';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -123,21 +124,21 @@ export default function AskScreen(): React.JSX.Element {
       <LinearGradient
         colors={[BRAND_FROM, BRAND_TO]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ paddingBottom: 20, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        style={{ paddingBottom: sp(20), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) }}
       >
         <SafeAreaView edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(20), paddingTop: 4 }}>
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Ask your memories</Text>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 24, color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Fan Memory AI</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Ask your memories</Text>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(24), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Fan Memory AI</Text>
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: scale(40) }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -150,35 +151,35 @@ export default function AskScreen(): React.JSX.Element {
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: 20, paddingBottom: 8, flexGrow: 1 }}
+          contentContainerStyle={{ padding: sp(20), paddingBottom: sp(8), flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Empty state */}
           {isEmpty && (
-            <View style={{ flex: 1, alignItems: 'center', paddingTop: 24 }}>
-              <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: `${BRAND_FROM}18`, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <View style={{ flex: 1, alignItems: 'center', paddingTop: sp(24) }}>
+              <View style={{ width: scale(72), height: scale(72), borderRadius: scale(36), backgroundColor: `${BRAND_FROM}18`, alignItems: 'center', justifyContent: 'center', marginBottom: sp(16) }}>
                 <Ionicons name="sparkles" size={32} color={BRAND_FROM} />
               </View>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 20, color: FG, textAlign: 'center', letterSpacing: -0.3 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(20), color: FG, textAlign: 'center', letterSpacing: -0.3 }}>
                 Ask anything about{'\n'}your event history
               </Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 14, color: MUTED, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: MUTED, textAlign: 'center', marginTop: sp(8), lineHeight: 20 }}>
                 I know every concert, game, and show{'\n'}you've imported to Salty.
               </Text>
 
               {/* Suggestions */}
-              <View style={{ width: '100%', marginTop: 28, gap: 10 }}>
+              <View style={{ width: '100%', marginTop: sp(28), gap: sp(10) }}>
                 {suggestions.map((s, i) => (
                   <TouchableOpacity
                     key={i}
                     onPress={() => send(s)}
                     activeOpacity={0.8}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 }}
                   >
-                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${BRAND_FROM}18`, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: scale(32), height: scale(32), borderRadius: scale(10), backgroundColor: `${BRAND_FROM}18`, alignItems: 'center', justifyContent: 'center' }}>
                       <Ionicons name="chatbubble-outline" size={15} color={BRAND_FROM} />
                     </View>
-                    <Text style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG }}>{s}</Text>
+                    <Text style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG }}>{s}</Text>
                     <Ionicons name="arrow-forward" size={14} color={MUTED} />
                   </TouchableOpacity>
                 ))}
@@ -191,25 +192,25 @@ export default function AskScreen(): React.JSX.Element {
             <View
               key={i}
               style={{
-                marginBottom: 12,
+                marginBottom: sp(12),
                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
               }}
             >
               {msg.role === 'assistant' && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                  <LinearGradient colors={[BRAND_FROM, BRAND_TO]} style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                  <LinearGradient colors={[BRAND_FROM, BRAND_TO]} style={{ width: scale(24), height: scale(24), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="sparkles" size={12} color="#fff" />
                   </LinearGradient>
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.5 }}>SALTY AI</Text>
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.5 }}>SALTY AI</Text>
                 </View>
               )}
               <View style={{
                 maxWidth: '85%',
                 backgroundColor: msg.role === 'user' ? BRAND_FROM : SURFACE,
-                borderRadius: 18,
-                borderBottomRightRadius: msg.role === 'user' ? 4 : 18,
-                borderBottomLeftRadius: msg.role === 'assistant' ? 4 : 18,
-                padding: 14,
+                borderRadius: scale(18),
+                borderBottomRightRadius: msg.role === 'user' ? 4 : scale(18),
+                borderBottomLeftRadius: msg.role === 'assistant' ? 4 : scale(18),
+                padding: sp(14),
                 shadowColor: '#503cb4',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: msg.role === 'user' ? 0 : 0.08,
@@ -218,7 +219,7 @@ export default function AskScreen(): React.JSX.Element {
               }}>
                 <Text style={{
                   fontFamily: 'DMSans_400Regular',
-                  fontSize: 14,
+                  fontSize: scaleFont(14),
                   color: msg.role === 'user' ? '#fff' : FG,
                   lineHeight: 20,
                 }}>
@@ -229,14 +230,14 @@ export default function AskScreen(): React.JSX.Element {
           ))}
 
           {loading && (
-            <View style={{ alignItems: 'flex-start', marginBottom: 12 }}>
+            <View style={{ alignItems: 'flex-start', marginBottom: sp(12) }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <LinearGradient colors={[BRAND_FROM, BRAND_TO]} style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                <LinearGradient colors={[BRAND_FROM, BRAND_TO]} style={{ width: scale(24), height: scale(24), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="sparkles" size={12} color="#fff" />
                 </LinearGradient>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: MUTED, letterSpacing: 0.5 }}>SALTY AI</Text>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: MUTED, letterSpacing: 0.5 }}>SALTY AI</Text>
               </View>
-              <View style={{ backgroundColor: SURFACE, borderRadius: 18, borderBottomLeftRadius: 4, padding: 14 }}>
+              <View style={{ backgroundColor: SURFACE, borderRadius: scale(18), borderBottomLeftRadius: 4, padding: sp(14) }}>
                 <ActivityIndicator size="small" color={BRAND_FROM} />
               </View>
             </View>
@@ -244,15 +245,15 @@ export default function AskScreen(): React.JSX.Element {
         </ScrollView>
 
         {/* ── Input bar ── */}
-        <View style={{ paddingHorizontal: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16, paddingTop: 8, backgroundColor: BG, borderTopWidth: 1, borderTopColor: `${BRAND_FROM}18` }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10, backgroundColor: SURFACE, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 3 }}>
+        <View style={{ paddingHorizontal: sp(16), paddingBottom: Platform.OS === 'ios' ? sp(28) : sp(16), paddingTop: sp(8), backgroundColor: BG, borderTopWidth: 1, borderTopColor: `${BRAND_FROM}18` }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: sp(10), backgroundColor: SURFACE, borderRadius: scale(20), paddingHorizontal: sp(16), paddingVertical: sp(10), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 3 }}>
             <TextInput
               value={input}
               onChangeText={setInput}
               placeholder="Ask about your events…"
               placeholderTextColor={MUTED}
               multiline
-              style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: 14, color: FG, maxHeight: 100 }}
+              style={{ flex: 1, fontFamily: 'DMSans_400Regular', fontSize: scaleFont(14), color: FG, maxHeight: 100 }}
               onSubmitEditing={() => send(input)}
               returnKeyType="send"
               blurOnSubmit
@@ -260,7 +261,7 @@ export default function AskScreen(): React.JSX.Element {
             <TouchableOpacity
               onPress={() => send(input)}
               disabled={!input.trim() || loading}
-              style={{ width: 36, height: 36, borderRadius: 18, overflow: 'hidden', opacity: !input.trim() || loading ? 0.4 : 1 }}
+              style={{ width: scale(36), height: scale(36), borderRadius: scale(18), overflow: 'hidden', opacity: !input.trim() || loading ? 0.4 : 1 }}
             >
               <LinearGradient colors={[BRAND_FROM, BRAND_TO]} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="arrow-up" size={18} color="#fff" />

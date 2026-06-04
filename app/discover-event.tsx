@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { SCREEN_W } from '@/lib/layout';
+import { SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { supabase } from '@/lib/supabase/client';
 import { useSavedEvents } from '@/lib/SavedEventsContext';
@@ -218,44 +218,44 @@ export default function DiscoverEventScreen(): React.JSX.Element {
 
           {/* Back button */}
           <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: sp(20), paddingTop: sp(4) }}>
               <TouchableOpacity
                 onPress={() => router.back()}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name="chevron-back" size={20} color="#fff" />
+                <Ionicons name="chevron-back" size={scale(20)} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={toggleSave}
-                style={{ width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: scale(40), height: scale(40), borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name={saved ? 'heart' : 'heart-outline'} size={20} color={saved ? '#ff6b8a' : '#fff'} />
+                <Ionicons name={saved ? 'heart' : 'heart-outline'} size={scale(20)} color={saved ? '#ff6b8a' : '#fff'} />
               </TouchableOpacity>
             </View>
           </SafeAreaView>
 
           {/* Category + status badge */}
-          <View style={{ position: 'absolute', top: 60, left: 20, flexDirection: 'row', gap: 8 }}>
-            <View style={{ backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <View style={{ position: 'absolute', top: 60, left: sp(20), flexDirection: 'row', gap: sp(8) }}>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 99, paddingHorizontal: sp(10), paddingVertical: sp(5) }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: FG, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {event?.genre ?? params.category}
               </Text>
             </View>
             {event?.status === 'onsale' && (
-              <View style={{ backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: '#059669' }}>On Sale</Text>
+              <View style={{ backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: sp(10), paddingVertical: sp(5) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: '#059669' }}>On Sale</Text>
               </View>
             )}
             {event?.status === 'offsale' && (
-              <View style={{ backgroundColor: '#fdecea', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 10, color: '#e55' }}>Off Sale</Text>
+              <View style={{ backgroundColor: '#fdecea', borderRadius: 99, paddingHorizontal: sp(10), paddingVertical: sp(5) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: '#e55' }}>Off Sale</Text>
               </View>
             )}
           </View>
 
           {/* Title block on image */}
-          <View style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 26, color: '#fff', letterSpacing: -0.5, lineHeight: 32 }} numberOfLines={3}>
+          <View style={{ position: 'absolute', bottom: sp(20), left: sp(20), right: sp(20) }}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(26), color: '#fff', letterSpacing: -0.5, lineHeight: 32 }} numberOfLines={3}>
               {event?.title ?? params.title}
             </Text>
           </View>
@@ -263,9 +263,9 @@ export default function DiscoverEventScreen(): React.JSX.Element {
 
         {/* ── Date / Time / Price strip ── */}
         <View style={{
-          marginTop: -1, marginHorizontal: 20,
-          backgroundColor: SURFACE, borderRadius: 24,
-          flexDirection: 'row', paddingVertical: 16,
+          marginTop: -1, marginHorizontal: sp(20),
+          backgroundColor: SURFACE, borderRadius: scale(24),
+          flexDirection: 'row', paddingVertical: sp(16),
           shadowColor: '#503cb4', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.13, shadowRadius: 20, elevation: 6,
         }}>
           {([
@@ -273,25 +273,25 @@ export default function DiscoverEventScreen(): React.JSX.Element {
             { icon: 'time-outline',     label: 'Time',  value: event?.timeStr  || params.timeStr  || '—' },
             { icon: 'pricetag-outline', label: 'Price', value: priceLabel ?? '—' },
           ] as const).map(({ icon, label, value }, i) => (
-            <View key={label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: BORDER, paddingHorizontal: 4 }}>
-              <Ionicons name={icon} size={16} color={BRAND_FROM} />
-              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 11, color: FG, marginTop: 5, textAlign: 'center' }} numberOfLines={2}>{value}</Text>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 9, color: MUTED, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
+            <View key={label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: BORDER, paddingHorizontal: sp(4) }}>
+              <Ionicons name={icon} size={scale(16)} color={BRAND_FROM} />
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: FG, marginTop: 5, textAlign: 'center' }} numberOfLines={2}>{value}</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(9), color: MUTED, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
             </View>
           ))}
         </View>
 
         {/* ── Get Tickets button ── */}
         {event?.ticketUrl && (
-          <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
-            <TouchableOpacity onPress={openTickets} activeOpacity={0.88} style={{ borderRadius: 18, overflow: 'hidden' }}>
+          <View style={{ paddingHorizontal: sp(20), marginTop: sp(20) }}>
+            <TouchableOpacity onPress={openTickets} activeOpacity={0.88} style={{ borderRadius: scale(18), overflow: 'hidden' }}>
               <LinearGradient
                 colors={[gradFrom, gradTo]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16 }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: sp(10), paddingVertical: sp(16) }}
               >
-                <Ionicons name="ticket-outline" size={20} color="#fff" />
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: '#fff', letterSpacing: -0.2 }}>
+                <Ionicons name="ticket-outline" size={scale(20)} color="#fff" />
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: '#fff', letterSpacing: -0.2 }}>
                   Get Tickets
                 </Text>
               </LinearGradient>
@@ -300,14 +300,14 @@ export default function DiscoverEventScreen(): React.JSX.Element {
         )}
 
         {loading && (
-          <View style={{ alignItems: 'center', paddingTop: 32 }}>
+          <View style={{ alignItems: 'center', paddingTop: sp(32) }}>
             <ActivityIndicator color={BRAND_FROM} />
           </View>
         )}
 
         {!loading && error && (
-          <View style={{ paddingHorizontal: 20, paddingTop: 24, alignItems: 'center' }}>
-            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: MUTED, textAlign: 'center' }}>{error}</Text>
+          <View style={{ paddingHorizontal: sp(20), paddingTop: sp(24), alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, textAlign: 'center' }}>{error}</Text>
           </View>
         )}
 
@@ -315,51 +315,51 @@ export default function DiscoverEventScreen(): React.JSX.Element {
           <>
             {/* ── Venue ── */}
             {event.venue && (
-              <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginBottom: 12, letterSpacing: -0.2 }}>Venue</Text>
+              <View style={{ paddingHorizontal: sp(20), marginTop: sp(24) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginBottom: sp(12), letterSpacing: -0.2 }}>Venue</Text>
                 <TouchableOpacity
                   onPress={openMaps}
                   activeOpacity={0.88}
-                  style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}
+                  style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(16), flexDirection: 'row', alignItems: 'center', gap: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}
                 >
                   <LinearGradient
                     colors={[gradFrom, gradTo]}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+                    style={{ width: scale(44), height: scale(44), borderRadius: scale(14), alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Ionicons name="location" size={22} color="#fff" />
+                    <Ionicons name="location" size={scale(22)} color="#fff" />
                   </LinearGradient>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG }}>{event.venue.name}</Text>
+                    <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>{event.venue.name}</Text>
                     {fullVenueAddress && (
-                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2 }}>
                         {fullVenueAddress}
                       </Text>
                     )}
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={MUTED} />
+                  <Ionicons name="chevron-forward" size={scale(16)} color={MUTED} />
                 </TouchableOpacity>
               </View>
             )}
 
             {/* ── Artists / Performers ── */}
             {event.attractions.length > 0 && (
-              <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginBottom: 12, letterSpacing: -0.2 }}>
+              <View style={{ paddingHorizontal: sp(20), marginTop: sp(24) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginBottom: sp(12), letterSpacing: -0.2 }}>
                   {event.attractions.length === 1 ? 'Performer' : 'Performers'}
                 </Text>
-                <View style={{ gap: 10 }}>
+                <View style={{ gap: sp(10) }}>
                   {event.attractions.map((a, i) => (
-                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SURFACE, borderRadius: 16, padding: 12, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 }}>
-                      <View style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', backgroundColor: BORDER }}>
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), backgroundColor: SURFACE, borderRadius: scale(16), padding: sp(12), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 }}>
+                      <View style={{ width: scale(44), height: scale(44), borderRadius: scale(12), overflow: 'hidden', backgroundColor: BORDER }}>
                         {a.imageUrl
                           ? <Image source={{ uri: a.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                           : <LinearGradient colors={[gradFrom, gradTo]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                              <Ionicons name="musical-note" size={20} color="#fff" />
+                              <Ionicons name="musical-note" size={scale(20)} color="#fff" />
                             </LinearGradient>
                         }
                       </View>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 14, color: FG, flex: 1 }}>{a.name}</Text>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG, flex: 1 }}>{a.name}</Text>
                       <TouchableOpacity
                         onPress={() =>
                           isFollowing(a.name)
@@ -367,14 +367,14 @@ export default function DiscoverEventScreen(): React.JSX.Element {
                             : followArtist(a.name, undefined, entityType)
                         }
                         style={{
-                          paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99,
+                          paddingHorizontal: sp(12), paddingVertical: sp(6), borderRadius: 99,
                           borderWidth: 1.5,
                           borderColor: isFollowing(a.name) ? BRAND_FROM : BORDER,
                           backgroundColor: isFollowing(a.name) ? `${BRAND_FROM}14` : 'transparent',
                         }}
                       >
                         <Text style={{
-                          fontFamily: 'DMSans_700Bold', fontSize: 11,
+                          fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11),
                           color: isFollowing(a.name) ? BRAND_FROM : MUTED,
                         }}>
                           {isFollowing(a.name) ? 'Following' : 'Follow'}
@@ -388,10 +388,10 @@ export default function DiscoverEventScreen(): React.JSX.Element {
 
             {/* ── Info / Notes ── */}
             {event.info && (
-              <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: 16, color: FG, marginBottom: 12, letterSpacing: -0.2 }}>Info</Text>
-                <View style={{ backgroundColor: SURFACE, borderRadius: 20, padding: 16, shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 }}>
-                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: 13, color: FG, lineHeight: 20 }}>
+              <View style={{ paddingHorizontal: sp(20), marginTop: sp(24) }}>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(16), color: FG, marginBottom: sp(12), letterSpacing: -0.2 }}>Info</Text>
+                <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), padding: sp(16), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 }}>
+                  <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: FG, lineHeight: 20 }}>
                     {event.info}
                   </Text>
                 </View>

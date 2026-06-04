@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { scale, scaleFont } from '@/lib/layout';
 
 interface SaltyButtonProps {
   label: string;
@@ -16,10 +17,6 @@ export default function SaltyButton({
   loading = false,
   disabled = false,
 }: SaltyButtonProps): React.JSX.Element {
-  const { width } = useWindowDimensions();
-  const fontSize = Math.round(width * 0.062);
-  const buttonHeight = Math.round(width * 0.148);
-
   const base = 'rounded-xl w-full items-center justify-center';
   const styles = variant === 'primary'
     ? `${base} bg-ember`
@@ -28,7 +25,7 @@ export default function SaltyButton({
   return (
     <TouchableOpacity
       className={`${styles} ${disabled || loading ? 'opacity-50' : ''}`}
-      style={{ height: buttonHeight }}
+      style={{ height: scale(58) }}
       onPress={onPress}
       disabled={disabled || loading}
     >
@@ -37,7 +34,7 @@ export default function SaltyButton({
       ) : (
         <Text
           className={`font-bebas tracking-widest ${variant === 'primary' ? 'text-cream' : 'text-cream'}`}
-          style={{ fontSize }}
+          style={{ fontSize: scaleFont(24) }}
         >
           {label}
         </Text>
