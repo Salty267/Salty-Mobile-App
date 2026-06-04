@@ -13,7 +13,7 @@ import { useSidebar } from '@/lib/SidebarContext';
 import { useAvatar } from '@/lib/useAvatar';
 import { supabase } from '@/lib/supabase/client';
 import { useFriends } from '@/lib/useFriends';
-import { isEventPast, parseEventDate } from '@/lib/parseEventDate';
+import { isEventPast, parseEventDate, daysUntil } from '@/lib/parseEventDate';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -294,11 +294,7 @@ export default function ProfileScreen(): React.JSX.Element {
       // it doesn't update as time passes), then sort soonest first
       const upcoming = tickets
         .filter(t => !isEventPast(t.date_str))
-        .sort((a, b) => {
-          const da = parseEventDate(a.date_str)?.getTime() ?? Infinity;
-          const db = parseEventDate(b.date_str)?.getTime() ?? Infinity;
-          return da - db;
-        });
+        .sort((a, b) => (daysUntil(a.date_str) ?? Infinity) - (daysUntil(b.date_str) ?? Infinity));
       if (upcoming.length > 0) {
         const next = upcoming[0];
         setNextEvent({
