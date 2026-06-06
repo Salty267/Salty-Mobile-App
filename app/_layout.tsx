@@ -45,27 +45,31 @@ function PermissionsGate({ visible, onDone }: { visible: boolean; onDone: () => 
 
   const requestAll = async () => {
     setRequesting(true);
+    // Wait for the modal animation to settle before firing OS dialogs,
+    // otherwise iOS can swallow dialogs that appear during transitions.
+    await new Promise(r => setTimeout(r, 400));
     try {
       // 1. Push notifications
       if (!isExpoGo) {
-        const N = await import('expo-notifications');
-        await N.requestPermissionsAsync().catch(() => {});
+        try {
+          const N = await import('expo-notifications');
+          await N.requestPermissionsAsync();
+        } catch { /* skip in Expo Go */ }
       }
-      // 2. Camera
-      await ImagePicker.requestCameraPermissionsAsync().catch(() => {});
+      // 2. Camera — wait for user to respond before showing next
+      await ImagePicker.requestCameraPermissionsAsync();
       // 3. Photo library
-      await ImagePicker.requestMediaLibraryPermissionsAsync().catch(() => {});
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
       // 4. Calendar
-      await ExpoCalendar.requestCalendarPermissionsAsync().catch(() => {});
+      await ExpoCalendar.requestCalendarPermissionsAsync();
       // 5. Location
-      await Location.requestForegroundPermissionsAsync().catch(() => {});
+      await Location.requestForegroundPermissionsAsync();
       // 6. Contacts
-      await Contacts.requestPermissionsAsync().catch(() => {});
-    } finally {
-      await SecureStore.setItemAsync(PERM_KEY, 'true').catch(() => {});
-      setRequesting(false);
-      onDone();
-    }
+      await Contacts.requestPermissionsAsync();
+    } catch { /* one failed — continue to mark done */ }
+    await SecureStore.setItemAsync(PERM_KEY, 'true').catch(() => {});
+    setRequesting(false);
+    onDone();
   };
 
   return (
@@ -94,7 +98,7 @@ function PermissionsGate({ visible, onDone }: { visible: boolean; onDone: () => 
           {PERMS.map(p => (
             <View key={p.label} style={styles.permRow}>
               <View style={[styles.permDot, { backgroundColor: p.color + '20' }]}>
-                <Ionicons name={p.icon} size={scale(20)} color={p.color} />
+                <Ionicons name={p.icon} size={scale(16)} color={p.color} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.permLabel}>{p.label}</Text>
@@ -141,11 +145,11 @@ const styles = StyleSheet.create({
   permIconWrap: { width: scale(64), height: scale(64), borderRadius: scale(20), backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: sp(16), shadowColor: '#4f6cf2', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 14, elevation: 6 },
   permTitle:  { fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', letterSpacing: -0.4, textAlign: 'center', marginBottom: sp(8) },
   permSub:    { fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: 'rgba(255,255,255,0.80)', textAlign: 'center', lineHeight: 20, paddingHorizontal: sp(24) },
-  permList:   { flex: 1, paddingHorizontal: sp(20), paddingTop: sp(24), gap: sp(16) },
-  permRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: sp(14), backgroundColor: '#fff', borderRadius: scale(16), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 },
-  permDot:    { width: scale(42), height: scale(42), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center' },
-  permLabel:  { fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#1a1530', marginBottom: 3 },
-  permDesc:   { fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: '#6b6a85', lineHeight: 18 },
+  permList:   { flex: 1, paddingHorizontal: sp(20), paddingTop: sp(16), gap: sp(8) },
+  permRow:    { flexDirection: 'row', alignItems: 'center', gap: sp(12), backgroundColor: '#fff', borderRadius: scale(14), paddingHorizontal: sp(12), paddingVertical: sp(10), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
+  permDot:    { width: scale(34), height: scale(34), borderRadius: scale(10), alignItems: 'center', justifyContent: 'center' },
+  permLabel:  { fontFamily: 'DMSans_700Bold', fontSize: scaleFont(13), color: '#1a1530', marginBottom: 1 },
+  permDesc:   { fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: '#6b6a85', lineHeight: 16 },
   permFooter: { paddingBottom: sp(8) },
   permBtn:    { height: scale(54), alignItems: 'center', justifyContent: 'center' },
   permBtnText:{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff', letterSpacing: 0.3 },
