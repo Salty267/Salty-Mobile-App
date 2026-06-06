@@ -5,11 +5,20 @@ import { SavedEventsProvider } from '@/lib/SavedEventsContext';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { View, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, AppState } from 'react-native';
 import * as Linking from 'expo-linking';
+import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
+import * as ExpoCalendar from 'expo-calendar';
+import * as Location from 'expo-location';
+import * as Contacts from 'expo-contacts';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase/client';
 import { registerForPushNotifications } from '@/lib/notifications';
+import { scale, scaleFont, sp } from '@/lib/layout';
 import type { Session } from '@supabase/supabase-js';
 import type * as NotificationsType from 'expo-notifications';
 
@@ -18,6 +27,132 @@ const isExpoGo =
   Constants.executionEnvironment === 'storeClient' ||
   (Constants.appOwnership as string | null) === 'expo';
 
+const PERM_KEY = 'salty_permissions_v1';
+
+// ── Permissions we request and what we say about each ────────────────────────
+const PERMS = [
+  { icon: 'notifications-outline' as const, color: '#4f6cf2', label: 'Notifications', desc: 'Get reminders before your events and alerts when new tickets are detected.' },
+  { icon: 'camera-outline'        as const, color: '#a25cf2', label: 'Camera',        desc: 'Scan physical tickets by pointing your camera at them.' },
+  { icon: 'images-outline'        as const, color: '#E8581A', label: 'Photo Library', desc: 'Import tickets saved in your camera roll and set your profile photo.' },
+  { icon: 'calendar-outline'      as const, color: '#059669', label: 'Calendar',      desc: 'Find concerts, games, and shows you have coming up.' },
+  { icon: 'location-outline'      as const, color: '#f59e0b', label: 'Location',      desc: 'Show events happening near you on the Discover page.' },
+  { icon: 'people-outline'        as const, color: '#ec4899', label: 'Contacts',      desc: 'Find friends who are already on Salty.' },
+];
+
+// ── Permission gate modal ─────────────────────────────────────────────────────
+function PermissionsGate({ visible, onDone }: { visible: boolean; onDone: () => void }): React.JSX.Element {
+  const [requesting, setRequesting] = useState(false);
+
+  const requestAll = async () => {
+    setRequesting(true);
+    try {
+      // 1. Push notifications
+      if (!isExpoGo) {
+        const N = await import('expo-notifications');
+        await N.requestPermissionsAsync().catch(() => {});
+      }
+      // 2. Camera
+      await ImagePicker.requestCameraPermissionsAsync().catch(() => {});
+      // 3. Photo library
+      await ImagePicker.requestMediaLibraryPermissionsAsync().catch(() => {});
+      // 4. Calendar
+      await ExpoCalendar.requestCalendarPermissionsAsync().catch(() => {});
+      // 5. Location
+      await Location.requestForegroundPermissionsAsync().catch(() => {});
+      // 6. Contacts
+      await Contacts.requestPermissionsAsync().catch(() => {});
+    } finally {
+      await SecureStore.setItemAsync(PERM_KEY, 'true').catch(() => {});
+      setRequesting(false);
+      onDone();
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" hardwareAccelerated>
+      <View style={styles.permBg}>
+        <LinearGradient
+          colors={['#4f6cf2', '#a25cf2']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={styles.permHeader}
+        >
+          <SafeAreaView edges={['top']}>
+            <View style={{ alignItems: 'center', paddingTop: sp(16), paddingBottom: sp(8) }}>
+              <View style={styles.permIconWrap}>
+                <Ionicons name="shield-checkmark" size={scale(32)} color="#4f6cf2" />
+              </View>
+              <Text style={styles.permTitle}>Before we get started</Text>
+              <Text style={styles.permSub}>
+                Salty needs a few permissions to give you the full experience.
+                You can change these anytime in Settings.
+              </Text>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        <View style={styles.permList}>
+          {PERMS.map(p => (
+            <View key={p.label} style={styles.permRow}>
+              <View style={[styles.permDot, { backgroundColor: p.color + '20' }]}>
+                <Ionicons name={p.icon} size={scale(20)} color={p.color} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.permLabel}>{p.label}</Text>
+                <Text style={styles.permDesc}>{p.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.permFooter}>
+          <SafeAreaView edges={['bottom']}>
+            <TouchableOpacity
+              onPress={requestAll}
+              disabled={requesting}
+              activeOpacity={0.85}
+              style={{ overflow: 'hidden', borderRadius: scale(18), marginHorizontal: sp(20) }}
+            >
+              <LinearGradient
+                colors={['#4f6cf2', '#a25cf2']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={styles.permBtn}
+              >
+                <Text style={styles.permBtnText}>
+                  {requesting ? 'Setting up…' : 'Allow permissions'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <Text style={styles.permSkip} onPress={() => {
+              SecureStore.setItemAsync(PERM_KEY, 'skipped').catch(() => {});
+              onDone();
+            }}>
+              Skip for now
+            </Text>
+          </SafeAreaView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  permBg:     { flex: 1, backgroundColor: '#eef0fb' },
+  permHeader: { paddingBottom: sp(24), borderBottomLeftRadius: scale(32), borderBottomRightRadius: scale(32) },
+  permIconWrap: { width: scale(64), height: scale(64), borderRadius: scale(20), backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: sp(16), shadowColor: '#4f6cf2', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 14, elevation: 6 },
+  permTitle:  { fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', letterSpacing: -0.4, textAlign: 'center', marginBottom: sp(8) },
+  permSub:    { fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: 'rgba(255,255,255,0.80)', textAlign: 'center', lineHeight: 20, paddingHorizontal: sp(24) },
+  permList:   { flex: 1, paddingHorizontal: sp(20), paddingTop: sp(24), gap: sp(16) },
+  permRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: sp(14), backgroundColor: '#fff', borderRadius: scale(16), padding: sp(14), shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 },
+  permDot:    { width: scale(42), height: scale(42), borderRadius: scale(12), alignItems: 'center', justifyContent: 'center' },
+  permLabel:  { fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#1a1530', marginBottom: 3 },
+  permDesc:   { fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: '#6b6a85', lineHeight: 18 },
+  permFooter: { paddingBottom: sp(8) },
+  permBtn:    { height: scale(54), alignItems: 'center', justifyContent: 'center' },
+  permBtnText:{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(15), color: '#fff', letterSpacing: 0.3 },
+  permSkip:   { fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: '#6b6a85', textAlign: 'center', paddingVertical: sp(14) },
+});
+
+// ── Protected route ───────────────────────────────────────────────────────────
 function useProtectedRoute(session: Session | null, isLoading: boolean): void {
   const segments = useSegments();
   const router = useRouter();
@@ -33,12 +168,14 @@ function useProtectedRoute(session: Session | null, isLoading: boolean): void {
   }, [session, segments, isLoading]);
 }
 
+// ── Root layout ───────────────────────────────────────────────────────────────
 export default function RootLayout(): React.JSX.Element | null {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [session,          setSession]          = useState<Session | null>(null);
+  const [isLoading,        setIsLoading]        = useState<boolean>(true);
+  const [showPermissions,  setShowPermissions]  = useState(false);
   const notificationListener = useRef<NotificationsType.Subscription | null>(null);
-  const responseListener = useRef<NotificationsType.Subscription | null>(null);
+  const responseListener     = useRef<NotificationsType.Subscription | null>(null);
 
   const [fontsLoaded] = useFonts({
     BebasNeue_400Regular,
@@ -46,6 +183,14 @@ export default function RootLayout(): React.JSX.Element | null {
     DMSans_500Medium,
     DMSans_700Bold,
   });
+
+  // Check whether we should show the permissions gate after login
+  useEffect(() => {
+    if (!session) { setShowPermissions(false); return; }
+    SecureStore.getItemAsync(PERM_KEY).then(val => {
+      if (!val) setShowPermissions(true);
+    }).catch(() => {});
+  }, [session?.user?.id]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -55,7 +200,6 @@ export default function RootLayout(): React.JSX.Element | null {
         return;
       }
       // Validate the stored session before autoRefreshToken fires and throws.
-      // Use scope:'local' so a stale token doesn't trigger a failing network revoke call.
       const { error } = await supabase.auth.getUser();
       if (error) {
         await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
@@ -72,10 +216,6 @@ export default function RootLayout(): React.JSX.Element | null {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // When the background token refresh fails (expired / revoked refresh token),
-      // Supabase fires TOKEN_REFRESHED or SIGNED_OUT with a null session.
-      // Call signOut({ scope: 'local' }) to clear the stale tokens from SecureStore
-      // so the auto-refresh timer stops retrying and the error stops propagating.
       if (!session && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT')) {
         await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         setSession(null);
@@ -87,22 +227,17 @@ export default function RootLayout(): React.JSX.Element | null {
       }
     });
 
-    // Handle deep link callbacks (e.g. email confirmation, OAuth redirect)
     const handleDeepLink = async ({ url }: { url: string }) => {
       if (!url.includes('auth/callback')) return;
       const parsed = new URL(url);
       const hashParams = new URLSearchParams(parsed.hash.replace(/^#/, ''));
-
-      // Supabase v2 email confirmation: token_hash + type
       const tokenHash = parsed.searchParams.get('token_hash');
       const type = parsed.searchParams.get('type') as 'signup' | 'recovery' | 'email' | null;
       if (tokenHash && type) {
         await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
         return;
       }
-
-      // OAuth / magic-link: access_token + refresh_token in hash or query
-      const accessToken = hashParams.get('access_token') ?? parsed.searchParams.get('access_token');
+      const accessToken  = hashParams.get('access_token')  ?? parsed.searchParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token') ?? parsed.searchParams.get('refresh_token');
       if (accessToken && refreshToken) {
         await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
@@ -110,9 +245,7 @@ export default function RootLayout(): React.JSX.Element | null {
     };
 
     let notifCleanup: (() => void) | undefined;
-
     if (!isExpoGo) {
-      // Dynamic import prevents expo-notifications loading (and throwing) in Expo Go
       void (async () => {
         const N = await import('expo-notifications');
         notificationListener.current = N.addNotificationReceivedListener(() => {});
@@ -142,7 +275,6 @@ export default function RootLayout(): React.JSX.Element | null {
     if (!session) return;
     const THROTTLE_MS = 6 * 60 * 60 * 1000;
     let lastChecked = 0;
-
     const checkAlerts = async () => {
       if (Date.now() - lastChecked < THROTTLE_MS) return;
       lastChecked = Date.now();
@@ -151,22 +283,12 @@ export default function RootLayout(): React.JSX.Element | null {
       try {
         await fetch(
           `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/check-artist-alerts`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${s.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: '{}',
-          },
+          { method: 'POST', headers: { Authorization: `Bearer ${s.access_token}`, 'Content-Type': 'application/json' }, body: '{}' },
         );
       } catch { /* best-effort */ }
     };
-
     checkAlerts();
-    const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') checkAlerts();
-    });
+    const sub = AppState.addEventListener('change', state => { if (state === 'active') checkAlerts(); });
     return () => sub.remove();
   }, [session]);
 
@@ -188,8 +310,8 @@ export default function RootLayout(): React.JSX.Element | null {
           gestureDirection: 'horizontal',
         }}
       >
-        <Stack.Screen name="(auth)" options={{ animation: 'fade', gestureEnabled: false }} />
-        <Stack.Screen name="(tabs)" options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="(auth)"    options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="(tabs)"    options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="auth/callback" options={{ animation: 'none', gestureEnabled: false }} />
         <Stack.Screen name="settings" />
         <Stack.Screen name="privacy" />
@@ -204,6 +326,12 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="following" />
         <Stack.Screen name="scan-ticket" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
+
+      {/* Permissions gate — shown once on first login */}
+      <PermissionsGate
+        visible={showPermissions}
+        onDone={() => setShowPermissions(false)}
+      />
     </SavedEventsProvider>
   );
 }

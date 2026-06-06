@@ -214,38 +214,6 @@ export default function SettingsScreen(): React.JSX.Element {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: sp(24), paddingBottom: bottom + 32 }}>
 
-        {/* ── Gmail ── */}
-        <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
-          <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Gmail</Text>
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/tickets')}
-            activeOpacity={gmailConnected ? 1 : 0.85}
-            style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: sp(16), paddingVertical: sp(16), gap: sp(14) }}>
-              <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="mail" size={18} color="#E8581A" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>
-                  {gmailConnected ? 'Gmail connected' : 'Connect Gmail'}
-                </Text>
-                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 2 }} numberOfLines={1}>
-                  {gmailConnected ? gmailEmail : 'Manage in My Tickets'}
-                </Text>
-              </View>
-              {gmailConnected ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', borderRadius: 99, paddingHorizontal: sp(9), paddingVertical: 4 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN }} />
-                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(10), color: GREEN }}>Active</Text>
-                </View>
-              ) : (
-                <Ionicons name="chevron-forward" size={16} color={MUTED} />
-              )}
-            </View>
-          </TouchableOpacity>
-        </View>
-
         {/* ── Notifications ── */}
         <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
           <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Notifications</Text>

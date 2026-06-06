@@ -23,7 +23,6 @@
         "NSCameraUsageDescription": "Salty uses your camera to scan ticket photos.",
         "NSPhotoLibraryUsageDescription": "Salty needs access to your photos to scan tickets and set a profile picture.",
         "NSCalendarsUsageDescription": "Salty reads your calendar to find concerts, games, and shows you're attending.",
-        "NSRemindersUsageDescription": "Salty may access reminders to help track your events.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -42,7 +41,6 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.RECORD_AUDIO",
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS",
         "android.permission.READ_CALENDAR",
