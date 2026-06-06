@@ -84,7 +84,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
   }>();
   const bottomPad = useBottomPad();
   const { saveEvent, unsaveEvent, isSaved } = useSavedEvents();
-  const saved = isSaved(params.id);
+  const saved = isSaved(params.id ?? '');
   const { isFollowing, followArtist, unfollowArtist } = useFollowedArtists();
   const { exportToSpotify, status: spotifyStatus, playlistUrl, errorMsg: spotifyError } = useSpotifyExport();
   const setlistCardRef = useRef<ViewShot>(null);
@@ -1040,7 +1040,7 @@ function SetlistShareCard({ title, venue, date, songs }: {
         <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)', letterSpacing: 4 }}>
           SETLIST
         </Text>
-        <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 32, color: '#fff', letterSpacing: 1, marginTop: 4, lineHeight: 36 }} numberOfLines={2}>
+        <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: 32, color: '#fff', letterSpacing: 1, marginTop: 4 }} numberOfLines={2}>
           {title}
         </Text>
         {(venue || date) && (

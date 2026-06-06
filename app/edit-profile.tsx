@@ -138,22 +138,27 @@ export default function EditProfileScreen(): React.JSX.Element {
       profileUpdate.username_changed_at = new Date().toISOString();
     }
 
-    await Promise.all([
-      supabase.auth.updateUser({
-        data: { full_name: fullName.trim(), phone_number: phone.trim() },
-      }),
-      supabase.from('users').update(profileUpdate).eq('id', userId),
-    ]);
+    try {
+      await Promise.all([
+        supabase.auth.updateUser({
+          data: { full_name: fullName.trim(), phone_number: phone.trim() },
+        }),
+        supabase.from('users').update(profileUpdate).eq('id', userId),
+      ]);
 
-    if (usernameChanged) {
-      setSavedUsername(newUsername);
-      setUsername(newUsername);
-      setUsernameChangedAt(new Date());
+      if (usernameChanged) {
+        setSavedUsername(newUsername);
+        setUsername(newUsername);
+        setUsernameChangedAt(new Date());
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      Alert.alert('Save failed', 'Could not save your changes. Please try again.');
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
   const handleChangePassword = async () => {
@@ -165,24 +170,21 @@ export default function EditProfileScreen(): React.JSX.Element {
     setChangingPw(true);
     setPwError('');
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: current });
-    if (signInError) {
-      setPwError('Current password is incorrect.');
-      setChangingPw(false);
-      return;
-    }
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: current });
+      if (signInError) { setPwError('Current password is incorrect.'); return; }
 
-    const { error } = await supabase.auth.updateUser({ password: next });
-    if (error) {
-      setPwError('Failed to update password. Please try again.');
-      setChangingPw(false);
-      return;
-    }
+      const { error } = await supabase.auth.updateUser({ password: next });
+      if (error) { setPwError('Failed to update password. Please try again.'); return; }
 
-    setChangingPw(false);
-    setPwSaved(true);
-    setChangePwForm({ current: '', next: '', confirm: '' });
-    setTimeout(() => setPwSaved(false), 2500);
+      setPwSaved(true);
+      setChangePwForm({ current: '', next: '', confirm: '' });
+      setTimeout(() => setPwSaved(false), 2500);
+    } catch {
+      setPwError('Something went wrong. Please try again.');
+    } finally {
+      setChangingPw(false);
+    }
   };
 
   const handleDeleteAccount = () => {

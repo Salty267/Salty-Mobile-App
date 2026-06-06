@@ -255,7 +255,7 @@ export default function DiscoverEventScreen(): React.JSX.Element {
 
           {/* Title block on image */}
           <View style={{ position: 'absolute', bottom: sp(20), left: sp(20), right: sp(20) }}>
-            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(26), color: '#fff', letterSpacing: -0.5, lineHeight: 32 }} numberOfLines={3}>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(26), color: '#fff', letterSpacing: -0.5 }} numberOfLines={3}>
               {event?.title ?? params.title}
             </Text>
           </View>

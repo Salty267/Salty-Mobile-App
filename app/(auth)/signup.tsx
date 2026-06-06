@@ -37,8 +37,12 @@ export default function SignupScreen(): React.JSX.Element {
     if (!clean) { setUsernameStatus('idle'); return; }
     if (!usernameIsValid(clean)) { setUsernameStatus('invalid'); return; }
     setUsernameStatus('checking');
-    const { data } = await supabase.rpc('is_username_taken', { p_username: clean });
-    setUsernameStatus(data ? 'taken' : 'available');
+    try {
+      const { data } = await supabase.rpc('is_username_taken', { p_username: clean });
+      setUsernameStatus(data ? 'taken' : 'available');
+    } catch {
+      setUsernameStatus('idle');
+    }
   }, []);
 
   const handleUsernameChange = (value: string) => {
@@ -72,35 +76,39 @@ export default function SignupScreen(): React.JSX.Element {
     setLoading(true);
     setError(null);
 
-    const { error: signUpErr } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        // username stored in metadata so the DB trigger reads it on OTP confirmation
-        data: {
-          full_name: fullName.trim(),
-          phone_number: phone,
-          zip_code: zipcode.trim(),
-          username: username.trim(),
+    try {
+      const { error: signUpErr } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            phone_number: phone,
+            zip_code: zipcode.trim(),
+            username: username.trim(),
+          },
         },
-      },
-    });
+      });
 
-    if (signUpErr) {
-      const msg = signUpErr.message;
-      const friendly = msg.includes('already registered') || msg.includes('already exists')
-        ? 'An account with this email already exists.'
-        : msg.includes('Password should be')
-        ? 'Password must be at least 6 characters.'
-        : msg.includes('rate limit') || msg.includes('Too many')
-        ? 'Too many attempts. Please wait a moment.'
-        : 'Could not create account. Please try again.';
-      setError(friendly);
+      if (signUpErr) {
+        const msg = signUpErr.message;
+        const friendly = msg.includes('already registered') || msg.includes('already exists')
+          ? 'An account with this email already exists.'
+          : msg.includes('Password should be')
+          ? 'Password must be at least 6 characters.'
+          : msg.includes('rate limit') || msg.includes('Too many')
+          ? 'Too many attempts. Please wait a moment.'
+          : 'Could not create account. Please try again.';
+        setError(friendly);
+        return;
+      }
+
+      router.replace({ pathname: '/(auth)/verify-otp', params: { email: email.trim() } } as any);
+    } catch {
+      setError('Something went wrong. Please check your connection and try again.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.replace({ pathname: '/(auth)/verify-otp', params: { email: email.trim() } } as any);
   };
 
   const usernameHint = (): { text: string; color: string } | null => {

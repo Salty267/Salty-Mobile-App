@@ -32,9 +32,14 @@ export default function SignInScreen(): React.JSX.Element {
   const handleSignIn = async (): Promise<void> => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(friendlyAuthError(error.message));
-    setLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setError(friendlyAuthError(error.message));
+    } catch {
+      setError('Something went wrong. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async (): Promise<void> => {

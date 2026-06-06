@@ -68,19 +68,24 @@ export default function VerifyOtpScreen(): React.JSX.Element {
   const verify = async (code: string) => {
     setLoading(true);
     setError(null);
-    const { error: verifyErr } = await supabase.auth.verifyOtp({
-      email: email ?? '',
-      token: code,
-      type: 'signup',
-    });
-    if (verifyErr) {
-      setError('Invalid code. Please try again.');
-      setDigits(Array(OTP_LENGTH).fill(''));
-      inputs.current[0]?.focus();
+    try {
+      const { error: verifyErr } = await supabase.auth.verifyOtp({
+        email: email ?? '',
+        token: code,
+        type: 'signup',
+      });
+      if (verifyErr) {
+        setError('Invalid code. Please try again.');
+        setDigits(Array(OTP_LENGTH).fill(''));
+        inputs.current[0]?.focus();
+        return;
+      }
+      router.replace('/(auth)/confirmed' as any);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
       setLoading(false);
-      return;
     }
-    router.replace('/(auth)/confirmed' as any);
   };
 
   useEffect(() => {
@@ -92,11 +97,15 @@ export default function VerifyOtpScreen(): React.JSX.Element {
   const handleResend = async () => {
     setError(null);
     setResent(false);
-    await supabase.auth.resend({ email: email ?? '', type: 'signup' });
-    setResent(true);
-    setDigits(Array(OTP_LENGTH).fill(''));
-    setTimeout(() => inputs.current[0]?.focus(), 100);
-    setTimeout(() => setResent(false), 4000);
+    try {
+      await supabase.auth.resend({ email: email ?? '', type: 'signup' });
+      setResent(true);
+      setDigits(Array(OTP_LENGTH).fill(''));
+      setTimeout(() => inputs.current[0]?.focus(), 100);
+      setTimeout(() => setResent(false), 4000);
+    } catch {
+      setError('Could not resend code. Please try again.');
+    }
   };
 
   return (

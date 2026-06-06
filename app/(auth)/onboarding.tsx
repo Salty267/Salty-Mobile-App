@@ -218,7 +218,7 @@ export default function OnboardingScreen(): React.JSX.Element {
               Your year, replayed
             </Text>
           </View>
-          <Text style={{ fontSize: scaleFont(36), fontFamily: 'DMSans_700Bold', color: DEEP, letterSpacing: -0.6, lineHeight: 38 }}>
+          <Text style={{ fontSize: scaleFont(36), fontFamily: 'DMSans_700Bold', color: DEEP, letterSpacing: -0.6 }}>
             Don't just go.{'\n'}
             <Text style={{ fontStyle: 'italic', color: '#E8581A' }}>Remember it.</Text>
           </Text>

@@ -434,7 +434,7 @@ export default function MemoriesScreen(): React.JSX.Element {
                     {mosaicImages[3] && <Image source={{ uri: mosaicImages[3] }} style={absoluteFill} resizeMode="cover" />}
                     <View style={{ ...absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' }} />
                     <View style={{ ...absoluteFill, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', lineHeight: 24 }}>
+                      <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff' }}>
                         {totalPhotos > 0 ? `+${totalPhotos}` : `${timeline.reduce((s, g) => s + g.data.length, 0)}`}
                       </Text>
                       <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: 'rgba(255,255,255,0.9)', marginTop: 3 }}>
