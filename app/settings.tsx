@@ -277,9 +277,9 @@ export default function SettingsScreen(): React.JSX.Element {
         <View style={{ paddingHorizontal: sp(20), marginBottom: sp(24) }}>
           <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: MUTED, letterSpacing: 1, textTransform: 'uppercase', marginBottom: sp(10) }}>Account</Text>
           <View style={{ backgroundColor: SURFACE, borderRadius: scale(20), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 3 }}>
-            <SettingsRow icon="lock-closed-outline" label="Privacy" onPress={() => router.push('/privacy')} />
+            <SettingsRow icon="lock-closed-outline" label="Privacy Policy" onPress={() => router.push('/privacy')} />
             <View style={{ height: 1, backgroundColor: '#f1eefb', marginLeft: scale(66) }} />
-            <SettingsRow icon="document-text-outline" label="Terms of Service" onPress={() => WebBrowser.openBrowserAsync('https://saltydigital.ai/terms')} last />
+            <SettingsRow icon="document-text-outline" label="Terms & Conditions" onPress={() => router.push('/terms')} last />
           </View>
         </View>
 

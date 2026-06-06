@@ -193,6 +193,7 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="auth/callback" options={{ animation: 'none', gestureEnabled: false }} />
         <Stack.Screen name="settings" />
         <Stack.Screen name="privacy" />
+        <Stack.Screen name="terms" />
         <Stack.Screen name="help" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="edit-profile" />
