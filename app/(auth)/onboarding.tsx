@@ -18,18 +18,23 @@ import { supabase } from '@/lib/supabase/client';
 import { scale, scaleFont, sp } from '@/lib/layout';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const BAND_W    = SCREEN_W - 40;
-const CARD_W    = Math.round(BAND_W * 0.88);
-const CARD_H    = Math.max(100, Math.min(Math.round(CARD_W / 1.5), SCREEN_H - 588));
-const CARD_LEFT = Math.round((BAND_W - CARD_W) / 2);
+const { width: SCREEN_W } = Dimensions.get('window');
+// Stage has marginHorizontal:sp(20) and paddingHorizontal:sp(16) on each side.
+// Cards must be sized against CONTENT width (inside the padding), not BAND width,
+// otherwise they overflow the padded container and get clipped by overflow:hidden.
+const STAGE_PAD = sp(16);
+const CONTENT_W = SCREEN_W - sp(40) - STAGE_PAD * 2;
+// Cards use 84% of content width — leaves ~8% on each side so rotated corners
+// never reach the stage edge and get clipped by overflow:hidden.
+const CARD_W    = Math.round(CONTENT_W * 0.84);
+const CARD_LEFT = Math.round((CONTENT_W - CARD_W) / 2);
 
-const EXPANDED_Y  = [0, 72, 144] as const;
-const STACK_H     = EXPANDED_Y[2] + CARD_H + 28;
-const ROTATIONS   = ['3deg', '-5deg', '1.5deg'] as const;
-const X_NUDGE     = [0, -6, 4] as const;
-const LOOP_MS     = 3500;
-const SWIPE_MIN   = 40;
+// Small rotation angles + nudges — kept proportional to the clearance available
+const ROTATIONS = ['2deg', '-3.5deg', '1.5deg'] as const;
+const X_NUDGE   = [0, -4, 3] as const;
+
+const LOOP_MS   = 3500;
+const SWIPE_MIN = 40;
 
 const DEEP = '#1A0848';
 
@@ -85,11 +90,11 @@ function makeAnims(): Anim[] {
   }));
 }
 
-function runExpand(anims: Anim[], cb?: () => void) {
+function runExpand(anims: Anim[], expandedY: readonly [number, number, number], cb?: () => void) {
   Animated.stagger(90, anims.map((a, i) =>
     Animated.parallel([
       Animated.spring(a.y, {
-        toValue: EXPANDED_Y[i],
+        toValue: expandedY[i],
         useNativeDriver: true,
         damping: 14, stiffness: 105, mass: 0.85,
       }),
@@ -128,14 +133,25 @@ function runCollapse(anims: Anim[], cb?: () => void) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function OnboardingScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
-  const [page,        setPage]       = useState(0);
-  const [displayPage, setDisplayPage] = useState(0);
+  const [page,         setPage]        = useState(0);
+  const [displayPage,  setDisplayPage] = useState(0);
+  // cardAreaH: actual pixel height of the flex:1 cards container, measured via onLayout
+  const [cardAreaH,    setCardAreaH]   = useState(0);
 
   const isAnimating         = useRef(false);
   const pageRef             = useRef(0);
   const anims               = useRef(makeAnims()).current;
   const loopTimer           = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handlePageChangeRef = useRef<(p: number) => void>(() => {});
+
+  // cardH and cascade gaps are both derived from the measured container height so
+  // the three stacked cards always fit without overflowing.
+  // Layout: card0 at y=0, card1 at y=gap, card2 at y=2*gap.
+  // Card2's bottom = 2*gap + cardH = cardAreaH  →  gap = (cardAreaH - cardH) / 2
+  // We allocate 56% to cardH and 44% to the two gaps (22% each).
+  const cardH   = cardAreaH > 0 ? Math.max(80, Math.round(cardAreaH * 0.56)) : Math.round(CARD_W / 1.6);
+  const expandGap = cardAreaH > 0 ? Math.round((cardAreaH - cardH) / 2) : 65;
+  const expandedY = [0, expandGap, expandGap * 2] as const;
 
   function scheduleLoop() {
     if (loopTimer.current) clearTimeout(loopTimer.current);
@@ -153,7 +169,7 @@ export default function OnboardingScreen(): React.JSX.Element {
     setPage(newPage);
     runCollapse(anims, () => {
       setDisplayPage(newPage);
-      runExpand(anims, () => {
+      runExpand(anims, expandedY, () => {
         isAnimating.current = false;
         scheduleLoop();
       });
@@ -186,14 +202,16 @@ export default function OnboardingScreen(): React.JSX.Element {
   }, []);
 
   useEffect(() => {
-    runExpand(anims, () => {
+    // Don't start expand until cardAreaH is known so cards render at correct size
+    if (cardAreaH === 0) return;
+    runExpand(anims, expandedY, () => {
       isAnimating.current = false;
       scheduleLoop();
     });
     return () => {
       if (loopTimer.current) clearTimeout(loopTimer.current);
     };
-  }, []);
+  }, [cardAreaH > 0]); // only fires once when layout is ready
 
   const current = PAGES[displayPage];
 
@@ -204,15 +222,15 @@ export default function OnboardingScreen(): React.JSX.Element {
       <View style={{ flex: 1, backgroundColor: '#FBF8F1' }}>
 
         {/* ── SALTY WORDMARK ── */}
-        <View style={{ alignItems: 'center', paddingTop: sp(16), paddingBottom: sp(16) }}>
+        <View style={{ alignItems: 'center', paddingTop: sp(12), paddingBottom: sp(8) }}>
           <Text style={{ fontFamily: 'BebasNeue_400Regular', fontSize: scaleFont(32), letterSpacing: 10, color: DEEP, opacity: 0.85 }}>
             SALTY
           </Text>
         </View>
 
         {/* ── HEADLINE ── */}
-        <View style={{ paddingHorizontal: sp(24), paddingBottom: sp(20) }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,47,212,0.09)', borderRadius: 99, paddingHorizontal: sp(11), paddingVertical: sp(6), alignSelf: 'flex-start', marginBottom: sp(16) }}>
+        <View style={{ paddingHorizontal: sp(24), paddingBottom: sp(12) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(91,47,212,0.09)', borderRadius: 99, paddingHorizontal: sp(11), paddingVertical: sp(6), alignSelf: 'flex-start', marginBottom: sp(12) }}>
             <Ionicons name="star" size={scale(11)} color="#5B2FD4" />
             <Text style={{ fontSize: scaleFont(10.5), fontFamily: 'DMSans_700Bold', letterSpacing: 1.4, color: DEEP, textTransform: 'uppercase' }}>
               Your year, replayed
@@ -224,15 +242,17 @@ export default function OnboardingScreen(): React.JSX.Element {
           </Text>
         </View>
 
-        {/* ── CARDS STAGE (swipeable) ── */}
+        {/* ── CARDS STAGE — flex:1 so it fills all remaining vertical space ── */}
         <View
-          style={{ marginHorizontal: sp(20), borderRadius: scale(28), backgroundColor: '#5B2FD4', overflow: 'hidden', paddingHorizontal: sp(16), paddingTop: sp(16), paddingBottom: sp(24) }}
+          style={{ flex: 1, marginHorizontal: sp(20), borderRadius: scale(28), backgroundColor: '#5B2FD4', overflow: 'hidden', paddingHorizontal: sp(16), paddingTop: sp(16), paddingBottom: sp(16) }}
           {...pan.panHandlers}
         >
+          {/* decorative blobs */}
           <View pointerEvents="none" style={{ position: 'absolute', top: -80, left: -80, width: 280, height: 280, borderRadius: 140, backgroundColor: '#FAC775', opacity: 0.22 }} />
           <View pointerEvents="none" style={{ position: 'absolute', bottom: -100, right: -80, width: 340, height: 340, borderRadius: 170, backgroundColor: '#E8581A', opacity: 0.28 }} />
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(16), zIndex: 10 }}>
+          {/* page counter + category badge */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sp(12), zIndex: 10 }}>
             <Text style={{ fontSize: scaleFont(10), fontFamily: 'DMSans_700Bold', letterSpacing: 3, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
               {String(page + 1).padStart(2, '0')} / {String(PAGES.length).padStart(2, '0')}
             </Text>
@@ -244,7 +264,11 @@ export default function OnboardingScreen(): React.JSX.Element {
             </View>
           </View>
 
-          <View style={{ position: 'relative', height: STACK_H }}>
+          {/* card stack — flex:1 fills rest of stage; onLayout gives us real height */}
+          <View
+            style={{ flex: 1, position: 'relative' }}
+            onLayout={e => setCardAreaH(e.nativeEvent.layout.height)}
+          >
             {current.cards.map((card, i) => (
               <Animated.View
                 key={i}
@@ -253,7 +277,7 @@ export default function OnboardingScreen(): React.JSX.Element {
                   top: 0,
                   left: CARD_LEFT + X_NUDGE[i],
                   width: CARD_W,
-                  height: CARD_H,
+                  height: cardH,
                   zIndex: 30 - i * 10,
                   opacity: anims[i].opacity,
                   transform: [
@@ -262,14 +286,14 @@ export default function OnboardingScreen(): React.JSX.Element {
                   ],
                 }}
               >
-                <TicketCard {...card} index={i} />
+                <TicketCard {...card} index={i} cardH={cardH} />
               </Animated.View>
             ))}
           </View>
         </View>
 
         {/* ── PAGE DOTS ── */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: sp(16), paddingBottom: sp(4) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: sp(12), paddingBottom: sp(4) }}>
           {PAGES.map((_, i) => (
             <TouchableOpacity
               key={i}
@@ -287,9 +311,9 @@ export default function OnboardingScreen(): React.JSX.Element {
         </View>
 
         {/* ── CTA ── */}
-        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(16) }}>
+        <View style={{ paddingHorizontal: sp(20), paddingTop: sp(12) }}>
           <TouchableOpacity
-            style={{ backgroundColor: DEEP, borderRadius: scale(18), paddingVertical: sp(18), alignItems: 'center', justifyContent: 'center' }}
+            style={{ backgroundColor: DEEP, borderRadius: scale(18), paddingVertical: sp(16), alignItems: 'center', justifyContent: 'center' }}
             onPress={() => router.push('/(auth)/signin' as any)}
             activeOpacity={0.85}
           >
@@ -298,7 +322,7 @@ export default function OnboardingScreen(): React.JSX.Element {
             </Text>
           </TouchableOpacity>
 
-          <View style={{ alignItems: 'center', paddingTop: sp(14), paddingBottom: Math.max(12, insets.bottom) }}>
+          <View style={{ alignItems: 'center', paddingTop: sp(12), paddingBottom: Math.max(sp(12), insets.bottom) }}>
             <Text style={{ fontSize: scaleFont(12.5), fontFamily: 'DMSans_400Regular', color: `${DEEP}88` }}>
               Don't have an account?{' '}
               <Text
@@ -317,16 +341,16 @@ export default function OnboardingScreen(): React.JSX.Element {
 }
 
 // ── Ticket Card ───────────────────────────────────────────────────────────────
-type TicketCardProps = CardData & { index: number };
+type TicketCardProps = CardData & { index: number; cardH: number };
 
-const DASH_COUNT  = 30;
+const DASH_COUNT   = 30;
 const BARCODE_FULL = [3,9,6,12,3,6,9,3,12,6,3,9,6,12,3,9,6,3,12,6,9,3,6,12,3];
 
-function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image, index }: TicketCardProps): React.JSX.Element {
+function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image, index, cardH }: TicketCardProps): React.JSX.Element {
   const isFront   = index === 0;
   const bg        = isFront ? '#FFFDF5' : cardBg;
   const STUB_H    = isFront ? 40 : 30;
-  const PERF_Y    = CARD_H - STUB_H;
+  const PERF_Y    = cardH - STUB_H;
   const ticketNum = (label.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 9000) + 1000;
 
   return (
@@ -399,7 +423,6 @@ function TicketCard({ tint, cardBg, iconName, label, sub, meta, category, image,
               fontSize: isFront ? scaleFont(20) : scaleFont(13),
               fontFamily: 'DMSans_700Bold',
               color: '#fff',
-              lineHeight: isFront ? 22 : 15,
               textShadowColor: 'rgba(0,0,0,0.5)',
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 4,
