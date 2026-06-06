@@ -313,13 +313,19 @@ export default function OnboardingScreen(): React.JSX.Element {
         {/* ── CTA ── */}
         <View style={{ paddingHorizontal: sp(20), paddingTop: sp(12) }}>
           <TouchableOpacity
-            style={{ backgroundColor: DEEP, borderRadius: scale(18), paddingVertical: sp(16), alignItems: 'center', justifyContent: 'center' }}
             onPress={() => router.push('/(auth)/signin' as any)}
             activeOpacity={0.85}
+            style={{ borderRadius: scale(18), overflow: 'hidden' }}
           >
-            <Text style={{ fontSize: scaleFont(14), fontFamily: 'DMSans_700Bold', color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase' }}>
-              Log In
-            </Text>
+            <LinearGradient
+              colors={['#4f6cf2', '#a25cf2']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{ paddingVertical: sp(16), alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: scaleFont(14), fontFamily: 'DMSans_700Bold', color: '#fff', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                Log In
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
 
           <View style={{ alignItems: 'center', paddingTop: sp(12), paddingBottom: Math.max(sp(12), insets.bottom) }}>
