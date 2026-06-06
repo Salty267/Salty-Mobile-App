@@ -54,10 +54,11 @@ export default function RootLayout(): React.JSX.Element | null {
         setIsLoading(false);
         return;
       }
-      // Validate the stored session before autoRefreshToken fires and throws
+      // Validate the stored session before autoRefreshToken fires and throws.
+      // Use scope:'local' so a stale token doesn't trigger a failing network revoke call.
       const { error } = await supabase.auth.getUser();
       if (error) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         setSession(null);
       } else {
         setSession(session);
@@ -65,12 +66,21 @@ export default function RootLayout(): React.JSX.Element | null {
       }
       setIsLoading(false);
     }).catch(async () => {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
       setSession(null);
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // When the background token refresh fails (expired / revoked refresh token),
+      // Supabase fires TOKEN_REFRESHED or SIGNED_OUT with a null session.
+      // Call signOut({ scope: 'local' }) to clear the stale tokens from SecureStore
+      // so the auto-refresh timer stops retrying and the error stops propagating.
+      if (!session && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT')) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        setSession(null);
+        return;
+      }
       setSession(session);
       if (event === 'SIGNED_IN' && session?.user) {
         await registerForPushNotifications(session.user.id).catch(() => {});
