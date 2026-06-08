@@ -82,7 +82,8 @@
         {
           "calendarPermission": "Salty reads your calendar to find concerts, games, and shows you're attending."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

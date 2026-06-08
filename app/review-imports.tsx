@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { scale, scaleFont, sp } from '@/lib/layout';
+import { isEventPast } from '@/lib/parseEventDate';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -151,11 +152,13 @@ export default function ReviewImportsScreen(): React.JSX.Element {
         }
       }
 
+      const dateStr = date || 'TBD';
+
       const { error } = await supabase.from('tickets').insert({
         user_id:    user.id,
         title:      title || 'Untitled',
         venue_name: venue || 'TBD',
-        date_str:   date  || 'TBD',
+        date_str:   dateStr,
         time_str:   time  || 'TBD',
         seat:       seat  || null,
         category:   dbCat,
@@ -164,7 +167,7 @@ export default function ReviewImportsScreen(): React.JSX.Element {
         confidence: item.confidence,
         source:     item.source ?? 'gmail',
         status:     'active',
-        is_past:    false,
+        is_past:    isEventPast(dateStr),
       });
       if (error) { Alert.alert('Could not approve', error.message); return; }
 
@@ -206,7 +209,13 @@ export default function ReviewImportsScreen(): React.JSX.Element {
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>Gmail import</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: 'rgba(255,255,255,0.72)' }}>
+                {imports[0]?.source === 'gmail' ? 'Gmail import'
+                  : imports[0]?.source === 'imap' ? 'Email import'
+                  : imports[0]?.source === 'photo' ? 'Photo scan'
+                  : imports[0]?.source === 'calendar' ? 'Calendar import'
+                  : 'Review Tickets'}
+              </Text>
               <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(22), color: '#fff', letterSpacing: -0.4, marginTop: 2 }}>Review Tickets</Text>
             </View>
             <View style={{ width: scale(40) }} />

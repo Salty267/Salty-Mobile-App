@@ -9,6 +9,7 @@ import { View, Text, TouchableOpacity, Modal, StyleSheet, AppState } from 'react
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 import * as ExpoCalendar from 'expo-calendar';
 import * as Location from 'expo-location';
 import * as Contacts from 'expo-contacts';
@@ -58,8 +59,9 @@ function PermissionsGate({ visible, onDone }: { visible: boolean; onDone: () => 
       }
       // 2. Camera — wait for user to respond before showing next
       await ImagePicker.requestCameraPermissionsAsync();
-      // 3. Photo library
+      // 3. Photo library (ImagePicker for manual picks, MediaLibrary for bulk scan)
       await ImagePicker.requestMediaLibraryPermissionsAsync();
+      await MediaLibrary.requestPermissionsAsync();
       // 4. Calendar
       await ExpoCalendar.requestCalendarPermissionsAsync();
       // 5. Location
@@ -327,6 +329,7 @@ export default function RootLayout(): React.JSX.Element | null {
         <Stack.Screen name="user-profile" />
         <Stack.Screen name="discover-event" />
         <Stack.Screen name="review-imports" />
+        <Stack.Screen name="photo-scan-review" options={{ title: 'Photo Matches', headerShown: false }} />
         <Stack.Screen name="following" />
         <Stack.Screen name="scan-ticket" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>

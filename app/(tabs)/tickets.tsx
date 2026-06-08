@@ -5,7 +5,10 @@ import {
   LayoutAnimation, UIManager, Platform, Alert,
 } from 'react-native';
 import * as Linking from 'expo-linking';
+import * as MediaLibrary from 'expo-media-library';
+import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { usePhotoLibraryScanner } from '@/lib/usePhotoLibraryScanner';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -101,6 +104,100 @@ export default function TicketsScreen(): React.JSX.Element {
   const [connecting,     setConnecting]    = useState(false);
   const [addVisible,     setAddVisible]    = useState(false);
   const [form,           setForm]          = useState<AddForm>({ title: '', venue: '', date: '', time: '', category: 'Concert', seat: '' });
+
+  // Photo library scanner
+  const [showPhotoLibraryConsent, setShowPhotoLibraryConsent] = useState(false);
+  const { progress: photoScanProgress, startScan: startPhotoScan } = usePhotoLibraryScanner();
+
+  const handleSelectMorePhotos = useCallback(() => {
+    if (Platform.OS !== 'ios') return;
+    setTimeout(async () => {
+      try {
+        await MediaLibrary.presentPermissionsPickerAsync();
+      } catch {
+        Linking.openSettings();
+        return;
+      }
+      startPhotoScan();
+    }, 300);
+  }, [startPhotoScan]);
+
+  // Navigate when scan completes
+  useEffect(() => {
+    if (photoScanProgress.state !== 'done') return;
+
+    const { limitedAccess, scanned, matched, newCandidates, jobId, isIncremental } = photoScanProgress;
+
+    // Limited access with too few photos — prompt before anything else
+    if (limitedAccess && scanned < 5) {
+      Alert.alert(
+        'Too Few Photos Selected',
+        `Only ${scanned} photo${scanned !== 1 ? 's' : ''} ${scanned === 1 ? 'was' : 'were'} scanned. Select at least 5 photos for better results, or allow full access so Salty can find all your event photos automatically.`,
+        [
+          {
+            text: 'Select More Photos',
+            onPress: handleSelectMorePhotos,
+          },
+          {
+            text: 'Allow Full Access',
+            onPress: () => setTimeout(() => Linking.openSettings(), 300),
+          },
+          {
+            text: 'Continue Anyway',
+            style: 'cancel',
+            onPress: () => {
+              if (matched > 0 || newCandidates > 0) {
+                router.push({
+                  pathname: '/photo-scan-review',
+                  params: jobId ? { jobId } : {},
+                } as any);
+              }
+            },
+          },
+        ],
+      );
+      return;
+    }
+
+    if (matched > 0 || newCandidates > 0) {
+      router.push({
+        pathname: '/photo-scan-review',
+        params: jobId ? { jobId } : {},
+      } as any);
+    } else if (isIncremental) {
+      Alert.alert(
+        'Library Up to Date',
+        'No new photos since your last scan.',
+        [
+          {
+            text: 'Scan Everything Again',
+            onPress: () => startPhotoScan({ forceFullScan: true }),
+          },
+          { text: 'OK', style: 'cancel' },
+        ],
+      );
+    } else {
+      Alert.alert(
+        'No Matches Found',
+        'None of your selected photos matched your events or formed a recognizable trip. Try selecting more photos, or make sure your photos have date and location data.',
+      );
+    }
+  }, [photoScanProgress.state]);
+
+  const handlePhotoLibraryTap = useCallback(async () => {
+    const consent = await SecureStore.getItemAsync('photo_library_consent').catch(() => null);
+    if (consent === 'true') {
+      startPhotoScan();
+    } else {
+      setShowPhotoLibraryConsent(true);
+    }
+  }, [startPhotoScan]);
+
+  const handlePhotoLibraryConsentAccept = useCallback(async () => {
+    setShowPhotoLibraryConsent(false);
+    await SecureStore.setItemAsync('photo_library_consent', 'true').catch(() => {});
+    startPhotoScan();
+  }, [startPhotoScan]);
 
   // IMAP (non-Gmail) connection state
   const [imapConnected,      setImapConnected]      = useState(false);
@@ -434,6 +531,7 @@ export default function TicketsScreen(): React.JSX.Element {
 
     const dbCategory = CATEGORY_DB[form.category] ?? 'other';
     const tint = CATEGORY_TINTS[form.category] ?? '#b0b8e0';
+    const dateStr = form.date.trim() || 'TBD';
 
     const { data, error } = await supabase
       .from('tickets')
@@ -441,7 +539,7 @@ export default function TicketsScreen(): React.JSX.Element {
         user_id: user.id,
         title: form.title.trim(),
         venue_name: form.venue.trim() || 'TBD',
-        date_str: form.date.trim() || 'TBD',
+        date_str: dateStr,
         time_str: form.time.trim() || 'TBD',
         category: dbCategory,
         tint,
@@ -449,7 +547,7 @@ export default function TicketsScreen(): React.JSX.Element {
         seat: form.seat.trim() || null,
         status: 'active',
         source: 'manual',
-        is_past: false,
+        is_past: isEventPast(dateStr),
       })
       .select('id, title, venue_name, date_str, time_str, category, tint, image_url, seat')
       .single();
@@ -709,6 +807,113 @@ export default function TicketsScreen(): React.JSX.Element {
             <Ionicons name="chevron-forward" size={16} color={MUTED} />
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* ── Scan Photo Library Card ── */}
+        <TouchableOpacity
+          onPress={handlePhotoLibraryTap}
+          disabled={photoScanProgress.state === 'scanning' || photoScanProgress.state === 'verifying'}
+          activeOpacity={0.85}
+          style={{ backgroundColor: SURFACE, borderRadius: scale(18), overflow: 'hidden', shadowColor: '#503cb4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}
+        >
+          <LinearGradient
+            colors={[`${GREEN}12`, `${BRAND_FROM}08`]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(12), padding: sp(14), borderWidth: 1.5, borderColor: `${GREEN}22`, borderRadius: scale(18) }}
+          >
+            <View style={{ width: scale(36), height: scale(36), borderRadius: 10, backgroundColor: `${GREEN}18`, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="images-outline" size={18} color={GREEN} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: FG }}>Scan Photo Library</Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(12), color: MUTED, marginTop: 1 }}>
+                {photoScanProgress.state === 'scanning'
+                  ? `Scanning… ${photoScanProgress.scanned}${photoScanProgress.total > 0 ? ` / ${photoScanProgress.total}` : ''} photos`
+                  : photoScanProgress.state === 'verifying'
+                  ? 'Verifying matches with AI…'
+                  : photoScanProgress.state === 'done'
+                  ? `Found ${photoScanProgress.matched} matches · ${photoScanProgress.newCandidates} new events`
+                  : 'Auto-find photos from your events in your camera roll'}
+              </Text>
+            </View>
+            {(photoScanProgress.state === 'scanning' || photoScanProgress.state === 'verifying')
+              ? <ActivityIndicator size="small" color={GREEN} />
+              : photoScanProgress.state === 'done' && (photoScanProgress.matched > 0 || photoScanProgress.newCandidates > 0)
+              ? <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/photo-scan-review', params: photoScanProgress.jobId ? { jobId: photoScanProgress.jobId } : {} })}
+                  activeOpacity={0.8}
+                  style={{ backgroundColor: GREEN, borderRadius: scale(8), paddingHorizontal: sp(10), paddingVertical: sp(5) }}
+                >
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(11), color: '#fff' }}>Review</Text>
+                </TouchableOpacity>
+              : <Ionicons name="chevron-forward" size={16} color={MUTED} />
+            }
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* ── Limited Access Banner ── */}
+        {photoScanProgress.limitedAccess && Platform.OS === 'ios' &&
+          photoScanProgress.state !== 'scanning' && photoScanProgress.state !== 'verifying' && (
+          <TouchableOpacity
+            onPress={handleSelectMorePhotos}
+            activeOpacity={0.75}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: sp(8), backgroundColor: '#fef3c7', borderRadius: scale(12), paddingHorizontal: sp(14), paddingVertical: sp(9), borderWidth: 1, borderColor: '#fde68a' }}
+          >
+            <Ionicons name="warning-outline" size={scale(14)} color="#b45309" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#92400e' }}>
+                Limited access
+                {photoScanProgress.state === 'done' && photoScanProgress.scanned < 5
+                  ? ` — only ${photoScanProgress.scanned} photo${photoScanProgress.scanned !== 1 ? 's' : ''} scanned`
+                  : ' — only selected photos'}
+              </Text>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(11), color: '#b45309', marginTop: 1 }}>
+                Select 5+ photos or allow full access for best results
+              </Text>
+            </View>
+            <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(12), color: '#b45309' }}>
+              Select More
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* ── Photo Library Consent Modal ── */}
+        <Modal visible={showPhotoLibraryConsent} transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: sp(24) }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: scale(24), padding: sp(24), gap: sp(16), width: '100%', maxWidth: 360 }}>
+              <View style={{ alignItems: 'center', gap: sp(8) }}>
+                <View style={{ width: scale(52), height: scale(52), borderRadius: 99, backgroundColor: `${GREEN}18`, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="images-outline" size={26} color={GREEN} />
+                </View>
+                <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(18), color: FG, textAlign: 'center' }}>
+                  Finding your event photos
+                </Text>
+              </View>
+              <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED, lineHeight: 20, textAlign: 'center' }}>
+                To match photos to your events, Salty reads the date and GPS from photos taken around your event dates.{'\n\n'}
+                Photos that match are uploaded to your private vault — your full photo library is never sent to a server. AI is used only to verify ambiguous matches.
+              </Text>
+              <TouchableOpacity
+                onPress={handlePhotoLibraryConsentAccept}
+                activeOpacity={0.85}
+                style={{ borderRadius: scale(12), overflow: 'hidden' }}
+              >
+                <LinearGradient
+                  colors={[BRAND_FROM, BRAND_TO]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ paddingVertical: sp(14), alignItems: 'center' }}
+                >
+                  <Text style={{ fontFamily: 'DMSans_700Bold', fontSize: scaleFont(14), color: '#fff' }}>Allow</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowPhotoLibraryConsent(false)}
+                style={{ alignItems: 'center', paddingVertical: sp(8) }}
+              >
+                <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(13), color: MUTED }}>Not now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {/* ── Upcoming / Past tab ── */}
         <View style={{ flexDirection: 'row', backgroundColor: `${BRAND_FROM}12`, borderRadius: scale(12), padding: 3 }}>

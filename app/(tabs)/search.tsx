@@ -12,6 +12,7 @@ import { useSidebar } from '@/lib/SidebarContext';
 import { useRouter } from 'expo-router';
 import { useZipLocation } from '@/lib/useZipLocation';
 import { supabase } from '@/lib/supabase/client';
+import { isEventPast } from '@/lib/parseEventDate';
 
 const BRAND_FROM = '#4f6cf2';
 const BRAND_TO   = '#a25cf2';
@@ -189,7 +190,6 @@ export default function DiscoverScreen(): React.JSX.Element {
         .from('tickets')
         .select('title, venue_name, date_str, category, image_url, tint, user_id')
         .in('user_id', friendIds)
-        .eq('is_past', false)
         .eq('status', 'active')
         .order('imported_at', { ascending: false })
         .limit(40),
@@ -199,8 +199,11 @@ export default function DiscoverScreen(): React.JSX.Element {
     const avatarById: Record<string, string | null> = {};
     for (const p of profilesRes.data ?? []) avatarById[p.id] = p.avatar_url;
 
+    // is_past in the DB is a stale snapshot from import time (never updated) — recompute live.
+    const upcomingTickets = (ticketsRes.data ?? []).filter(t => !isEventPast(t.date_str));
+
     const byTitle: Record<string, { ticket: NonNullable<typeof ticketsRes.data>[number]; users: string[]; count: number }> = {};
-    for (const t of ticketsRes.data ?? []) {
+    for (const t of upcomingTickets) {
       const key = t.title ?? 'Untitled';
       if (!byTitle[key]) byTitle[key] = { ticket: t, users: [], count: 0 };
       if (!byTitle[key].users.includes(t.user_id)) {

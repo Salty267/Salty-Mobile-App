@@ -9,6 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import * as Sharing from 'expo-sharing';
@@ -24,6 +26,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { AcceptedFriend } from '@/lib/useFriends';
 import { useFollowedArtists } from '@/lib/useFollowedArtists';
 import { isEventPast } from '@/lib/parseEventDate';
+import { usePhotoLibraryScanner } from '@/lib/usePhotoLibraryScanner';
 
 /* ─────────── constants ─────────── */
 const BRAND_FROM = '#4f6cf2';
@@ -34,9 +37,18 @@ const SURFACE    = '#ffffff';
 const BG         = '#eef0fb';
 const DANGER     = '#e63950';
 
-const HERO_H     = Math.round(SCREEN_W * 0.56);
-const MEDIA_GAP  = 4;
-const MEDIA_CELL = Math.floor((SCREEN_W - 40 - MEDIA_GAP * 2) / 3);
+const HERO_H        = Math.round(SCREEN_W * 0.56);
+// 3-column media grid. Width math reuses the SAME sp()/scale() calls as the gallery
+// container's paddingHorizontal (sp(20), see "Media Gallery" section below) so
+// cols * cell + (cols-1) * gap is mathematically guaranteed to fit the real available
+// width on any screen size. The old version compared a scaled container against
+// hardcoded literal padding/gap values that only matched exactly at the 390dp reference
+// width — on larger phones/tablets the row math overflowed by a few px, which is enough
+// for flexWrap to bump the 3rd tile down to the next line (silently collapsing to 2 cols).
+const MEDIA_COLUMNS = 3;
+const MEDIA_GAP     = sp(4);
+const MEDIA_PAD_H   = sp(20);
+const MEDIA_CELL    = Math.floor((SCREEN_W - MEDIA_PAD_H * 2 - MEDIA_GAP * (MEDIA_COLUMNS - 1)) / MEDIA_COLUMNS);
 
 /* ─────────── types ─────────── */
 type AttendeeRow = {
@@ -57,7 +69,7 @@ type NoteRow = {
 };
 
 type TagRow  = { id: string; text: string };
-type MediaRow = { id: string; url: string };
+type MediaRow = { id: string; url: string | null; media_type: 'photo' | 'video'; device_asset_id: string | null };
 type SetlistSong = { song: string; era?: string; time?: string };
 
 const SETLIST_PREVIEW = 3;
@@ -88,6 +100,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const { isFollowing, followArtist, unfollowArtist } = useFollowedArtists();
   const { exportToSpotify, status: spotifyStatus, playlistUrl, errorMsg: spotifyError } = useSpotifyExport();
   const setlistCardRef = useRef<ViewShot>(null);
+  const { progress: photoScanProgress, startScan: startPhotoScan } = usePhotoLibraryScanner({ singleTicketId: params.id });
 
   /* ── auth ── */
   const [currentUserId,      setCurrentUserId]      = useState<string | null>(null);
@@ -135,6 +148,12 @@ export default function EventDetailsScreen(): React.JSX.Element {
   const [uploading,    setUploading]    = useState(false);
   const [mediaEditMode, setMediaEditMode] = useState(false);
 
+  useEffect(() => {
+    if (photoScanProgress.state === 'done' && (photoScanProgress.matched > 0 || photoScanProgress.newCandidates > 0)) {
+      router.push({ pathname: '/photo-scan-review', params: { ticketId: params.id } } as any);
+    }
+  }, [photoScanProgress.state]);
+
   /* ────────── load all data ────────── */
   useEffect(() => {
     if (spotifyStatus === 'done' && playlistUrl) {
@@ -169,7 +188,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
           .eq('ticket_id', params.id)
           .order('created_at', { ascending: true }),
         supabase.from('photos')
-          .select('id, storage_url')
+          .select('id, storage_url, media_type, device_asset_id')
           .eq('ticket_id', params.id)
           .order('taken_at', { ascending: false }),
         supabase.from('setlists').select('songs').eq('ticket_id', params.id).maybeSingle(),
@@ -208,7 +227,37 @@ export default function EventDetailsScreen(): React.JSX.Element {
         })));
       }
 
-      if (mediaRes.data) setMedia(mediaRes.data.map(r => ({ id: r.id, url: r.storage_url })));
+      if (mediaRes.data) {
+        const rows = mediaRes.data.map(r => ({
+          id: r.id,
+          url: r.storage_url ?? null,
+          media_type: (r.media_type ?? 'photo') as 'photo' | 'video',
+          device_asset_id: r.device_asset_id ?? null,
+        }));
+        // Resolve local file:// URIs for library-scan photos (no storage_url, but has device_asset_id).
+        // IMPORTANT: chunked, not a single Promise.all over every row. A trip-card approval
+        // can auto-link an entire photo cluster at once (100+ items — e.g. "Washington DC
+        // Visit" linked 102), and firing 100+ concurrent MediaLibrary native-bridge calls
+        // on mount overwhelms it badly enough to crash the screen immediately and on every
+        // retry. Resolving in small batches gets the same end result (every item still
+        // resolves) with bounded native concurrency, so the screen opens normally.
+        const RESOLVE_CHUNK = 12;
+        const resolved: typeof rows = [];
+        for (let i = 0; i < rows.length; i += RESOLVE_CHUNK) {
+          if (!active) break; // unmounted mid-resolution — stop firing native calls, but
+                              // still let `load` finish its remaining work below as before
+          const chunk = rows.slice(i, i + RESOLVE_CHUNK);
+          const done = await Promise.all(chunk.map(async (item) => {
+            if (item.url || item.media_type === 'video' || !item.device_asset_id) return item;
+            try {
+              const info = await MediaLibrary.getAssetInfoAsync(item.device_asset_id);
+              return { ...item, url: info?.localUri ?? null };
+            } catch { return item; }
+          }));
+          resolved.push(...done);
+        }
+        if (active) setMedia(resolved);
+      }
 
       const songs = setlistRes.data?.songs;
       if (Array.isArray(songs) && songs.length > 0) {
@@ -393,10 +442,12 @@ export default function EventDetailsScreen(): React.JSX.Element {
   /* media */
   const deleteMedia = async (item: MediaRow) => {
     setMedia(prev => prev.filter(m => m.id !== item.id));
-    const marker = '/ticket-photos/';
-    const idx = item.url.indexOf(marker);
-    const path = idx >= 0 ? item.url.slice(idx + marker.length) : null;
-    if (path) await supabase.storage.from('ticket-photos').remove([path]);
+    if (item.url) {
+      const marker = '/ticket-photos/';
+      const idx = item.url.indexOf(marker);
+      const path = idx >= 0 ? item.url.slice(idx + marker.length) : null;
+      if (path) await supabase.storage.from('ticket-photos').remove([path]);
+    }
     await supabase.from('photos').delete().eq('id', item.id);
   };
 
@@ -431,7 +482,7 @@ export default function EventDetailsScreen(): React.JSX.Element {
         const { data: row } = await supabase.from('photos')
           .insert({ ticket_id: params.id, user_id: currentUserId, storage_url: publicUrl, match_method: 'manual' })
           .select('id').single();
-        if (row) setMedia(prev => [{ id: row.id, url: publicUrl }, ...prev]);
+        if (row) setMedia(prev => [{ id: row.id, url: publicUrl, media_type: 'photo', device_asset_id: null }, ...prev]);
       } catch {
         Alert.alert('Upload failed', 'Could not upload one or more photos.');
       }
@@ -652,14 +703,18 @@ export default function EventDetailsScreen(): React.JSX.Element {
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={mediaEditMode ? 1 : 0.9}
-                  onPress={() => { if (!mediaEditMode) setLightboxUri(item.url); }}
-                  style={{ position: 'relative' }}
+                  onPress={() => { if (!mediaEditMode && item.media_type !== 'video') setLightboxUri(item.url); }}
+                  style={{ position: 'relative', opacity: mediaEditMode ? 0.75 : 1 }}
                 >
-                  <Image
-                    source={{ uri: item.url }}
-                    style={{ width: MEDIA_CELL, height: MEDIA_CELL, borderRadius: 8, opacity: mediaEditMode ? 0.75 : 1 }}
-                    resizeMode="cover"
-                  />
+                  {item.media_type === 'video' && item.device_asset_id ? (
+                    <VideoGalleryCell deviceAssetId={item.device_asset_id} size={MEDIA_CELL} />
+                  ) : (
+                    <Image
+                      source={{ uri: item.url ?? '' }}
+                      style={{ width: MEDIA_CELL, height: MEDIA_CELL, borderRadius: 8 }}
+                      resizeMode="cover"
+                    />
+                  )}
                   {mediaEditMode && (
                     <TouchableOpacity
                       onPress={() => deleteMedia(item)}
@@ -678,6 +733,26 @@ export default function EventDetailsScreen(): React.JSX.Element {
                     <>
                       <Ionicons name="add" size={scale(22)} color={MUTED} />
                       <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: MUTED }}>Add Media</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+              {!mediaEditMode && isEventPast(displayDate) && (
+                <TouchableOpacity
+                  onPress={() => {
+                    if (photoScanProgress.state === 'idle' || photoScanProgress.state === 'error') {
+                      startPhotoScan();
+                    }
+                  }}
+                  activeOpacity={0.8}
+                  style={{ width: MEDIA_CELL, height: MEDIA_CELL, borderRadius: 8, backgroundColor: '#059669' + '18', borderWidth: 1.5, borderColor: '#059669' + '30', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                >
+                  {(photoScanProgress.state === 'scanning' || photoScanProgress.state === 'verifying') ? (
+                    <ActivityIndicator size="small" color="#059669" />
+                  ) : (
+                    <>
+                      <Ionicons name="images-outline" size={scale(22)} color="#059669" />
+                      <Text style={{ fontFamily: 'DMSans_400Regular', fontSize: scaleFont(10), color: '#059669' }}>Find Photos</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -1089,6 +1164,36 @@ function SetlistShareCard({ title, venue, date, songs }: {
 
 function Divider(): React.JSX.Element {
   return <View style={{ height: 1, backgroundColor: `${FG}10`, marginHorizontal: sp(20) }} />;
+}
+
+function VideoGalleryCell({ deviceAssetId, size }: { deviceAssetId: string; size: number }): React.JSX.Element {
+  const [thumbUri, setThumbUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const info = await MediaLibrary.getAssetInfoAsync(deviceAssetId);
+        if (!info?.localUri || !active) return;
+        const { uri } = await VideoThumbnails.getThumbnailAsync(info.localUri, { time: 1000 });
+        if (active) setThumbUri(uri);
+      } catch { /* video unavailable or not yet downloaded */ }
+    })();
+    return () => { active = false; };
+  }, [deviceAssetId]);
+
+  return (
+    <View style={{ width: size, height: size, borderRadius: 8, backgroundColor: '#1a1530', overflow: 'hidden' }}>
+      {thumbUri && (
+        <Image source={{ uri: thumbUri }} style={{ width: size, height: size }} resizeMode="cover" />
+      )}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: scale(28), height: scale(28), borderRadius: scale(14), backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="play" size={scale(13)} color="#fff" />
+        </View>
+      </View>
+    </View>
+  );
 }
 
 function FieldLabel({ children }: { children: string }): React.JSX.Element {
