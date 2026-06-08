@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, Image, TextInput,
   ActivityIndicator, LayoutAnimation, UIManager, Platform, Alert,
+  InteractionManager,
 } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
@@ -10,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase/client';
 import { usePhotoLibraryScanner } from '@/lib/usePhotoLibraryScanner';
 import { useBottomPad } from '@/lib/useBottomPad';
@@ -114,6 +116,21 @@ interface ClusterMedia {
   isVideo: boolean;
 }
 
+// Row shape for `photos` inserts — used by approveProposalUploadOnly to carry
+// upload results back to handleApproveAll for bulk batching.
+type PhotoRow = {
+  ticket_id: string;
+  user_id: string;
+  storage_url: string | null;
+  match_method: string;
+  match_confidence: number;
+  taken_at: string | null;
+  exif_lat: null;
+  exif_lng: null;
+  device_asset_id: string;
+  media_type: string;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function confidenceColor(score: number): string {
   return score >= 0.75 ? GREEN : score >= 0.45 ? AMBER : RED;
@@ -175,6 +192,21 @@ export default function PhotoScanReview(): React.JSX.Element {
   // unlike `processingIds` state (which only takes effect on the next render and
   // so would leave a brief window where a second tap sees the old, empty set).
   const approveAllInFlightRef = useRef<Set<string>>(new Set());
+
+  // Pre-warm cache for compressed images, keyed by proposal.id. `local_uri` is
+  // already on every proposal the instant they're loaded (no async resolution
+  // needed — see the load effect below), so the slowest CPU step in the whole
+  // approve pipeline (resize+compress via ImageManipulator) can run quietly in
+  // the background WHILE the user is still looking at the review screen deciding
+  // what to approve — work that would otherwise only start the moment they tap.
+  // approveProposalWork checks this cache first: a hit skips straight to
+  // decode->upload, taking compression latency out of the tap-to-saved critical
+  // path entirely. A miss (user taps before pre-warm gets there, or it's a
+  // re-approval after a prior failure) just falls through to the same inline
+  // manipulateAsync call as before — correctness never depends on a warm cache.
+  // Plain ref (mirrors approveAllInFlightRef just above) — this is a mutable
+  // cache, not render state; populating it should never trigger a re-render.
+  const compressionCacheRef = useRef<Map<string, ImageManipulator.ImageResult>>(new Map());
 
   const [isLimitedAccess, setIsLimitedAccess] = useState(false);
   const [scanStats, setScanStats] = useState<{ scanned: number; total: number } | null>(null);
@@ -259,6 +291,45 @@ export default function PhotoScanReview(): React.JSX.Element {
         });
 
         if (active) setTicketGroups(groups);
+
+        // Kick off the pre-warm pass — see compressionCacheRef's declaration above
+        // for the full reasoning. InteractionManager.runAfterInteractions defers
+        // this until the screen has finished its initial paint/animations, so it
+        // never competes with the first render for the JS thread; a narrow
+        // PREWARM_CONCURRENCY (well below BATCH_CONCURRENCY's 6) keeps it a quiet
+        // background courtesy that won't contend with an active "Approve All"
+        // for CPU/memory if the user moves fast.
+        const photoProposals = proposals.filter(
+          (p: MatchProposal) => p.media_type === 'photo' && p.local_uri,
+        );
+        if (photoProposals.length) {
+          InteractionManager.runAfterInteractions(() => {
+            if (!active) return;
+            const PREWARM_CONCURRENCY = 2;
+            let cursor = 0;
+            const nextProposal = (): MatchProposal | undefined => photoProposals[cursor++];
+            const prewarmWorker = async () => {
+              for (let p = nextProposal(); p; p = nextProposal()) {
+                if (!active || compressionCacheRef.current.has(p.id)) continue;
+                try {
+                  const manipulated = await ImageManipulator.manipulateAsync(
+                    p.local_uri!,
+                    [{ resize: { width: 1200 } }],
+                    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+                  );
+                  if (active) compressionCacheRef.current.set(p.id, manipulated);
+                } catch {
+                  // Miss — approveProposalWork's inline manipulateAsync call covers it
+                  // when the user actually taps Approve. Pre-warming is a courtesy,
+                  // never a dependency, so failures here are silently swallowed.
+                }
+              }
+            };
+            Promise.all(
+              Array.from({ length: Math.min(PREWARM_CONCURRENCY, photoProposals.length) }, prewarmWorker),
+            ).catch(() => {});
+          });
+        }
       }
 
       // Load new ticket candidates from this scan job (photo source only)
@@ -297,16 +368,36 @@ export default function PhotoScanReview(): React.JSX.Element {
     if (proposal.media_type === 'photo' && proposal.local_uri) {
       // Compress and upload photo to ticket-photos storage
       try {
-        const manipulated = await ImageManipulator.manipulateAsync(
+        // Cache hit ("pre-warmed" in the background while the user was still
+        // reviewing — see compressionCacheRef's declaration for the full
+        // reasoning) skips the resize+compress step entirely, taking the
+        // slowest CPU-bound part of this pipeline out of the tap-to-saved
+        // critical path. Consumed-and-removed on hit so the Map doesn't keep
+        // holding a decoded base64 string for a photo that's about to be saved
+        // (and therefore about to be filtered out of `ticketGroups` for good).
+        // A miss — user tapped before pre-warm reached this photo, it's a
+        // re-approval retry after a prior failure, or pre-warming itself
+        // errored — falls through to the exact same manipulateAsync call as
+        // before; the result is identical either way, just arrives sooner on a hit.
+        const cached = compressionCacheRef.current.get(proposal.id);
+        if (cached) compressionCacheRef.current.delete(proposal.id);
+        const manipulated = cached ?? await ImageManipulator.manipulateAsync(
           proposal.local_uri,
           [{ resize: { width: 1200 } }],
           { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true },
         );
 
         if (manipulated.base64) {
-          const raw = atob(manipulated.base64);
-          const bytes = new Uint8Array(raw.length);
-          for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+          // base64 -> ArrayBuffer via base64-arraybuffer's decode(), NOT atob()+a
+          // hand-rolled charCodeAt loop. That loop is pure single-threaded JS work —
+          // ~150-400K iterations per photo — and JS in RN is single-threaded, so it
+          // does NOT parallelize across BATCH_CONCURRENCY workers; it serializes on
+          // the one JS thread, blocking it (and the UI) for its duration, repeatedly,
+          // every batch. decode() goes straight to an ArrayBuffer without ever
+          // materializing an intermediate "raw bytes as UTF-16 chars" JS string (what
+          // atob produces — doubling memory and forcing a second char-by-char pass).
+          // Output type is identical (Uint8Array -> .upload(), proven to work below).
+          const bytes = new Uint8Array(decodeBase64(manipulated.base64));
 
           const path = `${uid}/${ticketId}/${proposal.device_asset_id}.jpg`;
           const { error: upErr } = await supabase.storage
@@ -368,29 +459,128 @@ export default function PhotoScanReview(): React.JSX.Element {
     if (!saved) return false;
 
     await supabase.from('photo_match_proposals').update({ status: 'approved' }).eq('id', proposal.id);
+    // UI removal is now handled optimistically by handleApproveProposal (the caller),
+    // which removes the card the instant the user taps Approve — before any network
+    // work starts — so the single-tap path gives instant visual feedback. This
+    // function's job ends here: flip the DB status, return true. The card is already gone.
+    return true;
+  }, []);
 
+  // Batch-path companion to approveProposalWork: does compress → decode →
+  // upload for ONE proposal and returns the `photos` row data ready to
+  // bulk-insert on success, or null on any failure. DB writes are intentionally
+  // omitted so handleApproveAll can collect all successes first and then issue:
+  //   • one chunked bulk `photos` INSERT  (⌈N/CHUNK⌉ round trips)
+  //   • one bulk `proposals` status-flip  (1 round trip)
+  // instead of the current 2×N individual writes (2 per photo). That's ~4 total
+  // for a 20-photo batch vs. 40. approveProposalWork is left untouched — the
+  // single-tap path still uses it and still does its own immediate insert,
+  // preserving the Session-2 invariant on both paths: "approved means a
+  // `photos` row genuinely exists."
+  const approveProposalUploadOnly = useCallback(async (
+    proposal: MatchProposal, ticketId: string, uid: string,
+  ): Promise<{ proposalId: string; row: PhotoRow } | null> => {
+    try {
+      if (proposal.media_type === 'photo' && proposal.local_uri) {
+        // Same compression-cache check as approveProposalWork — consumes on hit
+        const cached = compressionCacheRef.current.get(proposal.id);
+        if (cached) compressionCacheRef.current.delete(proposal.id);
+        const manipulated = cached ?? await ImageManipulator.manipulateAsync(
+          proposal.local_uri,
+          [{ resize: { width: 1200 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+        );
+        if (!manipulated.base64) return null;
+
+        const bytes = new Uint8Array(decodeBase64(manipulated.base64));
+        const path = `${uid}/${ticketId}/${proposal.device_asset_id}.jpg`;
+        const { error: upErr } = await supabase.storage
+          .from('ticket-photos')
+          .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+        if (upErr) return null;
+
+        const { data: { publicUrl } } = supabase.storage.from('ticket-photos').getPublicUrl(path);
+        return {
+          proposalId: proposal.id,
+          row: {
+            ticket_id:        ticketId,
+            user_id:          uid,
+            storage_url:      publicUrl,
+            match_method:     'library_scan',
+            match_confidence: proposal.ai_confidence ?? proposal.match_score,
+            taken_at:         proposal.exif_taken_at,
+            exif_lat:         null,
+            exif_lng:         null,
+            device_asset_id:  proposal.device_asset_id,
+            media_type:       'photo',
+          },
+        };
+      } else if (proposal.media_type === 'video') {
+        return {
+          proposalId: proposal.id,
+          row: {
+            ticket_id:        ticketId,
+            user_id:          uid,
+            storage_url:      null,
+            match_method:     'library_scan',
+            match_confidence: proposal.ai_confidence ?? proposal.match_score,
+            taken_at:         proposal.exif_taken_at,
+            exif_lat:         null,
+            exif_lng:         null,
+            device_asset_id:  proposal.device_asset_id,
+            media_type:       'video',
+          },
+        };
+      }
+    } catch { /* null → treated as failure in handleApproveAll */ }
+    return null;
+  }, []);
+
+  const handleApproveProposal = useCallback(async (proposal: MatchProposal, ticketId: string) => {
+    if (processingIds.has(proposal.id) || !userId) return;
+    beginProcessing(proposal.id);
+
+    // Optimistic removal: animate the card out the instant Approve is tapped —
+    // the user gets immediate feedback rather than the item sitting frozen-
+    // but-present for the ~2s of network work ahead. If the save fails, we
+    // re-insert the proposal back into its group (with another animation) and
+    // fire the same alert as before, so the item reappears ready to retry.
+    // Capture the group now (before removal) in case it's the last proposal
+    // in its group and we need to reconstruct the whole group on rollback.
+    const groupSnapshot = ticketGroups.find(g => g.ticketId === ticketId);
     LA();
     setTicketGroups(prev =>
       prev
         .map(g => ({ ...g, proposals: g.proposals.filter(p => p.id !== proposal.id) }))
         .filter(g => g.proposals.length > 0),
     );
-    return true;
-  }, []);
 
-  const handleApproveProposal = useCallback(async (proposal: MatchProposal, ticketId: string) => {
-    if (processingIds.has(proposal.id) || !userId) return;
-    beginProcessing(proposal.id);
     try {
       const ok = await approveProposalWork(proposal, ticketId, userId);
-      // One explicit tap deserves one direct answer — mirrors the existing
-      // Alert.alert('Could not approve', ...) surfacing pattern in handleApproveImport
-      // below, so failures are never silent anywhere in this screen.
-      if (!ok) Alert.alert('Couldn’t save this photo', 'Please check your connection and try again — it’s still in your list.');
+      if (!ok) {
+        // Rollback: put the proposal back so the user can retry naturally
+        LA();
+        setTicketGroups(prev => {
+          const existing = prev.find(g => g.ticketId === ticketId);
+          if (existing) {
+            // Group still exists (had other proposals) — re-insert at the front
+            return prev.map(g =>
+              g.ticketId === ticketId
+                ? { ...g, proposals: [proposal, ...g.proposals] }
+                : g,
+            );
+          } else if (groupSnapshot) {
+            // Group was fully cleared — recreate it with this one proposal
+            return [...prev, { ...groupSnapshot, proposals: [proposal] }];
+          }
+          return prev;
+        });
+        Alert.alert("Couldn't save this photo", "Please check your connection and try again — it's still in your list.");
+      }
     } finally {
       endProcessing(proposal.id);
     }
-  }, [processingIds, userId, beginProcessing, endProcessing, approveProposalWork]);
+  }, [processingIds, userId, ticketGroups, beginProcessing, endProcessing, approveProposalWork]);
 
   const handleRejectProposal = useCallback(async (proposalId: string) => {
     if (processingIds.has(proposalId)) return;
@@ -519,9 +709,10 @@ export default function PhotoScanReview(): React.JSX.Element {
                   { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true },
                 );
                 if (manipulated.base64) {
-                  const raw = atob(manipulated.base64);
-                  const bytes = new Uint8Array(raw.length);
-                  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+                  // Same swap as approveProposalWork above — see its comment for why
+                  // the atob()+charCodeAt-loop decode was a hidden single-thread
+                  // bottleneck that no amount of concurrency could parallelize away.
+                  const bytes = new Uint8Array(decodeBase64(manipulated.base64));
 
                   const path = `${userId}/${newTicket.id}/${assetId}.jpg`;
                   const { error: upErr } = await supabase.storage
@@ -586,62 +777,101 @@ export default function PhotoScanReview(): React.JSX.Element {
     }
   }, [processingIds, beginProcessing, endProcessing]);
 
-  // THE fix for "why does approving photos take so much time": the previous
-  // version awaited handleApproveProposal one photo at a time, so each photo's
-  // full pipeline (compress → upload → insert photo row → flip proposal status —
-  // four sequential network-bound steps) had to completely finish, mostly spent
-  // just waiting on round trips, before the next one even started. A 20-photo
-  // group at ~2-4s each meant 40-80 seconds of pure serial waiting for "Approve
-  // All". Running several through approveProposalWork concurrently overlaps that
-  // network latency instead of stacking it, so the same group now finishes in
-  // roughly 1/BATCH_CONCURRENCY of the time — about 10-20s for 20 photos.
+  // "Approve All" — two-phase pipeline designed to minimise total round trips:
+  //
+  // Phase 1 (concurrent): each BATCH_CONCURRENCY worker runs the per-item
+  //   compress → decode → upload steps via approveProposalUploadOnly (no DB
+  //   writes), collecting {proposalId, row} on success into a shared array.
+  //   JS is single-threaded so concurrent appends to the results array are safe
+  //   — workers only interleave at await boundaries, never on the push() itself.
+  //
+  // Phase 2 (sequential, after all uploads finish):
+  //   • chunked bulk `photos` INSERT  (⌈N/CHUNK⌉ round trips, ≪ N)
+  //   • one bulk `proposals` status-flip via .in('id', successIds)  (1 round trip)
+  //   • one batched LayoutAnimation + setTicketGroups removal for all successes
+  //
+  // For a 20-photo group this replaces the old 40 individual DB round trips
+  // with ~3-4 total (1-2 chunked inserts + 1 bulk update + uploads already ran
+  // concurrently in phase 1). Failure semantics are identical to before: any
+  // photo whose upload failed stays `pending` in the list; the `photos` insert
+  // and `proposals` flip only happen for uploads that actually succeeded, so
+  // "approved always means a photos row genuinely exists" is preserved.
   const handleApproveAll = useCallback(async (group: TicketGroup) => {
     if (!userId || approveAllInFlightRef.current.has(group.ticketId)) return;
     approveAllInFlightRef.current.add(group.ticketId);
     try {
-      const BATCH_CONCURRENCY = 4;
+      // Bumped from 4 → 6 now that the JS-thread bottleneck (atob+charCodeAt loop,
+      // Tasks #8) is gone and the work is genuinely network-bound and parallelisable.
+      // With 4 workers we were getting some thread serialisation on the decode step;
+      // now each worker spends almost all its time waiting on network I/O, so adding
+      // two more overlapping uploads is net-positive with negligible extra contention.
+      const BATCH_CONCURRENCY = 6;
+      const BULK_INSERT_CHUNK = 12; // well under PostgREST's default payload limit
       const queue = group.proposals.filter(p => !processingIds.has(p.id));
       if (!queue.length) return;
 
-      // Reserve every queued id up front (not as each worker picks it up) so the
-      // whole group visibly shows as busy — and is protected from a stray tap —
-      // the instant "Approve All" is pressed, not staggered as workers reach them.
+      // Reserve every queued id up front so the whole group shows busy
+      // the instant "Approve All" is pressed (not staggered as workers pick up).
       queue.forEach(p => beginProcessing(p.id));
+
+      // ── Phase 1: concurrent compress → decode → upload ──────────────────
       let cursor = 0;
       const next = (): MatchProposal | undefined => queue[cursor++];
+      const uploadResults: Array<{ proposalId: string; row: PhotoRow }> = [];
       let failCount = 0;
 
       const worker = async () => {
         for (let p = next(); p; p = next()) {
           try {
-            if (!await approveProposalWork(p, group.ticketId, userId)) failCount++;
+            const result = await approveProposalUploadOnly(p, group.ticketId, userId);
+            if (result) {
+              uploadResults.push(result); // safe: JS is single-threaded, push at await yields is atomic
+            } else {
+              failCount++;
+            }
           } finally {
             endProcessing(p.id);
           }
         }
       };
+      await Promise.all(Array.from({ length: Math.min(BATCH_CONCURRENCY, queue.length) }, worker));
 
-      await Promise.all(
-        Array.from({ length: Math.min(BATCH_CONCURRENCY, queue.length) }, worker),
-      );
+      // ── Phase 2: bulk DB writes + UI removal ─────────────────────────────
+      if (uploadResults.length > 0) {
+        // Chunked bulk INSERT — each chunk is one round trip; atomic per chunk
+        // (a chunk-level failure leaves those N proposals `pending`, still in list)
+        for (let i = 0; i < uploadResults.length; i += BULK_INSERT_CHUNK) {
+          await supabase.from('photos').insert(
+            uploadResults.slice(i, i + BULK_INSERT_CHUNK).map(r => r.row),
+          );
+        }
 
-      // Audit finding ("Now it is approving 3 photos at once but ... I don't see any
-      // photos there"): one alert per failure would stack into a wall of dialogs to
-      // dismiss — BATCH_CONCURRENCY workers tend to hit a flaky stretch and finish
-      // within moments of each other. One summary covers the whole group; each failed
-      // item simply stayed `pending` (approveProposalWork never marks a no-op
-      // "approved" anymore) — still right there in the list, ready to retry with the
-      // same button, exactly like any item that was never tapped in the first place.
+        // One bulk proposal status-flip covering the whole successful set
+        const successIds = uploadResults.map(r => r.proposalId);
+        await supabase.from('photo_match_proposals')
+          .update({ status: 'approved' })
+          .in('id', successIds);
+
+        // One LayoutAnimation + one state update for all removed cards at once
+        LA();
+        const successSet = new Set(successIds);
+        setTicketGroups(prev =>
+          prev
+            .map(g => ({ ...g, proposals: g.proposals.filter(p => !successSet.has(p.id)) }))
+            .filter(g => g.proposals.length > 0),
+        );
+      }
+
       if (failCount > 0) {
         Alert.alert(
-          failCount === queue.length ? 'Couldn’t save these photos' : 'Some photos didn’t save',
-          `${failCount} of ${queue.length} couldn’t be saved — they’re still in your list, ready to try again.`,
+          failCount === queue.length ? "Couldn't save these photos" : "Some photos didn't save",
+          `${failCount} of ${queue.length} couldn't be saved — they're still in your list, ready to try again.`,
         );
       }
     } finally {
       approveAllInFlightRef.current.delete(group.ticketId);
     }
-  }, [processingIds, userId, beginProcessing, endProcessing, approveProposalWork]);
+  }, [processingIds, userId, beginProcessing, endProcessing, approveProposalUploadOnly]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (

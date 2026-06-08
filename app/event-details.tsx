@@ -22,6 +22,7 @@ import { SCREEN_W, scale, scaleFont, sp } from '@/lib/layout';
 WebBrowser.maybeCompleteAuthSession();
 import { useBottomPad } from '@/lib/useBottomPad';
 import { useSavedEvents } from '@/lib/SavedEventsContext';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase/client';
 import type { AcceptedFriend } from '@/lib/useFriends';
 import { useFollowedArtists } from '@/lib/useFollowedArtists';
@@ -471,10 +472,13 @@ export default function EventDetailsScreen(): React.JSX.Element {
         const contentType = (mime === 'image/heic' || mime === 'image/heif') ? 'image/jpeg' : mime;
         const ext  = contentType.split('/')[1] ?? 'jpg';
         const path = `${currentUserId}/${params.id}/${Date.now()}.${ext}`;
-        // base64 → Uint8Array (reliable in React Native; fetch+blob produces empty uploads)
-        const raw   = atob(asset.base64);
-        const bytes = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        // base64 → Uint8Array — NOT fetch+blob (that reliably produces empty uploads
+        // in this RN setup). decode() from base64-arraybuffer goes straight to an
+        // ArrayBuffer, skipping the slow atob()+charCodeAt-loop's intermediate "raw
+        // bytes as a UTF-16 JS string" hop (same swap applied to the batch-approve
+        // hot path in photo-scan-review.tsx — see approveProposalWork's comment for
+        // the full single-JS-thread-bottleneck reasoning).
+        const bytes = new Uint8Array(decodeBase64(asset.base64));
         const { error: upErr } = await supabase.storage
           .from('ticket-photos').upload(path, bytes, { contentType });
         if (upErr) throw upErr;

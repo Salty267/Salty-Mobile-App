@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useBottomPad } from '@/lib/useBottomPad';
 import { scale, scaleFont, sp } from '@/lib/layout';
 import { useSidebar } from '@/lib/SidebarContext';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase/client';
 import { parseEventDate, isEventPast } from '@/lib/parseEventDate';
 
@@ -227,9 +228,13 @@ export default function MemoriesScreen(): React.JSX.Element {
         const contentType = (mime === 'image/heic' || mime === 'image/heif') ? 'image/jpeg' : mime;
         const ext  = contentType.split('/')[1] ?? 'jpg';
         const path = `${userId}/${ticketId}/${Date.now()}.${ext}`;
-        const raw   = atob(asset.base64);
-        const bytes = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        // base64 → Uint8Array via base64-arraybuffer's decode() — straight to an
+        // ArrayBuffer, skipping the slow atob()+charCodeAt-loop's intermediate "raw
+        // bytes as a UTF-16 JS string" hop (same swap as event-details.tsx's pickMedia
+        // and photo-scan-review.tsx's approveProposalWork — see the latter's comment
+        // for the full single-JS-thread-bottleneck reasoning). fetch+blob is avoided
+        // here too, per the proven "produces empty uploads in RN" finding.
+        const bytes = new Uint8Array(decodeBase64(asset.base64));
         const { error: upErr } = await supabase.storage
           .from('ticket-photos').upload(path, bytes, { contentType });
         if (upErr) throw upErr;

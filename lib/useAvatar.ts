@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { supabase } from './supabase/client';
 
 export function useAvatar() {
@@ -62,10 +63,12 @@ export function useAvatar() {
       const mime = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
       const path = `${user.id}/avatar.${ext}`;
 
-      // Decode base64 → Uint8Array — avoids fetch/blob unreliability on iOS
-      const binary = atob(asset.base64!);
-      const bytes  = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      // Decode base64 → Uint8Array via base64-arraybuffer's decode() — straight to an
+      // ArrayBuffer (avoids fetch/blob unreliability on iOS, same as before, but also
+      // skips the slow atob()+charCodeAt-loop's intermediate "raw bytes as a UTF-16 JS
+      // string" hop — same swap applied across the upload pipeline; see
+      // photo-scan-review.tsx's approveProposalWork for the full reasoning).
+      const bytes = new Uint8Array(decodeBase64(asset.base64!));
 
       const { error: uploadErr } = await supabase.storage
         .from('avatars')

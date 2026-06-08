@@ -34,8 +34,12 @@ const CLASSIFY_TOOL = {
         type: 'boolean',
         description: 'True if this cluster of photos represents a meaningful event/trip worth creating a ticket for',
       },
+      contains_sensitive_content: {
+        type: 'boolean',
+        description: "True if THIS representative photo is itself a screenshot (of an app, website, or text/chat conversation), a credit/debit/bank card, an ID card, passport, driver's license, boarding pass, or any other document/object exposing personal or financial information — rather than an actual travel/event scene. False for an ordinary travel photo.",
+      },
     },
-    required: ['location', 'suggested_title', 'category', 'confidence', 'is_event_worthy'],
+    required: ['location', 'suggested_title', 'category', 'confidence', 'is_event_worthy', 'contains_sensitive_content'],
   },
 };
 
@@ -181,6 +185,8 @@ Deno.serve(async (req) => {
 
 Classify this photo cluster using the classify_trip tool.
 
+Also screen for privacy: set "contains_sensitive_content" to true if THIS representative photo is itself a screenshot (of an app/website/conversation), a credit/debit/bank card, an ID card, passport, driver's license, boarding pass, or any other document/object exposing personal or financial information — rather than an actual travel/event scene. A card or screenshot should never become the cover image of a trip card.
+
 ${hasGps
   ? `Identify the specific city and country/state using the image content together with the GPS coordinates given above.`
   : `IMPORTANT — there is NO GPS data for this cluster. You may ONLY name a specific city/country if you can point to a concrete, distinguishing visual detail in the "visual_evidence" field — a famous landmark, readable signage/text, a license plate, a distinctive flag, architecture unique to one place, etc. Generic scenery (mountains, beaches, forests, a temple, a city skyline, a hiking trail) looks similar across many countries and is NOT enough to name a specific city — guessing one is worse than not creating a card at all.
@@ -200,10 +206,20 @@ Also: if you find yourself wanting to write words like "likely", "probably", "po
 
   const json = await res.json();
   const toolUse = json.content?.find((b: { type: string }) => b.type === 'tool_use') as
-    | { input: { location: string; visual_evidence?: string; suggested_title: string; category: string; confidence: number; is_event_worthy: boolean } }
+    | { input: { location: string; visual_evidence?: string; suggested_title: string; category: string; confidence: number; is_event_worthy: boolean; contains_sensitive_content?: boolean } }
     | undefined;
 
   if (!toolUse?.input.is_event_worthy) {
+    return new Response(JSON.stringify({ created: false }), { status: 200, headers: HEADERS });
+  }
+
+  // Same audit finding as verify-photos ("exclude screenshots/credit cards/debit
+  // cards/or anyother personal things from finding"): the representative photo sent
+  // here becomes the COVER IMAGE of an entire trip card shown to the user. Reject the
+  // whole cluster outright if it's a screenshot/card/ID/document — rather than mint a
+  // trip titled "Goa Beach Trip" fronted by a photo of someone's debit card.
+  if (toolUse.input.contains_sensitive_content) {
+    console.log('Rejected trip cluster — representative photo flagged as sensitive personal content (screenshot/card/ID/document)');
     return new Response(JSON.stringify({ created: false }), { status: 200, headers: HEADERS });
   }
 

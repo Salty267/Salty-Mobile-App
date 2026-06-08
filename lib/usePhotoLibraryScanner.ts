@@ -158,6 +158,57 @@ function isValidGPS(lat: number, lng: number): boolean {
   return !(Math.abs(lat) < 0.5 && Math.abs(lng) < 0.5);
 }
 
+// Audit findings ("i can still see few unrelated photos from years back which were
+// shared recently through whatsapp found [in] unrelated trips" + "exclude
+// screenshots/credit cards/debit cards/or any other personal things from finding"):
+// two complaints, one shared root cause and fix surface — both are about media whose
+// SOURCE makes it untrustworthy as "evidence of where/when the user was", no matter
+// what its metadata claims.
+//
+// (1) WhatsApp (and similar share/forward flows) re-encode media on receipt and strip
+// EXIF, so `creationTime` ends up meaning "when this landed in my camera roll" — NOT
+// when the photo was actually taken. A photo from a 2021 trip, forwarded today, carries
+// TODAY's creationTime: indistinguishable, by date math alone, from something the user
+// captured this week. From there it either (a) coincidentally scores against whatever
+// ticket sits near today's date, or (b) lands in the unmatchedBuf pool that trip-
+// cluster detection partitions, diluting a real cluster with a photo from a completely
+// different place and year. Better date math can't fix this — the date itself is wrong.
+//
+// (2) Screenshots, scans, and saved/received card-or-ID photos aren't "photos OF a
+// place" at all — exactly the "saved/forwarded image" category the screenshot check
+// further down (in the main scan loop) was already written to guard against (see its
+// own comment: "fed classify-trip-segment bogus visual evidence... places the user has
+// never been"). That check was just too narrow two ways: `mediaSubtypes` is iOS-only
+// (Android screenshots sailed straight through), and it only gated the *trip-cluster*
+// pool — a screenshot whose arrival `creationTime` happened to land near a ticket's
+// date could still score ≥ 0.25 and get proposed as "evidence" of that event. This
+// helper supersedes it with one check applied BEFORE either routing decision.
+//
+// `filename` and (Android) `albumId`/`albumTitleById` already arrive on every `Asset`
+// from `getAssetsAsync` (or one cheap up-front `getAlbumsAsync` — see scan setup) — no
+// extra per-asset fetches. WhatsApp's `…-WA####` suffix is an undocumented but
+// rock-solid signature stamped on every file it has ever saved, across OS versions and
+// years; messaging/utility apps similarly file saves into self-named albums ("WhatsApp
+// Images", "Telegram Video", "Screenshots", …) the user never created and wouldn't
+// think to exclude. Catching the SOURCE here — before any scoring or clustering — is
+// the only fix that's actually correct, since the embedded date can't be trusted for
+// content that arrived this way. (Credit/debit-card and other personal-document photos
+// have no such metadata trace — those are caught downstream by AI content screening;
+// see the `contains_sensitive_content` checks in verify-photos / classify-trip-segment.)
+const SHARED_MEDIA_FILENAME_PATTERN = /-WA\d{3,}|^Screenshot[_-]|^received_|^Snapchat[_-]/i;
+const SHARED_MEDIA_ALBUM_PATTERN = /whatsapp|telegram|messenger|signal|snapchat|wechat|\bline\b|viber|screenshot/i;
+
+function isUntrustworthyMediaSource(asset: MediaLibrary.Asset, albumTitle: string | undefined): boolean {
+  // iOS native screenshot flag
+  if (asset.mediaSubtypes?.includes('screenshot')) return true;
+  // Cross-platform filename signature — WhatsApp on both OSes; Android screenshots/
+  // Messenger/Snapchat saves where mediaSubtypes is unavailable
+  if (SHARED_MEDIA_FILENAME_PATTERN.test(asset.filename)) return true;
+  // Android: the album the OS/app itself filed this into (resolved once, up front)
+  if (albumTitle && SHARED_MEDIA_ALBUM_PATTERN.test(albumTitle)) return true;
+  return false;
+}
+
 function parseTimeStr(timeStr: string | null): { hours: number; minutes: number } | null {
   if (!timeStr) return null;
   const m = timeStr.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
@@ -652,6 +703,19 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
       }
     }
 
+    // Resolve albumId → title once, up front (Android only — `albumId` is
+    // @platform android, and per-asset album lookups would mean one extra call per
+    // photo). Lets isUntrustworthyMediaSource recognize "WhatsApp Images", "Telegram
+    // Video", "Screenshots", etc. — folders the OS/apps created and filed into
+    // automatically, never the user's own organizing — at zero per-asset cost.
+    let albumTitleById: Map<string, string> | null = null;
+    if (Platform.OS === 'android') {
+      try {
+        const albums = await MediaLibrary.getAlbumsAsync();
+        albumTitleById = new Map(albums.map(a => [a.id, a.title]));
+      } catch { /* best-effort — filename-based detection still applies */ }
+    }
+
     // ── Scan assets ───────────────────────────────────────────────────────────
     const highBuf: MatchCandidate[] = [];
     const mediumBuf: MatchCandidate[] = [];
@@ -736,6 +800,19 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
             }
           }
 
+          // Untrustworthy-source gate — screenshots, WhatsApp/Telegram/Messenger/etc.
+          // shares, and similar "not actually a photo OF a place" sources are skipped
+          // BEFORE either routing decision: they can neither match a ticket nor seed a
+          // trip cluster. See isUntrustworthyMediaSource for the full audit findings —
+          // short version: their `creationTime` reflects "when this arrived on my
+          // phone", not when (or where) the content was actually captured, so no amount
+          // of date/GPS scoring downstream can make a correct decision from it.
+          const albumTitle = asset.albumId ? (albumTitleById?.get(asset.albumId) ?? undefined) : undefined;
+          if (isUntrustworthyMediaSource(asset, albumTitle)) {
+            scanned++;
+            continue;
+          }
+
           mediaAssetMap.set(asset.id, asset);
 
           const mediaType: 'photo' | 'video' = asset.mediaType === MediaLibrary.MediaType.video ? 'video' : 'photo';
@@ -760,20 +837,11 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
             };
             if (bestScore >= 0.75) highBuf.push(candidate);
             else mediumBuf.push(candidate);
-          } else if (!asset.mediaSubtypes?.includes('screenshot')) {
+          } else {
             // No ticket match — collect for trip/event cluster detection (no time-of-day
-            // gate; trip photos happen during the day and may have no GPS).
-            //
-            // Screenshots are deliberately excluded here: they carry no EXIF GPS
-            // (diluting the GPS-sampling pool below with guaranteed misses) and they
-            // are not photos OF a place — they're UI captures, saved memes, shared
-            // images, map snippets, etc. A saved/forwarded photo of a temple or alpine
-            // scenery getting selected as a cluster's "representative" is exactly the
-            // kind of input that fed classify-trip-segment bogus visual evidence and
-            // produced "Alpine Winter Trip" / "Indore Temple Visit" cards for places
-            // the user has never been ("ive never visited switzerland or indore").
-            // They can still match an existing ticket by date via the scoring above —
-            // we only keep them out of the *new-trip-candidate* pool.
+            // gate; trip photos happen during the day and may have no GPS). The
+            // untrustworthy-source gate above already removed screenshots and shared
+            // media from this pool — see isUntrustworthyMediaSource.
             unmatchedBuf.push({ assetId: asset.id, mediaType, creationTimeMs: creationMs, lat, lng, localUri });
           }
 
@@ -872,10 +940,13 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
     // ── AI verification for medium-confidence ─────────────────────────────────
     update({ state: 'verifying' });
 
-    type VerifyTarget = { proposalId: string; assetId: string; mediaType: 'photo' | 'video'; localUri: string; ticket: TicketForMatch };
+    // `matchPreConfirmed` tells verify-photos "the metadata score already nailed this
+    // one — don't re-litigate is_match, just run the privacy/content screen" (see the
+    // `contains_sensitive_content` audit comment below, by the highBuf loop).
+    type VerifyTarget = { proposalId: string; assetId: string; mediaType: 'photo' | 'video'; localUri: string; ticket: TicketForMatch; matchPreConfirmed: boolean };
     const verifyTargets: VerifyTarget[] = [];
 
-    if (mediumBuf.length && jobId) {
+    if ((mediumBuf.length || highBuf.length) && jobId) {
       // Audit finding ("a night of love doesnt match the pictures", "seattle trip...
       // found photos for it"): this used to re-look-up the rows we just inserted via
       // `.in('device_asset_id', mediumBuf.map(...))` — for this user that's an IN-list
@@ -902,7 +973,23 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
       );
       for (const c of mediumBuf) {
         const proposalId = idMap.get(c.assetId);
-        if (proposalId) verifyTargets.push({ proposalId, assetId: c.assetId, mediaType: c.mediaType, localUri: c.localUri, ticket: c.ticket });
+        if (proposalId) verifyTargets.push({ proposalId, assetId: c.assetId, mediaType: c.mediaType, localUri: c.localUri, ticket: c.ticket, matchPreConfirmed: false });
+      }
+
+      // Audit finding ("exclude screenshots/credit cards/debit cards/or any other
+      // personal things from finding"): high-confidence matches skip the `is_match`
+      // re-check above on purpose — date+GPS metadata already nailed those, and
+      // re-litigating them on every scan would multiply AI cost for no benefit. But
+      // metadata can't see CONTENT — a credit/debit card, ID, or boarding pass
+      // photographed at the right place and time (e.g. to remember which card paid for
+      // merch, or for entry verification) would score ≥ 0.75 and sail straight into the
+      // queue with zero look at what's actually in the frame. That's a privacy issue,
+      // not a matching one, so it gets the same AI pass — just told (matchPreConfirmed)
+      // to trust the metadata verdict and ONLY screen for sensitive personal content,
+      // not second-guess whether it matches.
+      for (const c of highBuf) {
+        const proposalId = idMap.get(c.assetId);
+        if (proposalId) verifyTargets.push({ proposalId, assetId: c.assetId, mediaType: c.mediaType, localUri: c.localUri, ticket: c.ticket, matchPreConfirmed: true });
       }
     }
 
@@ -938,7 +1025,8 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
       for (const row of (backlogRows ?? []) as Array<{ id: string; device_asset_id: string; media_type: 'photo' | 'video'; local_uri: string | null; ticket_id: string }>) {
         const ticket = ticketById.get(row.ticket_id);
         if (!ticket || !row.local_uri) continue;
-        verifyTargets.push({ proposalId: row.id, assetId: row.device_asset_id, mediaType: row.media_type, localUri: row.local_uri, ticket });
+        // Backlog rows are all match_score < 0.75 by the query filter above — medium-tier, full re-check applies
+        verifyTargets.push({ proposalId: row.id, assetId: row.device_asset_id, mediaType: row.media_type, localUri: row.local_uri, ticket, matchPreConfirmed: false });
       }
     }
 
@@ -970,6 +1058,7 @@ export function usePhotoLibraryScanner(options?: { singleTicketId?: string }) {
               ticketCategory: item.ticket.category,
               ticketDate:     item.ticket.date_str  ?? '',
               mediaType:      item.mediaType,
+              matchPreConfirmed: item.matchPreConfirmed,
             };
           }),
         );
